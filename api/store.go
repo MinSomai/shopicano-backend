@@ -5,7 +5,7 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/middlewares"
-	"github.com/shopicano/shopicano-backend/repository"
+	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -39,7 +39,7 @@ func createStore(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	su := repository.NewStoreRepository()
+	su := repositories.NewStoreRepository()
 	if err := su.CreateStore(s, userID); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
@@ -65,7 +65,7 @@ func createStore(ctx echo.Context) error {
 func getStore(ctx echo.Context) error {
 	resp := core.Response{}
 
-	su := repository.NewStoreRepository()
+	su := repositories.NewStoreRepository()
 	profile, _ := su.GetStoreUserProfile(ctx.Get(utils.UserID).(string))
 
 	resp.Status = http.StatusOK

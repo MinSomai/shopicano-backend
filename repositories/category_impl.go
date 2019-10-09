@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import (
 	"github.com/shopicano/shopicano-backend/app"
@@ -6,20 +6,20 @@ import (
 	"strings"
 )
 
-type CollectionRepositoryImpl struct {
+type CategoryRepositoryImpl struct {
 }
 
-var collectionRepository CollectionRepository
+var categoryRepository CategoryRepository
 
-func NewCollectionRepository() CollectionRepository {
-	if collectionRepository == nil {
-		collectionRepository = &CollectionRepositoryImpl{}
+func NewCategoryRepository() CategoryRepository {
+	if categoryRepository == nil {
+		categoryRepository = &CategoryRepositoryImpl{}
 	}
 
-	return collectionRepository
+	return categoryRepository
 }
 
-func (cu *CollectionRepositoryImpl) CreateCollection(c *models.Collection) error {
+func (cu *CategoryRepositoryImpl) CreateCategory(c *models.Category) error {
 	db := app.DB()
 	if err := db.Table(c.TableName()).Create(c).Error; err != nil {
 		return err
@@ -27,10 +27,10 @@ func (cu *CollectionRepositoryImpl) CreateCollection(c *models.Collection) error
 	return nil
 }
 
-func (cu *CollectionRepositoryImpl) ListCollections(from, limit int) ([]models.Collection, error) {
+func (cu *CategoryRepositoryImpl) ListCategories(from, limit int) ([]models.Category, error) {
 	db := app.DB()
-	var cols []models.Collection
-	col := models.Collection{}
+	var cols []models.Category
+	col := models.Category{}
 	if err := db.Table(col.TableName()).
 		Where("is_published = ?", true).
 		Offset(from).Limit(limit).
@@ -40,10 +40,10 @@ func (cu *CollectionRepositoryImpl) ListCollections(from, limit int) ([]models.C
 	return cols, nil
 }
 
-func (cu *CollectionRepositoryImpl) ListCollectionsWithStore(storeID string, from, limit int) ([]models.Collection, error) {
+func (cu *CategoryRepositoryImpl) ListCategoriesWithStore(storeID string, from, limit int) ([]models.Category, error) {
 	db := app.DB()
-	var cols []models.Collection
-	col := models.Collection{}
+	var cols []models.Category
+	col := models.Category{}
 	if err := db.Table(col.TableName()).
 		Where("store_id = ?", storeID).
 		Offset(from).Limit(limit).
@@ -53,10 +53,10 @@ func (cu *CollectionRepositoryImpl) ListCollectionsWithStore(storeID string, fro
 	return cols, nil
 }
 
-func (cu *CollectionRepositoryImpl) SearchCollections(query string, from, limit int) ([]models.Collection, error) {
+func (cu *CategoryRepositoryImpl) SearchCategories(query string, from, limit int) ([]models.Category, error) {
 	db := app.DB()
-	var cols []models.Collection
-	col := models.Collection{}
+	var cols []models.Category
+	col := models.Category{}
 	if err := db.Table(col.TableName()).
 		Where("is_published = ? AND LOWER(name) LIKE ?", true, "%"+strings.ToLower(query)+"%").
 		Offset(from).Limit(limit).
@@ -66,10 +66,10 @@ func (cu *CollectionRepositoryImpl) SearchCollections(query string, from, limit 
 	return cols, nil
 }
 
-func (cu *CollectionRepositoryImpl) SearchCollectionsWithStore(storeID, query string, from, limit int) ([]models.Collection, error) {
+func (cu *CategoryRepositoryImpl) SearchCategoriesWithStore(storeID, query string, from, limit int) ([]models.Category, error) {
 	db := app.DB()
-	var cols []models.Collection
-	col := models.Collection{}
+	var cols []models.Category
+	col := models.Category{}
 	if err := db.Table(col.TableName()).
 		Where("store_id = ? AND LOWER(name) LIKE ?", storeID, "%"+strings.ToLower(query)+"%").
 		Offset(from).Limit(limit).
@@ -79,11 +79,11 @@ func (cu *CollectionRepositoryImpl) SearchCollectionsWithStore(storeID, query st
 	return cols, nil
 }
 
-func (cu *CollectionRepositoryImpl) DeleteCollection(storeID, collectionID string) error {
+func (cu *CategoryRepositoryImpl) DeleteCategory(storeID, categoryID string) error {
 	db := app.DB()
-	col := models.Collection{}
+	col := models.Category{}
 	if err := db.Table(col.TableName()).
-		Where("store_id = ? AND id = ?", storeID, collectionID).
+		Where("store_id = ? AND id = ?", storeID, categoryID).
 		Delete(&col).Error; err != nil {
 		return err
 	}

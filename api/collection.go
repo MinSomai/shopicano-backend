@@ -5,7 +5,7 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/middlewares"
-	"github.com/shopicano/shopicano-backend/repository"
+	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -41,7 +41,7 @@ func createCollection(ctx echo.Context) error {
 
 	c.StoreID = storeID
 
-	cu := repository.NewCollectionRepository()
+	cu := repositories.NewCollectionRepository()
 	if err := cu.CreateCollection(c); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
@@ -74,7 +74,7 @@ func deleteCollection(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	cu := repository.NewCollectionRepository()
+	cu := repositories.NewCollectionRepository()
 	if err := cu.DeleteCollection(storeID, collectionID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Collection not found"
@@ -112,7 +112,7 @@ func searchCollection(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	cu := repository.NewCollectionRepository()
+	cu := repositories.NewCollectionRepository()
 	collections, err := cu.SearchCollections(query, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -143,7 +143,7 @@ func listCollection(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	cu := repository.NewCollectionRepository()
+	cu := repositories.NewCollectionRepository()
 	collections, err := cu.ListCollections(int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -176,7 +176,7 @@ func searchCollectionWithStore(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	cu := repository.NewCollectionRepository()
+	cu := repositories.NewCollectionRepository()
 	collections, err := cu.SearchCollectionsWithStore(storeID, query, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -208,7 +208,7 @@ func listCollectionWithStore(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	cu := repository.NewCollectionRepository()
+	cu := repositories.NewCollectionRepository()
 	collections, err := cu.ListCollectionsWithStore(storeID, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"

@@ -5,7 +5,7 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/middlewares"
-	"github.com/shopicano/shopicano-backend/repository"
+	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -46,7 +46,7 @@ func createOrder(ctx echo.Context) error {
 
 	o.UserID = userID
 
-	ou := repository.NewOrderRepository()
+	ou := repositories.NewOrderRepository()
 	m, err := ou.CreateOrder(o)
 	if err != nil {
 		if errors.IsPreparedError(err) {

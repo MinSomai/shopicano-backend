@@ -6,7 +6,7 @@ import (
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
-	"github.com/shopicano/shopicano-backend/repository"
+	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -54,7 +54,7 @@ func createAddress(ctx echo.Context) error {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	au := repository.NewAddressRepository()
+	au := repositories.NewAddressRepository()
 	if err := au.CreateAddress(add); err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
@@ -99,7 +99,7 @@ func updateAddress(ctx echo.Context) error {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	au := repository.NewAddressRepository()
+	au := repositories.NewAddressRepository()
 	if err := au.UpdateAddress(add); err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
@@ -119,7 +119,7 @@ func deleteAddress(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	au := repository.NewAddressRepository()
+	au := repositories.NewAddressRepository()
 	if err := au.DeleteAddress(userID, addressID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Address not found"
@@ -157,7 +157,7 @@ func listAddresses(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	au := repository.NewAddressRepository()
+	au := repositories.NewAddressRepository()
 	addresses, err := au.ListAddresses(userID, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"

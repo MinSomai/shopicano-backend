@@ -6,7 +6,7 @@ import (
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/middlewares"
-	"github.com/shopicano/shopicano-backend/repository"
+	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"github.com/shopicano/shopicano-backend/values"
@@ -47,7 +47,7 @@ func login(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	uc := repository.NewUserRepository()
+	uc := repositories.NewUserRepository()
 	s, err := uc.Login(e, p)
 
 	if err != nil {
@@ -86,7 +86,7 @@ func register(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	uc := repository.NewUserRepository()
+	uc := repositories.NewUserRepository()
 
 	u.Password, _ = utils.GeneratePassword(u.Password)
 	u.PermissionID = values.UserGroupID
@@ -123,7 +123,7 @@ func get(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	uc := repository.NewUserRepository()
+	uc := repositories.NewUserRepository()
 	u, err := uc.Get(userID)
 
 	if err != nil {
@@ -164,7 +164,7 @@ func logout(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	uc := repository.NewUserRepository()
+	uc := repositories.NewUserRepository()
 	if err := uc.Logout(token); err != nil {
 		log.Log().Errorln(err)
 
@@ -195,7 +195,7 @@ func refreshToken(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	uc := repository.NewUserRepository()
+	uc := repositories.NewUserRepository()
 	s, err := uc.RefreshToken(token)
 	if err != nil {
 		log.Log().Errorln(err)
