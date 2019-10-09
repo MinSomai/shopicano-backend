@@ -1,0 +1,28 @@
+version: '3.1'
+
+services:
+  pg:
+    image: postgres:10
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_USER: root
+      PGDATA: "./storage/pg/:/var/lib/postgresql/data/"
+
+  minio:
+    image: minio/minio
+    ports:
+      - 9001:9000
+    environment:
+      MINIO_ACCESS_KEY: "MINIO_ACCESS_KEY"
+      MINIO_SECRET_KEY: "MINIO_SECRET_KEY"
+    command: ["server", "/data"]
+    volumes:
+      - "./storage/minio/:/data/"
+
+  consul:
+    image: consul
+    ports:
+      - "8500:8500"
