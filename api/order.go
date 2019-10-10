@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/errors"
+	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
@@ -49,6 +50,8 @@ func createOrder(ctx echo.Context) error {
 	ou := repositories.NewOrderRepository()
 	m, err := ou.CreateOrder(o)
 	if err != nil {
+		log.Log().Errorln(err)
+
 		if errors.IsPreparedError(err) {
 			resp.Title = "Invalid request"
 			resp.Status = http.StatusBadRequest

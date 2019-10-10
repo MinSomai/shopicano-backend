@@ -187,6 +187,7 @@ func (os *OrderRepositoryImpl) CreateOrder(v *validators.ReqOrderCreate) (*model
 
 	order.PaymentMethodID = v.PaymentMethodID
 	order.PaymentProcessingFee = paymentMethod.CalculateProcessingFee(order.GrandTotal)
+	order.PaymentGateway = payment_gateways.GetActivePaymentGateway().GetName()
 
 	if err := tx.Table(order.TableName()).Create(&order).Error; err != nil {
 		tx.Rollback()
@@ -215,28 +216,76 @@ func (os *OrderRepositoryImpl) CreateOrder(v *validators.ReqOrderCreate) (*model
 		IsPaid:               order.IsPaid,
 		Status:               order.Status,
 		PaymentProcessingFee: order.PaymentProcessingFee,
-		PaymentMethodID:      paymentMethod,
-		BillingAddressID:     billingAddress,
-		ShippingAddressID:    nil,
-		ShippingMethodID:     nil,
+		PaymentMethod:        paymentMethod,
+		BillingAddress:       billingAddress,
+		ShippingAddress:      nil,
+		ShippingMethod:       nil,
 		Products:             orderedProducts,
 		CompletedAt:          order.CompletedAt,
 		ConfirmedAt:          order.ConfirmedAt,
 		PaidAt:               order.PaidAt,
-		PaymentGateway:       payment_gateways.GetActivePaymentGateway().GetName(),
+		PaymentGateway:       order.PaymentGateway,
 	}
-
-	res, err := payment_gateways.GetActivePaymentGateway().Pay(orderDetails)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	order.PaymentGatewayReferenceID = res.ReferenceID
-	orderDetails.PaymentGatewayReferenceID = res.ReferenceID
 
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
+	return orderDetails, nil
+}
+
+func (os *OrderRepositoryImpl) GetOrderDetails(orderID string) (*models.OrderDetails, error) {
+	db := app.DB()
+
+	order := models.Order{}
+	if err := db.Model(&order).First(&order, "id = ?", orderID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	var orderedProducts []models.OrderedProduct
+	op := models.OrderedProduct{}
+	if err := db.Model(&op).Find(&orderedProducts, "order_id = ?", orderID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	billingAddress := models.Address{}
+	if err := db.Model(&billingAddress).Where("id = ?", order.BillingAddressID).First(&billingAddress).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	paymentMethod := models.PaymentMethod{}
+	if err := db.Model(&paymentMethod).First(&paymentMethod, "id = ?", order.PaymentMethodID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	orderDetails := &models.OrderDetails{
+		ID:                   order.ID,
+		TotalTax:             order.TotalTax,
+		SubTotal:             order.SubTotal,
+		GrandTotal:           order.GrandTotal,
+		TotalVat:             order.TotalVat,
+		StoreID:              order.StoreID,
+		UpdatedAt:            order.UpdatedAt,
+		CreatedAt:            order.CreatedAt,
+		UserID:               order.UserID,
+		ShippingCharge:       order.ShippingCharge,
+		Hash:                 order.Hash,
+		IsPaid:               order.IsPaid,
+		Status:               order.Status,
+		PaymentProcessingFee: order.PaymentProcessingFee,
+		PaymentMethod:        paymentMethod,
+		BillingAddress:       billingAddress,
+		ShippingAddress:      nil,
+		ShippingMethod:       nil,
+		Products:             orderedProducts,
+		CompletedAt:          order.CompletedAt,
+		ConfirmedAt:          order.ConfirmedAt,
+		PaidAt:               order.PaidAt,
+		PaymentGateway:       order.PaymentGateway,
+	}
+
 	return orderDetails, nil
 }

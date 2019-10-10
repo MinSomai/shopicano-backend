@@ -20,7 +20,7 @@ fi
 
 if [ "$cmd" = "run" ]; then
   echo "Executing run command"
-  curl --request PUT --data-binary @config.example.yml http://localhost:8500/v1/kv/${CONSUL_PATH}
+  curl --request PUT --data-binary @config.yml http://localhost:8500/v1/kv/${CONSUL_PATH}
   ./${binary} serve
   exit
 fi

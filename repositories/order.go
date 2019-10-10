@@ -7,4 +7,5 @@ import (
 
 type OrderRepository interface {
 	CreateOrder(v *validators.ReqOrderCreate) (*models.OrderDetails, error)
+	GetOrderDetails(orderID string) (*models.OrderDetails, error)
 }

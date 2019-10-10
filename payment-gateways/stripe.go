@@ -56,7 +56,7 @@ func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetails) (*Paymen
 		Params: stripe.Params{
 			IdempotencyKey: stripe.String(stripe.NewIdempotencyKey()),
 		},
-		CustomerEmail: stripe.String(orderDetails.BillingAddressID.Email),
+		CustomerEmail: stripe.String(orderDetails.BillingAddress.Email),
 		SuccessURL:    stripe.String(fmt.Sprintf("%s?session_id={CHECKOUT_SESSION_ID}&order_id=%s", spg.SuccessCallback, orderDetails.ID)),
 		CancelURL:     stripe.String(fmt.Sprintf("%s?session_id={CHECKOUT_SESSION_ID}&order_id=%s", spg.FailureCallback, orderDetails.ID)),
 	}
@@ -67,6 +67,10 @@ func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetails) (*Paymen
 	}
 
 	return &PaymentGatewayResponse{
-		ReferenceID: ss.ID,
+		Nonce: ss.ID,
 	}, nil
+}
+
+func (spg *stripePaymentGateway) GetClientToken() (string, error) {
+	return "", nil
 }

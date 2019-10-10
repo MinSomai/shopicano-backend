@@ -19,6 +19,7 @@ func auto(cmd *cobra.Command, args []string) {
 	tx := app.DB().Begin()
 
 	var tables []core.Table
+	tables = append(tables, &models.Address{})
 	tables = append(tables, &models.UserPermission{}, &models.User{}, &models.Session{})
 	tables = append(tables, &models.StorePermission{}, &models.Store{}, &models.Staff{})
 	tables = append(tables, &models.ShippingMethod{}, &models.PaymentMethod{}, &models.Settings{})
@@ -29,6 +30,7 @@ func auto(cmd *cobra.Command, args []string) {
 	for _, t := range tables {
 		if err := tx.AutoMigrate(t).Error; err != nil {
 			tx.Rollback()
+			log.Log().Errorln(err)
 			return
 		}
 	}
@@ -45,9 +47,16 @@ func auto(cmd *cobra.Command, args []string) {
 			fk := strings.Split(fks, ";")
 			if err := tx.Model(t).AddForeignKey(fk[0], fk[1], fk[2], fk[3]).Error; err != nil {
 				tx.Rollback()
+				log.Log().Errorln(err)
 				return
 			}
 		}
+	}
+
+	sup := models.StoreUserProfile{}
+	if err := sup.CreateView(tx); err != nil {
+		tx.Rollback()
+		log.Log().Errorln(err)
 	}
 
 	if err := tx.Commit().Error; err != nil {
