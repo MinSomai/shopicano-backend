@@ -9,6 +9,7 @@ type UserRepository interface {
 	RefreshToken(token string) (*models.Session, error)
 	Update(userID string, ud *models.User) (*models.User, error)
 	GetPermission(token string) (string, *models.Permission, error)
+	GetPermissionByUserID(userID string) (string, *models.Permission, error)
 	Get(userID string) (*models.User, error)
 	IsSignUpEnabled() (bool, error)
 	IsStoreCreationEnabled() (bool, error)

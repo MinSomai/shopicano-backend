@@ -140,6 +140,26 @@ func (uu *UserRepositoryImpl) GetPermission(token string) (string, *models.Permi
 	return result.ID, result.Permission, nil
 }
 
+func (uu *UserRepositoryImpl) GetPermissionByUserID(userID string) (string, *models.Permission, error) {
+	db := app.DB()
+
+	u := models.User{}
+	up := models.UserPermission{}
+
+	result := struct {
+		ID         string             `json:"id"`
+		Permission *models.Permission `json:"permission"`
+	}{}
+
+	if err := db.Table(fmt.Sprintf("%s AS u", u.TableName())).
+		Select("u.id, up.permission").
+		Joins(fmt.Sprintf("JOIN %s AS up ON u.permission_id = up.id", up.TableName())).
+		Where("u.id = ? AND u.status = ?", userID, models.UserActive).Scan(&result).Error; err != nil {
+		return "", nil, err
+	}
+	return result.ID, result.Permission, nil
+}
+
 func (uu *UserRepositoryImpl) Get(userID string) (*models.User, error) {
 	u := models.User{}
 

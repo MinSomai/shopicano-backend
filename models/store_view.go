@@ -12,7 +12,7 @@ type StoreUserProfile struct {
 	Address            string      `json:"address"`
 	City               string      `json:"city"`
 	Country            string      `json:"country"`
-	PostCode           string      `json:"post_code"`
+	PostCode           string      `json:"postcode"`
 	Email              string      `json:"email"`
 	Phone              string      `json:"phone"`
 	Status             StoreStatus `json:"status"`

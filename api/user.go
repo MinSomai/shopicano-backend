@@ -68,7 +68,24 @@ func login(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	resp.Data = s
+	_, permission, err := uc.GetPermissionByUserID(s.UserID)
+	if err != nil {
+		log.Log().Errorln(err)
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Data = map[string]interface{}{
+		"access_token":  s.AccessToken,
+		"refresh_token": s.RefreshToken,
+		"expire_on":     s.ExpireOn,
+		"permission":    permission,
+	}
+
 	resp.Status = http.StatusOK
 	return resp.ServerJSON(ctx)
 }
