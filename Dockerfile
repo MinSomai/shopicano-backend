@@ -12,8 +12,6 @@ ENV GO111MODULE=on
 COPY . $GOPATH/src/github.com/shopicano/shopicano-backend
 WORKDIR $GOPATH/src/github.com/shopicano/shopicano-backend
 
-RUN rm go.sum
-
 RUN go get .
 RUN rm /go/pkg/mod/github.com/coreos/etcd@v3.3.10+incompatible/client/keys.generated.go
 RUN cp ./hacks/keys.generated.go /go/pkg/mod/github.com/coreos/etcd@v3.3.10+incompatible/client/
