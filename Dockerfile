@@ -12,7 +12,7 @@ ENV GO111MODULE=on
 COPY . $GOPATH/src/github.com/shopicano/shopicano-backend
 WORKDIR $GOPATH/src/github.com/shopicano/shopicano-backend
 
-go get github.com/ugorji/go@v1.1.2-0.20180831062425-e253f1f20942
+RUN go get github.com/ugorji/go@v1.1.2-0.20180831062425-e253f1f20942
 
 RUN go get .
 RUN rm /go/pkg/mod/github.com/coreos/etcd@v3.3.10+incompatible/client/keys.generated.go
