@@ -12,7 +12,7 @@ import (
 var (
 	// RootCmd is the root command of nur service
 	RootCmd = &cobra.Command{
-		Use:   "fin",
+		Use:   "shopicano",
 		Short: "A http service",
 		Long:  `A HTTP JSON API backend service`,
 	}
