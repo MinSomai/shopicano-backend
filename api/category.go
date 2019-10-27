@@ -5,7 +5,7 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/middlewares"
-	"github.com/shopicano/shopicano-backend/repository"
+	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -41,7 +41,7 @@ func createCategory(ctx echo.Context) error {
 
 	c.StoreID = storeID
 
-	cu := repository.NewCategoryRepository()
+	cu := repositories.NewCategoryRepository()
 	if err := cu.CreateCategory(c); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
@@ -80,7 +80,7 @@ func listCategories(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	cu := repository.NewCategoryRepository()
+	cu := repositories.NewCategoryRepository()
 	collections, err := cu.ListCategories(int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -112,7 +112,7 @@ func searchCategories(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	cu := repository.NewCategoryRepository()
+	cu := repositories.NewCategoryRepository()
 	collections, err := cu.SearchCategories(query, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -144,7 +144,7 @@ func listCategoriesWithStore(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	cu := repository.NewCategoryRepository()
+	cu := repositories.NewCategoryRepository()
 	collections, err := cu.ListCategoriesWithStore(storeID, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -177,7 +177,7 @@ func searchCategoriesWithStore(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	cu := repository.NewCategoryRepository()
+	cu := repositories.NewCategoryRepository()
 	collections, err := cu.SearchCategoriesWithStore(storeID, query, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -198,7 +198,7 @@ func deleteCategory(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	cu := repository.NewCategoryRepository()
+	cu := repositories.NewCategoryRepository()
 	if err := cu.DeleteCategory(storeID, categoryID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Category not found"

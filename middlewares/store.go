@@ -6,7 +6,7 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
-	"github.com/shopicano/shopicano-backend/repository"
+	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"net/http"
 )
@@ -22,7 +22,7 @@ var IsStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.HandlerFu
 			return resp.ServerJSON(ctx)
 		}
 
-		uc := repository.NewUserRepository()
+		uc := repositories.NewUserRepository()
 		userID, _, err := uc.GetPermission(token)
 		if err != nil {
 			resp.Status = http.StatusUnauthorized
@@ -30,7 +30,7 @@ var IsStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.HandlerFu
 			return resp.ServerJSON(ctx)
 		}
 
-		su := repository.NewStoreRepository()
+		su := repositories.NewStoreRepository()
 		store, err := su.GetStoreUserProfile(userID)
 
 		if err != nil {
@@ -69,7 +69,7 @@ var IsStoreStaff = func(next echo.HandlerFunc) echo.HandlerFunc {
 			return resp.ServerJSON(ctx)
 		}
 
-		uc := repository.NewUserRepository()
+		uc := repositories.NewUserRepository()
 		userID, _, err := uc.GetPermission(token)
 		if err != nil {
 			resp.Status = http.StatusUnauthorized
@@ -77,7 +77,7 @@ var IsStoreStaff = func(next echo.HandlerFunc) echo.HandlerFunc {
 			return resp.ServerJSON(ctx)
 		}
 
-		su := repository.NewStoreRepository()
+		su := repositories.NewStoreRepository()
 		store, err := su.GetStoreUserProfile(userID)
 
 		if err != nil {

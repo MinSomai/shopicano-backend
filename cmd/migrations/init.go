@@ -21,10 +21,10 @@ func initCmd(cmd *cobra.Command, args []string) {
 
 	s := models.Settings{
 		ID:                     "1",
-		Name:                   "Fin Shop",
-		URL:                    "http://finshop.com",
+		Name:                   "Shopicano Marketplace",
+		URL:                    "http://shopicano.com",
 		IsActive:               true,
-		CompanyName:            "Fin Shop Ltd.",
+		CompanyName:            "Shopicano Ltd.",
 		CompanyAddress:         "Dhaka",
 		CompanyCity:            "Dhaka",
 		CompanyCountry:         "Bangladesh",
@@ -39,6 +39,7 @@ func initCmd(cmd *cobra.Command, args []string) {
 	}
 	if err := tx.Table(s.TableName()).Create(&s).Error; err != nil {
 		tx.Rollback()
+		log.Log().Errorln(err)
 		return
 	}
 
@@ -48,6 +49,16 @@ func initCmd(cmd *cobra.Command, args []string) {
 	}
 	if err := tx.Table(upAdmin.TableName()).Create(&upAdmin).Error; err != nil {
 		tx.Rollback()
+		log.Log().Errorln(err)
+		return
+	}
+	upManager := models.UserPermission{
+		ID:         values.ManagerGroupID,
+		Permission: models.ManagerPerm,
+	}
+	if err := tx.Table(upManager.TableName()).Create(&upManager).Error; err != nil {
+		tx.Rollback()
+		log.Log().Errorln(err)
 		return
 	}
 	upUser := models.UserPermission{
@@ -56,6 +67,35 @@ func initCmd(cmd *cobra.Command, args []string) {
 	}
 	if err := tx.Table(upUser.TableName()).Create(&upUser).Error; err != nil {
 		tx.Rollback()
+		log.Log().Errorln(err)
+		return
+	}
+
+	stAdmin := models.StorePermission{
+		ID:         values.AdminGroupID,
+		Permission: models.AdminPerm,
+	}
+	if err := tx.Table(stAdmin.TableName()).Create(&stAdmin).Error; err != nil {
+		tx.Rollback()
+		log.Log().Errorln(err)
+		return
+	}
+	stManager := models.StorePermission{
+		ID:         values.ManagerGroupID,
+		Permission: models.ManagerPerm,
+	}
+	if err := tx.Table(stManager.TableName()).Create(&stManager).Error; err != nil {
+		tx.Rollback()
+		log.Log().Errorln(err)
+		return
+	}
+	stUser := models.StorePermission{
+		ID:         values.UserGroupID,
+		Permission: models.UserPerm,
+	}
+	if err := tx.Table(stUser.TableName()).Create(&stUser).Error; err != nil {
+		tx.Rollback()
+		log.Log().Errorln(err)
 		return
 	}
 
@@ -63,7 +103,7 @@ func initCmd(cmd *cobra.Command, args []string) {
 
 	u := models.User{
 		ID:             utils.NewUUID(),
-		Name:           "Fin Admin",
+		Name:           "Shopicano Admin",
 		Status:         models.UserActive,
 		Phone:          nil,
 		ProfilePicture: nil,
@@ -75,6 +115,7 @@ func initCmd(cmd *cobra.Command, args []string) {
 	}
 	if err := tx.Table(u.TableName()).Create(&u).Error; err != nil {
 		tx.Rollback()
+		log.Log().Errorln(err)
 		return
 	}
 

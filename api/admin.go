@@ -6,7 +6,7 @@ import (
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
-	"github.com/shopicano/shopicano-backend/repository"
+	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -64,7 +64,7 @@ func createShippingMethod(ctx echo.Context) error {
 		UpdatedAt:               time.Now().UTC(),
 	}
 
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	if err := au.CreateShippingMethod(m); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
@@ -102,7 +102,7 @@ func updateShippingMethod(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	m, err := au.GetShippingMethod(ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
@@ -145,7 +145,7 @@ func deleteShippingMethod(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	if err := au.DeleteShippingMethod(ID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Shipping method not found"
@@ -182,7 +182,7 @@ func listShippingMethods(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	data, err := au.ListActiveShippingMethods(int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -213,7 +213,7 @@ func listShippingMethodsWithAdmin(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	data, err := au.ListShippingMethods(int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -249,7 +249,7 @@ func createPaymentMethod(ctx echo.Context) error {
 		UpdatedAt:   time.Now().UTC(),
 	}
 
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	if err := au.CreatePaymentMethod(m); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
@@ -287,7 +287,7 @@ func updatePaymentMethod(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	m, err := au.GetPaymentMethod(ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
@@ -327,7 +327,7 @@ func deletePaymentMethod(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	if err := au.DeletePaymentMethod(ID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Payment method not found"
@@ -364,7 +364,7 @@ func listPaymentMethods(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	data, err := au.ListActivePaymentMethods(int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -395,7 +395,7 @@ func listPaymentMethodsWithAdmin(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	data, err := au.ListPaymentMethods(int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -436,7 +436,7 @@ func createAdditionalCharge(ctx echo.Context) error {
 		UpdatedAt:   time.Now().UTC(),
 	}
 
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	if err := au.CreateAdditionalCharge(m); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
@@ -474,7 +474,7 @@ func updateAdditionalCharge(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	m, err := au.GetAdditionalCharge(ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
@@ -519,7 +519,7 @@ func deleteAdditionalCharge(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	if err := au.DeleteAdditionalCharge(ID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Additional charge not found"
@@ -556,7 +556,7 @@ func listAdditionalCharges(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	data, err := au.ListActiveAdditionalCharges(int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -587,7 +587,7 @@ func listAdditionalChargesWithAdmin(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	au := repository.NewAdminRepository()
+	au := repositories.NewAdminRepository()
 	data, err := au.ListAdditionalCharges(int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"

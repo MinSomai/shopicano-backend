@@ -9,7 +9,8 @@ services:
       POSTGRES_DB: test
       POSTGRES_PASSWORD: test
       POSTGRES_USER: root
-      PGDATA: "./storage/pg/:/var/lib/postgresql/data/"
+    volumes:
+      - "./storage/pg/:/var/lib/postgresql/data/"
 
   minio:
     image: minio/minio

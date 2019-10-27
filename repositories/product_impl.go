@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import (
 	"fmt"
@@ -208,7 +208,7 @@ func (pu *ProductRepositoryImpl) ListProductsWithStore(storeID string, from, lim
 	var ps []models.ProductDetails
 	p := models.Product{}
 	if err := db.Table(p.TableName()).
-		Select("products.id, products.stock, products.name, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, products.stock, products.sku, products.name, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins("LEFT JOIN categories AS c ON products.category_id = c.id").
 		Where("products.store_id = ?", storeID).
 		Offset(from).Limit(limit).
