@@ -3,9 +3,10 @@ package api
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/core"
+	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/middlewares"
-	"github.com/shopicano/shopicano-backend/repositories"
+	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -13,15 +14,18 @@ import (
 )
 
 func RegisterCollectionRoutes(g *echo.Group) {
-	g.GET("/", listCollection)
-	g.GET("/search/", searchCollection)
+	func(*echo.Group) {
+		g.Use(middlewares.MightBeStoreStaffWithStoreActivation)
+		g.GET("/", listCollections)
+	}(g)
 
-	g.Use(middlewares.IsStoreStaffWithStoreActivation)
-	g.POST("/", createCollection)
-	g.GET("/with_store/", listCollectionWithStore)
-	g.GET("/search/with_store/", searchCollectionWithStore)
-	g.DELETE("/:id/", deleteCollection)
-	g.PUT("/:id/", updateCollection)
+	func(*echo.Group) {
+		// Private endpoints only
+		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.POST("/", createCollection)
+		g.DELETE("/:id/", deleteCollection)
+		g.PUT("/:id/", updateCollection)
+	}(g)
 }
 
 func createCollection(ctx echo.Context) error {
@@ -41,7 +45,7 @@ func createCollection(ctx echo.Context) error {
 
 	c.StoreID = storeID
 
-	cu := repositories.NewCollectionRepository()
+	cu := data.NewCollectionRepository()
 	if err := cu.CreateCollection(c); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
@@ -74,7 +78,7 @@ func deleteCollection(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	cu := repositories.NewCollectionRepository()
+	cu := data.NewCollectionRepository()
 	if err := cu.DeleteCollection(storeID, collectionID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Collection not found"
@@ -95,11 +99,13 @@ func deleteCollection(ctx echo.Context) error {
 	return resp.ServerJSON(ctx)
 }
 
-func searchCollection(ctx echo.Context) error {
+func listCollections(ctx echo.Context) error {
 	pageQ := ctx.Request().URL.Query().Get("page")
 	limitQ := ctx.Request().URL.Query().Get("limit")
 	query := ctx.Request().URL.Query().Get("query")
 
+	var err error
+
 	page, err := strconv.ParseInt(pageQ, 10, 64)
 	if err != nil {
 		page = 1
@@ -111,9 +117,14 @@ func searchCollection(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	from := (page - 1) * limit
-	cu := repositories.NewCollectionRepository()
-	collections, err := cu.SearchCollections(query, int(from), int(limit))
+	var collections []models.Collection
+
+	if query == "" {
+		collections, err = fetchCollections(ctx, page, limit, utils.IsStoreStaff(ctx))
+	} else {
+		collections, err = searchCollections(ctx, query, page, limit, utils.IsStoreStaff(ctx))
+	}
+
 	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
@@ -127,98 +138,20 @@ func searchCollection(ctx echo.Context) error {
 	return resp.ServerJSON(ctx)
 }
 
-func listCollection(ctx echo.Context) error {
-	pageQ := ctx.Request().URL.Query().Get("page")
-	limitQ := ctx.Request().URL.Query().Get("limit")
-
-	page, err := strconv.ParseInt(pageQ, 10, 64)
-	if err != nil {
-		page = 1
-	}
-	limit, err := strconv.ParseInt(limitQ, 10, 64)
-	if err != nil {
-		limit = 10
-	}
-
-	resp := core.Response{}
-
+func searchCollections(ctx echo.Context, query string, page, limit int64, isPublic bool) ([]models.Collection, error) {
 	from := (page - 1) * limit
-	cu := repositories.NewCollectionRepository()
-	collections, err := cu.ListCollections(int(from), int(limit))
-	if err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+	cu := data.NewCollectionRepository()
+	if isPublic {
+		return cu.SearchCollections(query, int(from), int(limit))
 	}
-
-	resp.Status = http.StatusOK
-	resp.Data = collections
-	return resp.ServerJSON(ctx)
+	return cu.SearchCollectionsWithStore(ctx.Get(utils.StoreID).(string), query, int(from), int(limit))
 }
 
-func searchCollectionWithStore(ctx echo.Context) error {
-	storeID := ctx.Get(utils.StoreID).(string)
-	pageQ := ctx.Request().URL.Query().Get("page")
-	limitQ := ctx.Request().URL.Query().Get("limit")
-	query := ctx.Request().URL.Query().Get("query")
-
-	page, err := strconv.ParseInt(pageQ, 10, 64)
-	if err != nil {
-		page = 1
-	}
-	limit, err := strconv.ParseInt(limitQ, 10, 64)
-	if err != nil {
-		limit = 10
-	}
-
-	resp := core.Response{}
-
+func fetchCollections(ctx echo.Context, page, limit int64, isPublic bool) ([]models.Collection, error) {
 	from := (page - 1) * limit
-	cu := repositories.NewCollectionRepository()
-	collections, err := cu.SearchCollectionsWithStore(storeID, query, int(from), int(limit))
-	if err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+	cu := data.NewCollectionRepository()
+	if isPublic {
+		return cu.ListCollections(int(from), int(limit))
 	}
-
-	resp.Status = http.StatusOK
-	resp.Data = collections
-	return resp.ServerJSON(ctx)
-}
-
-func listCollectionWithStore(ctx echo.Context) error {
-	storeID := ctx.Get(utils.StoreID).(string)
-	pageQ := ctx.Request().URL.Query().Get("page")
-	limitQ := ctx.Request().URL.Query().Get("limit")
-
-	page, err := strconv.ParseInt(pageQ, 10, 64)
-	if err != nil {
-		page = 1
-	}
-	limit, err := strconv.ParseInt(limitQ, 10, 64)
-	if err != nil {
-		limit = 10
-	}
-
-	resp := core.Response{}
-
-	from := (page - 1) * limit
-	cu := repositories.NewCollectionRepository()
-	collections, err := cu.ListCollectionsWithStore(storeID, int(from), int(limit))
-	if err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	resp.Status = http.StatusOK
-	resp.Data = collections
-	return resp.ServerJSON(ctx)
+	return cu.ListCollectionsWithStore(ctx.Get(utils.StoreID).(string), int(from), int(limit))
 }

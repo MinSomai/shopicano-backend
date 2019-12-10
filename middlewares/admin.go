@@ -3,9 +3,9 @@ package middlewares
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/core"
+	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
-	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"net/http"
 )
@@ -21,7 +21,7 @@ var IsPlatformAdmin = func(next echo.HandlerFunc) echo.HandlerFunc {
 			return resp.ServerJSON(ctx)
 		}
 
-		uc := repositories.NewUserRepository()
+		uc := data.NewUserRepository()
 		userID, userPermission, err := uc.GetPermission(token)
 		if err != nil {
 			resp.Status = http.StatusUnauthorized
@@ -45,7 +45,7 @@ var IsSignUpEnabled = func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		resp := core.Response{}
 
-		uc := repositories.NewUserRepository()
+		uc := data.NewUserRepository()
 		ok, err := uc.IsSignUpEnabled()
 		if err != nil {
 			log.Log().Errorln(err)
@@ -66,7 +66,7 @@ var IsStoreCreationEnabled = func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		resp := core.Response{}
 
-		uc := repositories.NewUserRepository()
+		uc := data.NewUserRepository()
 		ok, err := uc.IsStoreCreationEnabled()
 		if err != nil {
 			log.Log().Errorln(err)

@@ -3,10 +3,10 @@ package api
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/core"
+	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/middlewares"
-	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -47,7 +47,7 @@ func createOrder(ctx echo.Context) error {
 
 	o.UserID = userID
 
-	ou := repositories.NewOrderRepository()
+	ou := data.NewOrderRepository()
 	m, err := ou.CreateOrder(o)
 	if err != nil {
 		log.Log().Errorln(err)

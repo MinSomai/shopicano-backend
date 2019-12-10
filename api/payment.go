@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/core"
+	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
 	gateway "github.com/shopicano/shopicano-backend/payment-gateways"
-	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
 )
@@ -33,7 +33,7 @@ func createPaymentBrainTree(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	repo := repositories.NewOrderRepository()
+	repo := data.NewOrderRepository()
 	od, err := repo.GetOrderDetails(orderID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
@@ -75,7 +75,7 @@ func createPaymentStripe(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	repo := repositories.NewOrderRepository()
+	repo := data.NewOrderRepository()
 	od, err := repo.GetOrderDetails(orderID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {

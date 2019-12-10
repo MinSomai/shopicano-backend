@@ -4,9 +4,9 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/core"
+	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/middlewares"
-	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -47,7 +47,7 @@ func createProduct(ctx echo.Context) error {
 		req.CategoryID = nil
 	}
 
-	pu := repositories.NewProductRepository()
+	pu := data.NewProductRepository()
 	p, err := pu.CreateProduct(req)
 	if err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
@@ -93,7 +93,7 @@ func updateProduct(ctx echo.Context) error {
 		req.CategoryID = nil
 	}
 
-	pu := repositories.NewProductRepository()
+	pu := data.NewProductRepository()
 	p, err := pu.UpdateProduct(productID, req)
 	if err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
@@ -132,7 +132,7 @@ func deleteProduct(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	pu := repositories.NewProductRepository()
+	pu := data.NewProductRepository()
 	if err := pu.DeleteProduct(storeID, productID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Product not found"
@@ -159,7 +159,7 @@ func getProductWithStore(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	pu := repositories.NewProductRepository()
+	pu := data.NewProductRepository()
 	p, err := pu.GetProductWithStore(storeID, productID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
@@ -187,7 +187,7 @@ func getProduct(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	pu := repositories.NewProductRepository()
+	pu := data.NewProductRepository()
 	p, err := pu.GetProduct(productID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
@@ -227,7 +227,7 @@ func searchProducts(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	pu := repositories.NewProductRepository()
+	pu := data.NewProductRepository()
 	products, err := pu.SearchProducts(query, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -258,7 +258,7 @@ func listProducts(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	pu := repositories.NewProductRepository()
+	pu := data.NewProductRepository()
 	products, err := pu.ListProducts(int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -291,7 +291,7 @@ func searchProductsWithStore(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	pu := repositories.NewProductRepository()
+	pu := data.NewProductRepository()
 	products, err := pu.SearchProductsWithStore(storeID, query, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -323,7 +323,7 @@ func listProductsWithStore(ctx echo.Context) error {
 	resp := core.Response{}
 
 	from := (page - 1) * limit
-	pu := repositories.NewProductRepository()
+	pu := data.NewProductRepository()
 	products, err := pu.ListProductsWithStore(storeID, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"

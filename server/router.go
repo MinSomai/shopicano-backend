@@ -45,6 +45,7 @@ func registerV1Routes() {
 
 	fsGroup := v1.Group("/fs")
 
+	api.RegisterLegacyRoutes(v1)
 	api.RegisterAdminRoutes(adminGroup)
 	api.RegisterUserRoutes(userGroup)
 	api.RegisterStoreRoutes(storeGroup)

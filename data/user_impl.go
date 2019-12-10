@@ -1,9 +1,8 @@
-package repositories
+package data
 
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
-	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
 	"time"
@@ -21,18 +20,16 @@ func NewUserRepository() UserRepository {
 	return userRepository
 }
 
-func (uu *UserRepositoryImpl) Register(u *models.User) error {
-	db := app.DB()
+func (uu *UserRepositoryImpl) Register(db *gorm.DB, u *models.User) error {
 	if err := db.Model(u).Create(u).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (uu *UserRepositoryImpl) Login(email, password string) (*models.Session, error) {
+func (uu *UserRepositoryImpl) Login(db *gorm.DB, email, password string) (*models.Session, error) {
 	u := models.User{}
 
-	db := app.DB()
 	if err := db.Model(&u).Where("email = ? AND status = ?", email, models.UserActive).First(&u).Error; err != nil {
 		return nil, err
 	}
@@ -57,20 +54,18 @@ func (uu *UserRepositoryImpl) Login(email, password string) (*models.Session, er
 	return &s, nil
 }
 
-func (uu *UserRepositoryImpl) Logout(token string) error {
+func (uu *UserRepositoryImpl) Logout(db *gorm.DB, token string) error {
 	s := models.Session{}
 
-	db := app.DB()
 	if err := db.Model(&s).Where("access_token = ?", token).Delete(&s).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (uu *UserRepositoryImpl) RefreshToken(token string) (*models.Session, error) {
+func (uu *UserRepositoryImpl) RefreshToken(db *gorm.DB, token string) (*models.Session, error) {
 	os := models.Session{}
 
-	db := app.DB().Begin()
 	if err := db.Model(&os).Where("refresh_token = ?", token).First(&os).Error; err != nil {
 		return nil, err
 	}
@@ -99,10 +94,9 @@ func (uu *UserRepositoryImpl) RefreshToken(token string) (*models.Session, error
 	return &s, nil
 }
 
-func (uu *UserRepositoryImpl) Update(userID string, ud *models.User) (*models.User, error) {
+func (uu *UserRepositoryImpl) Update(db *gorm.DB, userID string, ud *models.User) (*models.User, error) {
 	u := models.User{}
 
-	db := app.DB()
 	if err := db.Model(&u).Where("id = ?", userID).First(&u).Error; err != nil {
 		return nil, err
 	}
@@ -118,9 +112,7 @@ func (uu *UserRepositoryImpl) Update(userID string, ud *models.User) (*models.Us
 	return &u, nil
 }
 
-func (uu *UserRepositoryImpl) GetPermission(token string) (string, *models.Permission, error) {
-	db := app.DB()
-
+func (uu *UserRepositoryImpl) GetPermission(db *gorm.DB, token string) (string, *models.Permission, error) {
 	s := models.Session{}
 	u := models.User{}
 	up := models.UserPermission{}
@@ -140,9 +132,7 @@ func (uu *UserRepositoryImpl) GetPermission(token string) (string, *models.Permi
 	return result.ID, result.Permission, nil
 }
 
-func (uu *UserRepositoryImpl) GetPermissionByUserID(userID string) (string, *models.Permission, error) {
-	db := app.DB()
-
+func (uu *UserRepositoryImpl) GetPermissionByUserID(db *gorm.DB, userID string) (string, *models.Permission, error) {
 	u := models.User{}
 	up := models.UserPermission{}
 
@@ -160,28 +150,25 @@ func (uu *UserRepositoryImpl) GetPermissionByUserID(userID string) (string, *mod
 	return result.ID, result.Permission, nil
 }
 
-func (uu *UserRepositoryImpl) Get(userID string) (*models.User, error) {
+func (uu *UserRepositoryImpl) Get(db *gorm.DB, userID string) (*models.User, error) {
 	u := models.User{}
 
-	db := app.DB()
 	if err := db.Model(&u).Where("id = ?", userID).First(&u).Error; err != nil {
 		return nil, err
 	}
 	return &u, nil
 }
 
-func (uu *UserRepositoryImpl) IsSignUpEnabled() (bool, error) {
+func (uu *UserRepositoryImpl) IsSignUpEnabled(db *gorm.DB) (bool, error) {
 	s := models.Settings{}
-	db := app.DB()
 	if err := db.Model(&s).Where("id = ?", "1").First(&s).Error; err != nil {
 		return false, err
 	}
 	return s.IsSignUpEnabled, nil
 }
 
-func (uu *UserRepositoryImpl) IsStoreCreationEnabled() (bool, error) {
+func (uu *UserRepositoryImpl) IsStoreCreationEnabled(db *gorm.DB) (bool, error) {
 	s := models.Settings{}
-	db := app.DB()
 	if err := db.Model(&s).Where("id = ?", "1").First(&s).Error; err != nil {
 		return false, err
 	}
