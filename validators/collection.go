@@ -60,13 +60,13 @@ func ValidateUpdateCollection(ctx echo.Context) (*ReqCollectionUpdate, error) {
 
 	ve := errors.ValidationError{}
 	if pld.Name != nil {
-		ok := govalidator.StringLength(*pld.Name, `valid:"required,stringlength(1|100)"`)
+		ok := len(*pld.Name) >= 1 && len(*pld.Name) <= 100
 		if !ok {
 			ve.Add("name", "must be between 1 to 100 characters")
 		}
 	}
 	if pld.Description != nil {
-		ok := govalidator.StringLength(*pld.Description, `valid:"required,stringlength(1|500)"`)
+		ok := len(*pld.Name) >= 1 && len(*pld.Name) <= 500
 		if !ok {
 			ve.Add("description", "must be between 1 to 500 characters")
 		}

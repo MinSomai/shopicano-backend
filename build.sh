@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export CONSUL_URL="localhost:8500"
+export CONSUL_URL="128.199.89.247:8500"
 export CONSUL_PATH="shopicano"
 
 export GO111MODULE=on
@@ -20,7 +20,7 @@ fi
 
 if [ "$cmd" = "run" ]; then
   echo "Executing run command"
-  curl --request PUT --data-binary @config.yml http://localhost:8500/v1/kv/${CONSUL_PATH}
+  #  curl --request PUT --data-binary @config.yml http://localhost:8500/v1/kv/${CONSUL_PATH}
   ./${binary} serve
   exit
 fi

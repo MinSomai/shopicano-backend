@@ -95,7 +95,16 @@ func (cu *CollectionRepositoryImpl) Get(db *gorm.DB, storeID, collectionID strin
 }
 
 func (cu *CollectionRepositoryImpl) Update(db *gorm.DB, c *models.Collection) error {
-	if err := db.Table(c.TableName()).Save(c).Error; err != nil {
+	if err := db.Table(c.TableName()).
+		Where("id = ?", c.ID).
+		Select("name", "description", "is_published", "image", "updated_at").
+		Updates(map[string]interface{}{
+			"name":         c.Name,
+			"description":  c.Description,
+			"is_published": c.IsPublished,
+			"image":        c.Image,
+			"updated_at":   c.UpdatedAt,
+		}).Error; err != nil {
 		return err
 	}
 	return nil

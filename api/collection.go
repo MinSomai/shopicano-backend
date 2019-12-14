@@ -12,6 +12,7 @@ import (
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func RegisterCollectionRoutes(g *echo.Group) {
@@ -119,6 +120,8 @@ func updateCollection(ctx echo.Context) error {
 	if pld.IsPublished != nil {
 		c.IsPublished = *pld.IsPublished
 	}
+
+	c.UpdatedAt = time.Now().UTC()
 
 	if err := cu.Update(db, c); err != nil {
 		resp.Title = "Database query failed"

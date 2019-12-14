@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/log"
@@ -21,8 +22,10 @@ var IsPlatformAdmin = func(next echo.HandlerFunc) echo.HandlerFunc {
 			return resp.ServerJSON(ctx)
 		}
 
+		db := app.DB()
+
 		uc := data.NewUserRepository()
-		userID, userPermission, err := uc.GetPermission(token)
+		userID, userPermission, err := uc.GetPermission(db, token)
 		if err != nil {
 			resp.Status = http.StatusUnauthorized
 			resp.Title = "Unauthorized request"
@@ -45,8 +48,10 @@ var IsSignUpEnabled = func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		resp := core.Response{}
 
+		db := app.DB()
+
 		uc := data.NewUserRepository()
-		ok, err := uc.IsSignUpEnabled()
+		ok, err := uc.IsSignUpEnabled(db)
 		if err != nil {
 			log.Log().Errorln(err)
 			resp.Status = http.StatusInternalServerError
@@ -66,8 +71,10 @@ var IsStoreCreationEnabled = func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		resp := core.Response{}
 
+		db := app.DB()
+
 		uc := data.NewUserRepository()
-		ok, err := uc.IsStoreCreationEnabled()
+		ok, err := uc.IsStoreCreationEnabled(db)
 		if err != nil {
 			log.Log().Errorln(err)
 			resp.Status = http.StatusInternalServerError
