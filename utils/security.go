@@ -3,7 +3,6 @@ package utils
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/errors"
-	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
@@ -39,6 +38,5 @@ func ParseBearerToken(ctx echo.Context) (string, error) {
 
 func IsStoreStaff(ctx echo.Context) bool {
 	perm := ctx.Get(StorePermission)
-	log.Log().Infoln(perm)
 	return perm != nil && (perm.(models.Permission) == models.ManagerPerm || perm.(models.Permission) == models.AdminPerm)
 }
