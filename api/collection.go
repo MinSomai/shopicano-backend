@@ -186,9 +186,9 @@ func listCollections(ctx echo.Context) error {
 	var collections []models.Collection
 
 	if query == "" {
-		collections, err = fetchCollections(ctx, page, limit, utils.IsStoreStaff(ctx))
+		collections, err = fetchCollections(ctx, page, limit, !utils.IsStoreStaff(ctx))
 	} else {
-		collections, err = searchCollections(ctx, query, page, limit, utils.IsStoreStaff(ctx))
+		collections, err = searchCollections(ctx, query, page, limit, !utils.IsStoreStaff(ctx))
 	}
 
 	if err != nil {
