@@ -73,7 +73,7 @@ var MightBeStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.Hand
 		db := app.DB()
 
 		uc := data.NewUserRepository()
-		userID, _, err := uc.GetPermission(db, token)
+		userID, u, err := uc.GetPermission(db, token)
 		if err != nil {
 			return next(ctx)
 		}
@@ -84,20 +84,25 @@ var MightBeStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.Hand
 		if err != nil {
 			log.Log().Errorln(err)
 			if err == gorm.ErrRecordNotFound {
+				ctx.Set(utils.UserID, userID)
+				ctx.Set(utils.UserPermission, *u)
 				return next(ctx)
 			}
+
 			resp.Status = http.StatusInternalServerError
 			resp.Title = "Database query failed"
 			return resp.ServerJSON(ctx)
 		}
 
 		if store.Status != models.StoreActive {
-			return next(ctx)
+			resp.Status = http.StatusForbidden
+			resp.Title = "Store isn't active"
+			return resp.ServerJSON(ctx)
 		}
 
 		ctx.Set(utils.StoreID, store.ID)
 		ctx.Set(utils.UserID, store.UserID)
-		ctx.Set(utils.StorePermission, store.UserPermission)
+		ctx.Set(utils.StorePermission, store.StorePermission)
 		return next(ctx)
 	}
 }
