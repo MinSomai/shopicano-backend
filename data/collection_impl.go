@@ -32,7 +32,7 @@ func (cu *CollectionRepositoryImpl) List(db *gorm.DB, from, limit int) ([]models
 	if err := db.Table(col.TableName()).
 		Where("is_published = ?", true).
 		Offset(from).Limit(limit).
-		Order("created_at DESC").Find(&cols).Error; err != nil {
+		Order("updated_at DESC").Find(&cols).Error; err != nil {
 		return nil, err
 	}
 	return cols, nil
@@ -44,7 +44,7 @@ func (cu *CollectionRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string
 	if err := db.Table(col.TableName()).
 		Where("store_id = ?", storeID).
 		Offset(from).Limit(limit).
-		Order("created_at DESC").Find(&cols).Error; err != nil {
+		Order("updated_at DESC").Find(&cols).Error; err != nil {
 		return nil, err
 	}
 	return cols, nil
@@ -56,7 +56,7 @@ func (cu *CollectionRepositoryImpl) Search(db *gorm.DB, query string, from, limi
 	if err := db.Table(col.TableName()).
 		Where("is_published = ? AND LOWER(name) LIKE ?", true, "%"+strings.ToLower(query)+"%").
 		Offset(from).Limit(limit).
-		Order("created_at DESC").Find(&cols).Error; err != nil {
+		Order("updated_at DESC").Find(&cols).Error; err != nil {
 		return nil, err
 	}
 	return cols, nil
@@ -68,7 +68,7 @@ func (cu *CollectionRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, storeID, que
 	if err := db.Table(col.TableName()).
 		Where("store_id = ? AND LOWER(name) LIKE ?", storeID, "%"+strings.ToLower(query)+"%").
 		Offset(from).Limit(limit).
-		Order("created_at DESC").Find(&cols).Error; err != nil {
+		Order("updated_at DESC").Find(&cols).Error; err != nil {
 		return nil, err
 	}
 	return cols, nil
