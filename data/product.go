@@ -1,19 +1,20 @@
 package data
 
 import (
+	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/models"
-	"github.com/shopicano/shopicano-backend/validators"
 )
 
 type ProductRepository interface {
-	CreateProduct(req *validators.ReqProductCreate) (*models.Product, error)
-	UpdateProduct(productID string, req *validators.ReqProductUpdate) (*models.Product, error)
-	ListProducts(from, limit int) ([]models.ProductDetails, error)
-	SearchProducts(query string, from, limit int) ([]models.ProductDetails, error)
-	ListProductsWithStore(storeID string, from, limit int) ([]models.ProductDetails, error)
-	SearchProductsWithStore(storeID, query string, from, limit int) ([]models.ProductDetails, error)
-	DeleteProduct(storeID, productID string) error
-	GetProduct(productID string) (*models.ProductDetails, error)
-	GetProductWithStore(storeID, productID string) (*models.ProductDetails, error)
-	GetProductForOrder(storeID, productID string, quantity int) (*models.Product, error)
+	Create(db *gorm.DB, p *models.Product) error
+	Update(db *gorm.DB, productID string, p *models.Product) error
+	List(db *gorm.DB, from, limit int) ([]models.ProductDetails, error)
+	Search(db *gorm.DB, query string, from, limit int) ([]models.ProductDetails, error)
+	ListAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]models.ProductDetails, error)
+	SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.ProductDetails, error)
+	Delete(db *gorm.DB, storeID, productID string) error
+	Get(db *gorm.DB, productID string) (*models.Product, error)
+	GetDetails(db *gorm.DB, productID string) (*models.ProductDetails, error)
+	GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.ProductDetails, error)
+	GetForOrder(db *gorm.DB, storeID, productID string, quantity int) (*models.Product, error)
 }
