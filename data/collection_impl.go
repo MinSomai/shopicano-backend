@@ -30,6 +30,7 @@ func (cu *CollectionRepositoryImpl) List(db *gorm.DB, from, limit int) ([]models
 	var cols []models.Collection
 	col := models.Collection{}
 	if err := db.Table(col.TableName()).
+		Select("DISTINCT(name), id, description, image, is_published, created_at, updated_at").
 		Where("is_published = ?", true).
 		Offset(from - limit).Limit(limit).
 		Order("updated_at DESC").Find(&cols).Error; err != nil {
@@ -54,6 +55,7 @@ func (cu *CollectionRepositoryImpl) Search(db *gorm.DB, query string, from, limi
 	var cols []models.Collection
 	col := models.Collection{}
 	if err := db.Table(col.TableName()).
+		Select("DISTINCT(name), id, description, image, is_published, created_at, updated_at").
 		Where("is_published = ? AND LOWER(name) LIKE ?", true, "%"+strings.ToLower(query)+"%").
 		Offset(from - limit).Limit(limit).
 		Order("updated_at DESC").Find(&cols).Error; err != nil {
@@ -96,7 +98,7 @@ func (cu *CollectionRepositoryImpl) Get(db *gorm.DB, storeID, collectionID strin
 
 func (cu *CollectionRepositoryImpl) Update(db *gorm.DB, c *models.Collection) error {
 	if err := db.Table(c.TableName()).
-		Where("id = ?", c.ID).
+		Where("store_id = ? AND id = ?", c.StoreID, c.ID).
 		Select("name", "description", "is_published", "image", "updated_at").
 		Updates(map[string]interface{}{
 			"name":         c.Name,

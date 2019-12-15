@@ -56,7 +56,7 @@ var IsStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.HandlerFu
 
 		ctx.Set(utils.StoreID, store.ID)
 		ctx.Set(utils.UserID, store.UserID)
-		ctx.Set(utils.StorePermission, store.UserPermission)
+		ctx.Set(utils.StorePermission, store.StorePermission)
 		return next(ctx)
 	}
 }
@@ -145,7 +145,7 @@ var IsStoreStaff = func(next echo.HandlerFunc) echo.HandlerFunc {
 
 		ctx.Set(utils.StoreID, store.ID)
 		ctx.Set(utils.UserID, store.UserID)
-		ctx.Set(utils.StorePermission, store.UserPermission)
+		ctx.Set(utils.StorePermission, store.StorePermission)
 		return next(ctx)
 	}
 }

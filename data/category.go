@@ -1,12 +1,17 @@
 package data
 
-import "github.com/shopicano/shopicano-backend/models"
+import (
+	"github.com/jinzhu/gorm"
+	"github.com/shopicano/shopicano-backend/models"
+)
 
 type CategoryRepository interface {
-	CreateCategory(c *models.Category) error
-	ListCategories(from, limit int) ([]models.Category, error)
-	SearchCategories(query string, from, limit int) ([]models.Category, error)
-	ListCategoriesWithStore(storeID string, from, limit int) ([]models.Category, error)
-	SearchCategoriesWithStore(storeID, query string, from, limit int) ([]models.Category, error)
-	DeleteCategory(storeID, categoryID string) error
+	Create(db *gorm.DB, c *models.Category) error
+	List(db *gorm.DB, from, limit int) ([]models.ResCategorySearch, error)
+	Search(db *gorm.DB, query string, from, limit int) ([]models.ResCategorySearch, error)
+	ListAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]models.ResCategorySearchInternal, error)
+	SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.ResCategorySearchInternal, error)
+	Delete(db *gorm.DB, storeID, categoryID string) error
+	Get(db *gorm.DB, storeID, categoryID string) (*models.Category, error)
+	Update(db *gorm.DB, c *models.Category) error
 }
