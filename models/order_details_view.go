@@ -7,54 +7,55 @@ import (
 )
 
 type OrderDetailsView struct {
-	ID                     string      `json:"id,omitempty"`
-	Hash                   string      `json:"hash"`
-	TotalVat               int64       `json:"total_vat"`
-	TotalTax               int64       `json:"total_tax"`
-	ShippingCharge         int64       `json:"shipping_charge"`
-	PaymentProcessingFee   int64       `json:"payment_processing_fee"`
-	SubTotal               int64       `json:"sub_total"`
-	PaymentGateway         string      `json:"payment_gateway"`
-	Nonce                  *string     `json:"nonce;omitempty"`          // Private
-	TransactionID          *string     `json:"transaction_id;omitempty"` //Private
-	GrandTotal             int64       `json:"grand_total"`
-	IsPaid                 bool        `json:"is_paid"`
-	Status                 OrderStatus `json:"status"`
-	PaidAt                 *time.Time  `json:"paid_at;omitempty"`
-	ConfirmedAt            *time.Time  `json:"confirmed_at;omitempty"`
-	CompletedAt            *time.Time  `json:"completed_at;omitempty"`
-	CreatedAt              *time.Time  `json:"created_at"`
-	UpdatedAt              *time.Time  `json:"updated_at"`
-	ShippingID             *string     `json:"shipping_id;omitempty"`
-	ShippingName           *string     `json:"shipping_name;omitempty"`
-	ShippingHouse          *string     `json:"shipping_house;omitempty"`
-	ShippingRoad           *string     `json:"shipping_road;omitempty"`
-	ShippingCity           *string     `json:"shipping_city;omitempty"`
-	ShippingCountry        *string     `json:"shipping_country;omitempty"`
-	ShippingPostcode       *string     `json:"shipping_postcode;omitempty"`
-	ShippingEmail          *string     `json:"shipping_email;omitempty"`
-	ShippingPhone          *string     `json:"shipping_phone;omitempty"`
-	BillingID              string      `json:"billing_id"`
-	BillingName            string      `json:"billing_name"`
-	BillingHouse           string      `json:"billing_house"`
-	BillingRoad            string      `json:"billing_road"`
-	BillingCity            string      `json:"billing_city"`
-	BillingCountry         string      `json:"billing_country"`
-	BillingPostcode        string      `json:"billing_postcode"`
-	BillingEmail           string      `json:"billing_email"`
-	BillingPhone           string      `json:"billing_phone"`
-	StoreID                string      `json:"store_id"`
-	StoreName              string      `json:"store_name"`
-	StoreAddress           string      `json:"store_address"`
-	StoreCity              string      `json:"store_city"`
-	StoreCountry           string      `json:"store_country"`
-	StorePostcode          string      `json:"store_postcode"`
-	StoreEmail             string      `json:"store_email"`
-	StorePhone             string      `json:"store_phone"`
-	StoreStatus            string      `json:"store_status"`
-	PaymentMethodID        string      `json:"payment_method_id"`
-	PaymentMethodName      string      `json:"payment_method_name"`
-	PaymentMethodIsOffline bool        `json:"payment_method_is_offline"`
+	ID                     string            `json:"id,omitempty"`
+	Hash                   string            `json:"hash"`
+	TotalVat               int               `json:"total_vat"`
+	TotalTax               int               `json:"total_tax"`
+	ShippingCharge         int               `json:"shipping_charge"`
+	PaymentProcessingFee   int               `json:"payment_processing_fee"`
+	SubTotal               int               `json:"sub_total"`
+	PaymentGateway         string            `json:"payment_gateway"`
+	Nonce                  *string           `json:"nonce,omitempty"`          // Private
+	TransactionID          *string           `json:"transaction_id,omitempty"` //Private
+	GrandTotal             int               `json:"grand_total"`
+	IsPaid                 bool              `json:"is_paid"`
+	Status                 OrderStatus       `json:"status"`
+	PaidAt                 *time.Time        `json:"paid_at,omitempty"`
+	ConfirmedAt            *time.Time        `json:"confirmed_at,omitempty"`
+	CompletedAt            *time.Time        `json:"completed_at,omitempty"`
+	CreatedAt              *time.Time        `json:"created_at"`
+	UpdatedAt              *time.Time        `json:"updated_at"`
+	ShippingID             *string           `json:"shipping_id,omitempty"`
+	ShippingName           *string           `json:"shipping_name,omitempty"`
+	ShippingHouse          *string           `json:"shipping_house,omitempty"`
+	ShippingRoad           *string           `json:"shipping_road,omitempty"`
+	ShippingCity           *string           `json:"shipping_city,omitempty"`
+	ShippingCountry        *string           `json:"shipping_country,omitempty"`
+	ShippingPostcode       *string           `json:"shipping_postcode,omitempty"`
+	ShippingEmail          *string           `json:"shipping_email,omitempty"`
+	ShippingPhone          *string           `json:"shipping_phone,omitempty"`
+	BillingID              string            `json:"billing_id"`
+	BillingName            string            `json:"billing_name"`
+	BillingHouse           string            `json:"billing_house"`
+	BillingRoad            string            `json:"billing_road"`
+	BillingCity            string            `json:"billing_city"`
+	BillingCountry         string            `json:"billing_country"`
+	BillingPostcode        string            `json:"billing_postcode"`
+	BillingEmail           string            `json:"billing_email"`
+	BillingPhone           string            `json:"billing_phone"`
+	StoreID                string            `json:"store_id"`
+	StoreName              string            `json:"store_name"`
+	StoreAddress           string            `json:"store_address"`
+	StoreCity              string            `json:"store_city"`
+	StoreCountry           string            `json:"store_country"`
+	StorePostcode          string            `json:"store_postcode"`
+	StoreEmail             string            `json:"store_email"`
+	StorePhone             string            `json:"store_phone"`
+	StoreStatus            string            `json:"store_status"`
+	PaymentMethodID        string            `json:"payment_method_id"`
+	PaymentMethodName      string            `json:"payment_method_name"`
+	PaymentMethodIsOffline bool              `json:"payment_method_is_offline"`
+	Items                  []OrderedItemView `json:"items"`
 }
 
 func (odv *OrderDetailsView) TableName() string {

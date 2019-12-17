@@ -8,6 +8,6 @@ import (
 type OrderRepository interface {
 	Create(db *gorm.DB, o *models.Order) error
 	AddOrderedItem(db *gorm.DB, item *models.OrderedItem) error
-	GetDetailsInternal(db *gorm.DB, orderID string) (*models.OrderDetailsViewExternal, error)
-	GetDetails(db *gorm.DB, userID, orderID string) (*models.OrderDetails, error)
+	GetDetailsExternal(db *gorm.DB, userID, orderID string) (*models.OrderDetailsViewExternal, error)
+	GetDetails(db *gorm.DB, orderID string) (*models.OrderDetailsView, error)
 }

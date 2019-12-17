@@ -37,7 +37,7 @@ func createPaymentBrainTree(ctx echo.Context) error {
 	db := app.DB()
 
 	repo := data.NewOrderRepository()
-	od, err := repo.GetDetailsInternal(db, orderID)
+	od, err := repo.GetDetails(db, orderID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Order not found"
@@ -81,7 +81,7 @@ func createPaymentStripe(ctx echo.Context) error {
 	db := app.DB()
 
 	repo := data.NewOrderRepository()
-	od, err := repo.GetDetailsInternal(db, orderID)
+	od, err := repo.GetDetails(db, orderID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Product not found"
@@ -109,7 +109,7 @@ func createPaymentStripe(ctx echo.Context) error {
 
 	resp.Status = http.StatusOK
 	resp.Data = map[string]interface{}{
-		"session_id": res.Nonce,
+		"session_id": res.Result,
 	}
 
 	return resp.ServerJSON(ctx)

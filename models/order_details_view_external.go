@@ -11,25 +11,25 @@ type OrderDetailsViewExternal struct {
 	PaymentProcessingFee   int64                     `json:"payment_processing_fee"`
 	SubTotal               int64                     `json:"sub_total"`
 	PaymentGateway         string                    `json:"payment_gateway"`
-	Nonce                  *string                   `json:"nonce;omitempty"`          // Private
-	TransactionID          *string                   `json:"transaction_id;omitempty"` //Private
+	Nonce                  *string                   `json:"nonce,omitempty"`          // Private
+	TransactionID          *string                   `json:"transaction_id,omitempty"` //Private
 	GrandTotal             int64                     `json:"grand_total"`
 	IsPaid                 bool                      `json:"is_paid"`
 	Status                 OrderStatus               `json:"status"`
-	PaidAt                 *time.Time                `json:"paid_at;omitempty"`
-	ConfirmedAt            *time.Time                `json:"confirmed_at;omitempty"`
-	CompletedAt            *time.Time                `json:"completed_at;omitempty"`
+	PaidAt                 *time.Time                `json:"paid_at,omitempty"`
+	ConfirmedAt            *time.Time                `json:"confirmed_at,omitempty"`
+	CompletedAt            *time.Time                `json:"completed_at,omitempty"`
 	CreatedAt              *time.Time                `json:"created_at"`
 	UpdatedAt              *time.Time                `json:"updated_at"`
-	ShippingID             *string                   `json:"shipping_id;omitempty"`
-	ShippingName           *string                   `json:"shipping_name;omitempty"`
-	ShippingHouse          *string                   `json:"shipping_house;omitempty"`
-	ShippingRoad           *string                   `json:"shipping_road;omitempty"`
-	ShippingCity           *string                   `json:"shipping_city;omitempty"`
-	ShippingCountry        *string                   `json:"shipping_country;omitempty"`
-	ShippingPostcode       *string                   `json:"shipping_postcode;omitempty"`
-	ShippingEmail          *string                   `json:"shipping_email;omitempty"`
-	ShippingPhone          *string                   `json:"shipping_phone;omitempty"`
+	ShippingID             *string                   `json:"shipping_id,omitempty"`
+	ShippingName           *string                   `json:"shipping_name,omitempty"`
+	ShippingHouse          *string                   `json:"shipping_house,omitempty"`
+	ShippingRoad           *string                   `json:"shipping_road,omitempty"`
+	ShippingCity           *string                   `json:"shipping_city,omitempty"`
+	ShippingCountry        *string                   `json:"shipping_country,omitempty"`
+	ShippingPostcode       *string                   `json:"shipping_postcode,omitempty"`
+	ShippingEmail          *string                   `json:"shipping_email,omitempty"`
+	ShippingPhone          *string                   `json:"shipping_phone,omitempty"`
 	BillingID              string                    `json:"billing_id"`
 	BillingName            string                    `json:"billing_name"`
 	BillingHouse           string                    `json:"billing_house"`

@@ -16,10 +16,12 @@ import (
 )
 
 func RegisterOrderRoutes(g *echo.Group) {
+	g.POST("/:order_id/pay/", payOrder)
+
 	func(g echo.Group) {
 		g.Use(middlewares.MightBeStoreStaffWithStoreActivation)
 		g.GET("/", listOrders)
-		g.GET("/:order_id", getOrder)
+		g.GET("/:order_id/", getOrder)
 	}(*g)
 
 	func(g echo.Group) {
@@ -198,7 +200,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
-	m, err := ou.GetDetailsInternal(db, o.ID)
+	m, err := ou.GetDetails(db, o.ID)
 	if err != nil {
 		db.Rollback()
 
@@ -264,44 +266,25 @@ func createOrderWithStore(ctx echo.Context) error {
 }
 
 func getOrder(ctx echo.Context) error {
-	//storeID := ctx.Get(utils.StoreID).(string)
-	//
-	//c, err := validateCreateCollection(ctx)
-	//
-	//resp := core.Response{}
-	//
-	//if err != nil {
-	//	resp.Title = "Invalid data"
-	//	resp.Status = http.StatusUnprocessableEntity
-	//	resp.Code = errors.CollectionCreationDataInvalid
-	//	resp.Errors = err
-	//	return resp.ServerJSON(ctx)
-	//}
-	//
-	//c.StoreID = storeID
-	//
-	//cu := NewCollectionRepository()
-	//if err := cu.CreateCollection(c); err != nil {
-	//	msg, ok := errors.IsDuplicateKeyError(err)
-	//	if ok {
-	//		resp.Title = msg
-	//		resp.Status = http.StatusConflict
-	//		resp.Code = errors.CollectionAlreadyExists
-	//		resp.Errors = err
-	//		return resp.ServerJSON(ctx)
-	//	}
-	//
-	//	resp.Title = "Database query failed"
-	//	resp.Status = http.StatusInternalServerError
-	//	resp.Code = errors.DatabaseQueryFailed
-	//	resp.Errors = err
-	//	return resp.ServerJSON(ctx)
-	//}
-	//
-	//resp.Status = http.StatusCreated
-	//resp.Data = c
-	//return resp.ServerJSON(ctx)
-	return nil
+	orderID := ctx.Param("order_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+
+	ou := data.NewOrderRepository()
+	m, err := ou.GetDetails(db, orderID)
+	if err != nil {
+		resp.Title = "Order not found"
+		resp.Status = http.StatusNotFound
+		resp.Code = errors.OrderNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = m
+	return resp.ServerJSON(ctx)
 }
 
 func getOrderWithStore(ctx echo.Context) error {
@@ -473,4 +456,64 @@ func listOrdersWithStore(ctx echo.Context) error {
 	//resp.Data = collections
 	//return resp.ServerJSON(ctx)
 	return nil
+}
+
+func payOrder(ctx echo.Context) error {
+	orderID := ctx.Param("order_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+
+	ou := data.NewOrderRepository()
+	m, err := ou.GetDetails(db, orderID)
+	if err != nil {
+		resp.Title = "Order not found"
+		resp.Status = http.StatusNotFound
+		resp.Code = errors.OrderNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	switch m.PaymentGateway {
+	case "brainTree":
+		return processBrainTree(ctx, m)
+	}
+	return nil
+}
+
+type resBrainTreeNonce struct {
+	Nonce *string `json:"nonce"`
+}
+
+func processBrainTree(ctx echo.Context, o *models.OrderDetailsView) error {
+	resp := core.Response{}
+
+	body := resBrainTreeNonce{}
+	if err := ctx.Bind(&body); err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.OrderPaymentDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	o.Nonce = body.Nonce
+
+	res, err := payment_gateways.GetActivePaymentGateway().Pay(o)
+	if err != nil {
+		resp.Title = "Failed to process payment"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.PaymentProcessingFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	o.TransactionID = &res.Result
+
+	resp.Status = http.StatusOK
+	resp.Data = map[string]interface{}{
+		"transaction_id": res.Result,
+	}
+	return resp.ServerJSON(ctx)
 }

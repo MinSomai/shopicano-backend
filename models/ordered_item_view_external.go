@@ -4,11 +4,11 @@ type OrderedItemViewExternal struct {
 	OrderID             string `json:"order_id"`
 	ProductID           string `json:"product_id"`
 	Name                string `json:"name"`
-	Quantity            int64  `json:"quantity"`
-	Price               int64  `json:"price"`
-	TotalVat            int64  `json:"total_vat"`
-	TotalTax            int64  `json:"total_tax"`
-	SubTotal            int64  `json:"sub_total"`
+	Quantity            int    `json:"quantity"`
+	Price               int    `json:"price"`
+	TotalVat            int    `json:"total_vat"`
+	TotalTax            int    `json:"total_tax"`
+	SubTotal            int    `json:"sub_total"`
 	Description         string `json:"description"`
 	SKU                 string `json:"sku"`
 	AdditionalImages    string `json:"additional_images"`

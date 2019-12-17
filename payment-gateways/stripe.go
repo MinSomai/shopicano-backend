@@ -22,7 +22,7 @@ func (spg *stripePaymentGateway) GetName() string {
 	return "stripe"
 }
 
-func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetailsViewExternal) (*PaymentGatewayResponse, error) {
+func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error) {
 	//stripe.Key = spg.SecretKey
 	//
 	//var lineItems []*stripe.CheckoutSessionLineItemParams
@@ -63,7 +63,7 @@ func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetailsViewExtern
 	//}
 	//
 	//return &PaymentGatewayResponse{
-	//	Nonce: ss.ID,
+	//	Result: ss.ID,
 	//}, nil
 	return &PaymentGatewayResponse{}, nil
 }

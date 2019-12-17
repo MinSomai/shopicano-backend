@@ -237,7 +237,26 @@ func (os *OrderRepositoryImpl) AddOrderedItem(db *gorm.DB, oi *models.OrderedIte
 	return nil
 }
 
-func (os *OrderRepositoryImpl) GetDetailsInternal(db *gorm.DB, orderID string) (*models.OrderDetailsViewExternal, error) {
+func (os *OrderRepositoryImpl) GetDetails(db *gorm.DB, orderID string) (*models.OrderDetailsView, error) {
+	order := models.OrderDetailsView{}
+	if err := db.Model(&order).First(&order, "id = ?", orderID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	oiv := models.OrderedItemView{}
+
+	var items []models.OrderedItemView
+	if err := db.Model(oiv).Find(&items, "order_id = ?", orderID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	order.Items = items
+	return &order, nil
+}
+
+func (os *OrderRepositoryImpl) GetDetailsExternal(db *gorm.DB, userID, orderID string) (*models.OrderDetailsViewExternal, error) {
 	order := models.OrderDetailsViewExternal{}
 	if err := db.Model(&order).First(&order, "id = ?", orderID).Error; err != nil {
 		log.Log().Errorln(err)
@@ -254,108 +273,4 @@ func (os *OrderRepositoryImpl) GetDetailsInternal(db *gorm.DB, orderID string) (
 
 	order.Items = items
 	return &order, nil
-
-	//var orderedProducts []models.OrderedItemDetailsInternal
-	//op := models.OrderedItem{}
-	//if err := db.Model(&op).Find(&orderedProducts, "order_id = ?", orderID).Error; err != nil {
-	//	log.Log().Errorln(err)
-	//	return nil, err
-	//}
-	//
-	//billingAddress := models.Address{}
-	//if err := db.Model(&billingAddress).Where("id = ?", order.BillingAddressID).First(&billingAddress).Error; err != nil {
-	//	log.Log().Errorln(err)
-	//	return nil, err
-	//}
-	//
-	//paymentMethod := models.PaymentMethod{}
-	//if err := db.Model(&paymentMethod).First(&paymentMethod, "id = ?", order.PaymentMethodID).Error; err != nil {
-	//	log.Log().Errorln(err)
-	//	return nil, err
-	//}
-	//
-	//orderDetails := &models.OrderDetailsViewExternal{
-	//	ID:                   order.ID,
-	//	TotalTax:             order.TotalTax,
-	//	SubTotal:             order.SubTotal,
-	//	GrandTotal:           order.GrandTotal,
-	//	TotalVat:             order.TotalVat,
-	//	StoreID:              order.StoreID,
-	//	UpdatedAt:            order.UpdatedAt,
-	//	CreatedAt:            order.CreatedAt,
-	//	UserID:               order.UserID,
-	//	ShippingCharge:       order.ShippingCharge,
-	//	Hash:                 order.Hash,
-	//	IsPaid:               order.IsPaid,
-	//	Status:               order.Status,
-	//	PaymentProcessingFee: order.PaymentProcessingFee,
-	//	PaymentMethod:        paymentMethod,
-	//	BillingAddress:       billingAddress,
-	//	ShippingAddress:      nil,
-	//	ShippingMethod:       nil,
-	//	Items:                orderedProducts,
-	//	CompletedAt:          order.CompletedAt,
-	//	ConfirmedAt:          order.ConfirmedAt,
-	//	PaidAt:               order.PaidAt,
-	//	PaymentGateway:       order.PaymentGateway,
-	//}
-	//
-	//return orderDetails, nil
-}
-
-func (os *OrderRepositoryImpl) GetDetails(db *gorm.DB, userID, orderID string) (*models.OrderDetails, error) {
-	order := models.OrderDetails{}
-	if err := db.Model(&order).First(&order, "id = ?", orderID).Error; err != nil {
-		log.Log().Errorln(err)
-		return nil, err
-	}
-
-	return &order, nil
-
-	//var orderedProducts []models.OrderedItemDetails
-	//op := models.OrderedItem{}
-	//if err := db.Model(&op).Find(&orderedProducts, "order_id = ?", orderID).Error; err != nil {
-	//	log.Log().Errorln(err)
-	//	return nil, err
-	//}
-	//
-	//billingAddress := models.Address{}
-	//if err := db.Model(&billingAddress).Where("id = ?", order.BillingAddressID).First(&billingAddress).Error; err != nil {
-	//	log.Log().Errorln(err)
-	//	return nil, err
-	//}
-	//
-	//paymentMethod := models.PaymentMethod{}
-	//if err := db.Model(&paymentMethod).First(&paymentMethod, "id = ?", order.PaymentMethodID).Error; err != nil {
-	//	log.Log().Errorln(err)
-	//	return nil, err
-	//}
-	//
-	//orderDetails := &models.OrderDetails{
-	//	ID:                   order.ID,
-	//	TotalTax:             order.TotalTax,
-	//	SubTotal:             order.SubTotal,
-	//	GrandTotal:           order.GrandTotal,
-	//	TotalVat:             order.TotalVat,
-	//	StoreID:              order.StoreID,
-	//	UpdatedAt:            order.UpdatedAt,
-	//	CreatedAt:            order.CreatedAt,
-	//	UserID:               order.UserID,
-	//	ShippingCharge:       order.ShippingCharge,
-	//	Hash:                 order.Hash,
-	//	IsPaid:               order.IsPaid,
-	//	Status:               order.Status,
-	//	PaymentProcessingFee: order.PaymentProcessingFee,
-	//	PaymentMethod:        paymentMethod,
-	//	BillingAddress:       billingAddress,
-	//	ShippingAddress:      nil,
-	//	ShippingMethod:       nil,
-	//	Items:                orderedProducts,
-	//	CompletedAt:          order.CompletedAt,
-	//	ConfirmedAt:          order.ConfirmedAt,
-	//	PaidAt:               order.PaidAt,
-	//	PaymentGateway:       order.PaymentGateway,
-	//}
-	//
-	//return orderDetails, nil
 }
