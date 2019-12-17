@@ -77,6 +77,8 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 
 	pm, err := au.GetPaymentMethod(o.PaymentMethodID)
 	if err != nil {
+		db.Rollback()
+
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Payment method not found"
 			resp.Status = http.StatusNotFound
@@ -97,6 +99,8 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	if o.ShippingMethodID != nil {
 		sm, err = au.GetShippingMethod(*o.ShippingMethodID)
 		if err != nil {
+			db.Rollback()
+
 			if errors.IsRecordNotFoundError(err) {
 				resp.Title = "Shipping method not found"
 				resp.Status = http.StatusNotFound
@@ -194,18 +198,18 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
-	if err := db.Commit().Error; err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
+	m, err := ou.GetDetailsInternal(db, o.ID)
+	if err != nil {
+		db.Rollback()
+
+		resp.Title = "Order not found"
+		resp.Status = http.StatusNotFound
+		resp.Code = errors.OrderNotFound
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
 
-	db = app.DB()
-
-	m, err := ou.GetDetailsInternal(db, o.ID)
-	if err != nil {
+	if err := db.Commit().Error; err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed

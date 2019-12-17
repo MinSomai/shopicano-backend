@@ -59,5 +59,6 @@ const (
 	AddressNotFound                   ErrorCode = "404011"
 	AdditionalChargeNotFound          ErrorCode = "404012"
 	ProductUnavailable                ErrorCode = "404013"
+	OrderNotFound                     ErrorCode = "404014"
 	LoginCredentialsInvalid           ErrorCode = "401001"
 )
