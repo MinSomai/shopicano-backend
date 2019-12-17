@@ -9,6 +9,7 @@ import (
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
+	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -68,9 +69,49 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	o.BillingAddressID = pld.BillingAddressID
 	o.PaymentMethodID = pld.PaymentMethodID
 	o.ShippingMethodID = pld.ShippingMethodID
+	o.IsPaid = false
 
 	pu := data.NewProductRepository()
 	ou := data.NewOrderRepository()
+	au := data.NewAdminRepository()
+
+	pm, err := au.GetPaymentMethod(o.PaymentMethodID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Payment method not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.PaymentMethodNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	var sm *models.ShippingMethod
+
+	if o.ShippingMethodID != nil {
+		sm, err = au.GetShippingMethod(*o.ShippingMethodID)
+		if err != nil {
+			if errors.IsRecordNotFoundError(err) {
+				resp.Title = "Shipping method not found"
+				resp.Status = http.StatusNotFound
+				resp.Code = errors.ShippingMethodNotFound
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
 
 	var availableItems []*models.OrderedItem
 
@@ -111,9 +152,18 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		o.TotalVat += oi.TotalVat
 	}
 
-	o.GrandTotal = o.SubTotal + o.TotalTax + o.TotalVat
+	if o.ShippingMethodID != nil {
+		o.ShippingCharge = sm.CalculateDeliveryCharge(0)
+	}
 
-	err := ou.Create(db, &o)
+	pgName := payment_gateways.GetActivePaymentGateway().GetName()
+
+	o.GrandTotal = o.SubTotal + o.TotalTax + o.TotalVat + o.ShippingCharge
+	o.PaymentProcessingFee = pm.CalculateProcessingFee(o.GrandTotal)
+	o.PaymentGateway = &pgName
+	o.Status = models.Pending
+
+	err = ou.Create(db, &o)
 	if err != nil {
 		log.Log().Errorln(err)
 

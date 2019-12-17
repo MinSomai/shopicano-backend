@@ -31,9 +31,9 @@ type Order struct {
 	ShippingCharge       int         `json:"shipping_charge" sql:"shipping_charge"`
 	PaymentProcessingFee int         `json:"payment_processing_fee" sql:"payment_processing_fee"`
 	SubTotal             int         `json:"sub_total" sql:"sub_total"`
-	PaymentGateway       string      `json:"payment_gateway" sql:"payment_gateway"`
-	Nonce                string      `json:"nonce" sql:"nonce"`
-	TransactionID        string      `json:"transaction_id" json:"transaction_id"`
+	PaymentGateway       *string     `json:"payment_gateway" sql:"payment_gateway"`
+	Nonce                *string     `json:"nonce" sql:"nonce"`
+	TransactionID        *string     `json:"transaction_id" json:"transaction_id"`
 	GrandTotal           int         `json:"grand_total" sql:"grand_total"`
 	IsPaid               bool        `json:"is_paid" sql:"is_paid"`
 	Status               OrderStatus `json:"status" sql:"status"`

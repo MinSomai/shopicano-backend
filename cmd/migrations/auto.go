@@ -53,10 +53,16 @@ func auto(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	sup := models.StoreUserProfile{}
-	if err := sup.CreateView(tx); err != nil {
-		tx.Rollback()
-		log.Log().Errorln(err)
+	var views []core.View
+	views = append(views, &models.StoreUserProfile{})
+	views = append(views, &models.OrderDetailsView{})
+
+	for _, v := range views {
+		if err := v.CreateView(tx); err != nil {
+			tx.Rollback()
+			log.Log().Errorln(err)
+			return
+		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
