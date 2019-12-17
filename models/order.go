@@ -6,11 +6,13 @@ import (
 )
 
 const (
-	Pending   OrderStatus = "pending"
-	Confirmed OrderStatus = "confirmed"
-	Shipping  OrderStatus = "shipping"
-	Cancelled OrderStatus = "cancelled"
-	Delivered OrderStatus = "delivered"
+	Pending          OrderStatus = "pending"
+	Confirmed        OrderStatus = "confirmed"
+	Shipping         OrderStatus = "shipping"
+	Cancelled        OrderStatus = "cancelled"
+	PaymentCompleted OrderStatus = "payment_completed"
+	PaymentReversed  OrderStatus = "payment_reversed"
+	Delivered        OrderStatus = "delivered"
 )
 
 type OrderStatus string
@@ -54,23 +56,21 @@ func (o *Order) ForeignKeys() []string {
 	}
 }
 
-type OrderedProduct struct {
+type OrderedItem struct {
 	OrderID   string `json:"order_id"`
 	ProductID string `json:"product_id"`
-	Name      string `json:"name"`
 	Quantity  int    `json:"quantity"`
 	Price     int    `json:"price" sql:"price"`
 	TotalVat  int    `json:"total_vat" sql:"total_vat"`
 	TotalTax  int    `json:"total_tax" sql:"total_tax"`
 	SubTotal  int    `json:"sub_total" sql:"sub_total"`
-	//CurrencyID string `json:"currency_id" sql:"currency_id"`
 }
 
-func (op *OrderedProduct) TableName() string {
-	return "ordered_products"
+func (op *OrderedItem) TableName() string {
+	return "ordered_items"
 }
 
-func (op *OrderedProduct) ForeignKeys() []string {
+func (op *OrderedItem) ForeignKeys() []string {
 	o := Order{}
 	p := Product{}
 

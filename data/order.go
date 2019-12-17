@@ -1,11 +1,13 @@
 package data
 
 import (
+	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/models"
-	"github.com/shopicano/shopicano-backend/validators"
 )
 
 type OrderRepository interface {
-	CreateOrder(v *validators.ReqOrderCreate) (*models.OrderDetails, error)
-	GetOrderDetails(orderID string) (*models.OrderDetails, error)
+	Create(db *gorm.DB, o *models.Order) error
+	AddOrderedItem(db *gorm.DB, item *models.OrderedItem) error
+	GetDetailsInternal(db *gorm.DB, orderID string) (*models.OrderDetailsInternal, error)
+	GetDetails(db *gorm.DB, userID, orderID string) (*models.OrderDetails, error)
 }

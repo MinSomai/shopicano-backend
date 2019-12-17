@@ -35,10 +35,10 @@ func (bt *brainTreePaymentGateway) GetName() string {
 	return "brainTree"
 }
 
-func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetails) (*PaymentGatewayResponse, error) {
+func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsInternal) (*PaymentGatewayResponse, error) {
 	var items []*braintree.TransactionLineItemRequest
 
-	for _, op := range orderDetails.Products {
+	for _, op := range orderDetails.Items {
 		unitPrice, err := utils.IntToDecimal(op.Price, 100)
 		if err != nil {
 			return nil, err
@@ -51,7 +51,7 @@ func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetails) (*Paym
 		log.Log().Infoln(unitPrice)
 
 		items = append(items, &braintree.TransactionLineItemRequest{
-			Name:        op.Name,
+			//Name:        op.Name,
 			UnitAmount:  unitPrice,
 			Description: op.ProductID,
 			Quantity:    braintree.NewDecimal(int64(op.Quantity), 0),

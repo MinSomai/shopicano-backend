@@ -234,7 +234,7 @@ func getProduct(ctx echo.Context) error {
 
 	pu := data.NewProductRepository()
 
-	var p *models.ProductDetails
+	var p interface{}
 	var err error
 
 	if utils.IsStoreStaff(ctx) {

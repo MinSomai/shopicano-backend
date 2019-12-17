@@ -26,14 +26,14 @@ func (spg *stripePaymentGateway) GetName() string {
 	return "stripe"
 }
 
-func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetails) (*PaymentGatewayResponse, error) {
+func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetailsInternal) (*PaymentGatewayResponse, error) {
 	stripe.Key = spg.SecretKey
 
 	var lineItems []*stripe.CheckoutSessionLineItemParams
 
-	for _, op := range orderDetails.Products {
+	for _, op := range orderDetails.Items {
 		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
-			Name:        stripe.String(op.Name),
+			//Name:        stripe.String(op.Name),
 			Amount:      stripe.Int64(int64(op.Price)),
 			Currency:    stripe.String("usd"),
 			Description: stripe.String(op.ProductID),

@@ -19,6 +19,7 @@ const (
 	ProductVariantCreationDataInvalid ErrorCode = "422010"
 	AddCollectionDataInvalid          ErrorCode = "422011"
 	AdditionalChargeDataInvalid       ErrorCode = "422012"
+	OrderDataInvalid                  ErrorCode = "422013"
 	StoreCreationQueryFailed          ErrorCode = "500001"
 	DatabaseQueryFailed               ErrorCode = "500002"
 	PasswordEncryptionFailed          ErrorCode = "500003"
@@ -57,5 +58,6 @@ const (
 	ProductVariantNotFound            ErrorCode = "404010"
 	AddressNotFound                   ErrorCode = "404011"
 	AdditionalChargeNotFound          ErrorCode = "404012"
+	ProductUnavailable                ErrorCode = "404013"
 	LoginCredentialsInvalid           ErrorCode = "401001"
 )

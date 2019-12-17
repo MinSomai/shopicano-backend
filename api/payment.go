@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
@@ -33,8 +34,10 @@ func createPaymentBrainTree(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	db := app.DB()
+
 	repo := data.NewOrderRepository()
-	od, err := repo.GetOrderDetails(orderID)
+	od, err := repo.GetDetailsInternal(db, orderID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Order not found"
@@ -75,8 +78,10 @@ func createPaymentStripe(ctx echo.Context) error {
 
 	resp := core.Response{}
 
+	db := app.DB()
+
 	repo := data.NewOrderRepository()
-	od, err := repo.GetOrderDetails(orderID)
+	od, err := repo.GetDetailsInternal(db, orderID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Product not found"

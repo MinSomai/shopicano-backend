@@ -9,7 +9,7 @@ import (
 type PaymentGateway interface {
 	GetName() string
 	GetClientToken() (string, error)
-	Pay(orderDetails *models.OrderDetails) (*PaymentGatewayResponse, error)
+	Pay(orderDetails *models.OrderDetailsInternal) (*PaymentGatewayResponse, error)
 }
 
 type PaymentGatewayResponse struct {

@@ -28,8 +28,27 @@ func (pu *ProductRepositoryImpl) Create(db *gorm.DB, p *models.Product) error {
 }
 
 func (pu *ProductRepositoryImpl) Update(db *gorm.DB, productID string, p *models.Product) error {
-
-	return &p, nil
+	if err := db.Table(p.TableName()).
+		Select("name, description, is_published, category_id, sku, stock, unit, price, additional_images, image, is_shippable, is_digital, digital_download_link, updated_at").
+		Updates(map[string]interface{}{
+			"name":                  p.Name,
+			"description":           p.Description,
+			"is_published":          p.IsPublished,
+			"category_id":           p.CategoryID,
+			"sku":                   p.SKU,
+			"stock":                 p.Stock,
+			"unit":                  p.Unit,
+			"price":                 p.Price,
+			"additional_images":     p.AdditionalImages,
+			"image":                 p.Image,
+			"is_shippable":          p.IsShippable,
+			"is_digital":            p.IsDigital,
+			"digital_download_link": p.DigitalDownloadLink,
+			"updated_at":            p.UpdatedAt,
+		}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (pu *ProductRepositoryImpl) List(db *gorm.DB, from, limit int) ([]models.ProductDetails, error) {
@@ -46,8 +65,8 @@ func (pu *ProductRepositoryImpl) List(db *gorm.DB, from, limit int) ([]models.Pr
 	return ps, nil
 }
 
-func (pu *ProductRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]models.ProductDetails, error) {
-	var ps []models.ProductDetails
+func (pu *ProductRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]models.ProductDetailsInternal, error) {
+	var ps []models.ProductDetailsInternal
 	p := models.Product{}
 	if err := db.Table(p.TableName()).
 		Select("products.id, products.stock, products.sku, products.name, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
@@ -74,8 +93,8 @@ func (pu *ProductRepositoryImpl) Search(db *gorm.DB, query string, from, limit i
 	return ps, nil
 }
 
-func (pu *ProductRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.ProductDetails, error) {
-	var ps []models.ProductDetails
+func (pu *ProductRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.ProductDetailsInternal, error) {
+	var ps []models.ProductDetailsInternal
 	p := models.Product{}
 	if err := db.Table(p.TableName()).
 		Select("products.id, products.name, products.stock, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
@@ -155,9 +174,9 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 	return &ps, nil
 }
 
-func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.ProductDetails, error) {
+func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.ProductDetailsInternal, error) {
 	p := models.Product{}
-	ps := models.ProductDetails{}
+	ps := models.ProductDetailsInternal{}
 	cat := models.Category{}
 	store := models.Store{}
 
@@ -202,14 +221,14 @@ func (pu *ProductRepositoryImpl) GetForOrder(db *gorm.DB, storeID, productID str
 	p := models.Product{}
 
 	if err := db.Table(p.TableName()).
-		Where("products.id = ? AND products.store_id = ? AND products.quantity - ? >= 0", productID, storeID, quantity).
+		Where("id = ? AND store_id = ? AND stock - ? >= 0", productID, storeID, quantity).
 		First(&p).Error; err != nil {
 		return nil, err
 	}
 
 	if err := db.Table(p.TableName()).
-		Where("products.id = ? AND products.store_id = ? AND products.quantity - ? >= 0", productID, storeID, quantity).
-		UpdateColumn("products.quantity = products.quantity - ?", quantity).Error; err != nil {
+		Where("id = ? AND store_id = ? AND stock - ? >= 0", productID, storeID, quantity).
+		Set("stock = stock - ?", quantity).Error; err != nil {
 		return nil, err
 	}
 
