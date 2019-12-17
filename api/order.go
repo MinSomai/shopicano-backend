@@ -13,6 +13,7 @@ import (
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
+	"time"
 )
 
 func RegisterOrderRoutes(g *echo.Group) {
@@ -489,6 +490,9 @@ type resBrainTreeNonce struct {
 func processBrainTree(ctx echo.Context, o *models.OrderDetailsView) error {
 	resp := core.Response{}
 
+	db := app.DB()
+	or := data.NewOrderRepository()
+
 	body := resBrainTreeNonce{}
 	if err := ctx.Bind(&body); err != nil {
 		resp.Title = "Invalid data"
@@ -509,7 +513,19 @@ func processBrainTree(ctx echo.Context, o *models.OrderDetailsView) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	now := time.Now().UTC()
 	o.TransactionID = &res.Result
+	o.Status = models.PaymentCompleted
+	o.PaidAt = &now
+	o.IsPaid = true
+
+	if err := or.UpdatePaymentInfo(db, o); err != nil {
+		resp.Title = "Failed to update payment info"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
 
 	resp.Status = http.StatusOK
 	resp.Data = map[string]interface{}{

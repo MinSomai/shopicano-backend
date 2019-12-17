@@ -56,10 +56,15 @@ func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*
 
 		log.Log().Infoln(unitPrice)
 
+		description := op.Description
+		if len(description) > 30 {
+			description = description[:30]
+		}
+
 		items = append(items, &braintree.TransactionLineItemRequest{
 			Name:        op.Name,
 			UnitAmount:  unitPrice,
-			Description: op.Description,
+			Description: description,
 			ProductCode: op.SKU,
 			Quantity:    braintree.NewDecimal(int64(op.Quantity), 0),
 			TotalAmount: TotalPrice,
@@ -67,7 +72,7 @@ func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*
 		})
 	}
 
-	paymentProcessingFee, err := utils.IntToDecimal(orderDetails.PaymentProcessingFee+3, 1)
+	paymentProcessingFee, err := utils.IntToDecimal(orderDetails.PaymentProcessingFee, 1)
 	if err != nil {
 		return nil, err
 	}

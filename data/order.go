@@ -10,4 +10,5 @@ type OrderRepository interface {
 	AddOrderedItem(db *gorm.DB, item *models.OrderedItem) error
 	GetDetailsExternal(db *gorm.DB, userID, orderID string) (*models.OrderDetailsViewExternal, error)
 	GetDetails(db *gorm.DB, orderID string) (*models.OrderDetailsView, error)
+	UpdatePaymentInfo(db *gorm.DB, o *models.OrderDetailsView) error
 }
