@@ -72,24 +72,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	pu := data.NewProductRepository()
 	ou := data.NewOrderRepository()
 
-	err := ou.Create(db, &o)
-	if err != nil {
-		log.Log().Errorln(err)
-
-		if errors.IsPreparedError(err) {
-			resp.Title = "Invalid request"
-			resp.Status = http.StatusBadRequest
-			resp.Code = errors.InvalidRequest
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
-		}
-
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
+	var availableItems []*models.OrderedItem
 
 	for _, v := range pld.Items {
 		item, err := pu.GetForOrder(db, o.StoreID, v.ID, v.Quantity)
@@ -121,7 +104,36 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 		oi.SubTotal = v.Quantity * item.Price
 
-		if err := ou.AddOrderedItem(db, oi); err != nil {
+		availableItems = append(availableItems, oi)
+
+		o.SubTotal += oi.SubTotal
+		o.TotalTax += oi.TotalTax
+		o.TotalVat += oi.TotalVat
+	}
+
+	o.GrandTotal = o.SubTotal + o.TotalTax + o.TotalVat
+
+	err := ou.Create(db, &o)
+	if err != nil {
+		log.Log().Errorln(err)
+
+		if errors.IsPreparedError(err) {
+			resp.Title = "Invalid request"
+			resp.Status = http.StatusBadRequest
+			resp.Code = errors.InvalidRequest
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	for _, v := range availableItems {
+		if err := ou.AddOrderedItem(db, v); err != nil {
 			db.Rollback()
 
 			resp.Title = "Database query failed"
@@ -130,13 +142,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
-
-		o.SubTotal += oi.SubTotal
-		o.TotalTax += oi.TotalTax
-		o.TotalVat += oi.TotalVat
 	}
-
-	o.GrandTotal = o.SubTotal + o.TotalTax + o.TotalVat
 
 	if err := db.Commit().Error; err != nil {
 		resp.Title = "Database query failed"
