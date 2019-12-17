@@ -32,7 +32,7 @@ func (bt *brainTreePaymentGateway) GetName() string {
 	return "brainTree"
 }
 
-func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsInternal) (*PaymentGatewayResponse, error) {
+func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsViewExternal) (*PaymentGatewayResponse, error) {
 	//var items []*braintree.TransactionLineItemRequest
 	//
 	//for _, op := range orderDetails.Items {

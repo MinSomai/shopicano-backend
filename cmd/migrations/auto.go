@@ -56,6 +56,7 @@ func auto(cmd *cobra.Command, args []string) {
 	var views []core.View
 	views = append(views, &models.StoreUserProfile{})
 	views = append(views, &models.OrderDetailsView{})
+	views = append(views, &models.OrderedItemView{})
 
 	for _, v := range views {
 		if err := v.CreateView(tx); err != nil {

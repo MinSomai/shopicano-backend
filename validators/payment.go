@@ -7,7 +7,7 @@ import (
 )
 
 type ReqBrainTreeCreatePayment struct {
-	Nonce string `json:"nonce" valid:"required,stringlength(1|1000)"`
+	Nonce *string `json:"nonce" valid:"required,stringlength(1|1000)"`
 }
 
 func ValidateCreateReqBrainTreePayment(ctx echo.Context) (*ReqBrainTreeCreatePayment, error) {

@@ -237,13 +237,22 @@ func (os *OrderRepositoryImpl) AddOrderedItem(db *gorm.DB, oi *models.OrderedIte
 	return nil
 }
 
-func (os *OrderRepositoryImpl) GetDetailsInternal(db *gorm.DB, orderID string) (*models.OrderDetailsInternal, error) {
-	order := models.OrderDetailsInternal{}
+func (os *OrderRepositoryImpl) GetDetailsInternal(db *gorm.DB, orderID string) (*models.OrderDetailsViewExternal, error) {
+	order := models.OrderDetailsViewExternal{}
 	if err := db.Model(&order).First(&order, "id = ?", orderID).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}
 
+	oiv := models.OrderedItemView{}
+
+	var items []models.OrderedItemViewExternal
+	if err := db.Model(oiv).Find(&items, "order_id = ?", orderID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	order.Items = items
 	return &order, nil
 
 	//var orderedProducts []models.OrderedItemDetailsInternal
@@ -265,7 +274,7 @@ func (os *OrderRepositoryImpl) GetDetailsInternal(db *gorm.DB, orderID string) (
 	//	return nil, err
 	//}
 	//
-	//orderDetails := &models.OrderDetailsInternal{
+	//orderDetails := &models.OrderDetailsViewExternal{
 	//	ID:                   order.ID,
 	//	TotalTax:             order.TotalTax,
 	//	SubTotal:             order.SubTotal,
