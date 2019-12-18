@@ -3,10 +3,11 @@ package api
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
+	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
 	gateway "github.com/shopicano/shopicano-backend/payment-gateways"
-	"github.com/shopicano/shopicano-backend/repositories"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
 )
@@ -33,8 +34,10 @@ func createPaymentBrainTree(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	repo := repositories.NewOrderRepository()
-	od, err := repo.GetOrderDetails(orderID)
+	db := app.DB()
+
+	repo := data.NewOrderRepository()
+	od, err := repo.GetDetails(db, orderID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Order not found"
@@ -75,8 +78,10 @@ func createPaymentStripe(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	repo := repositories.NewOrderRepository()
-	od, err := repo.GetOrderDetails(orderID)
+	db := app.DB()
+
+	repo := data.NewOrderRepository()
+	od, err := repo.GetDetails(db, orderID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Product not found"
@@ -104,7 +109,7 @@ func createPaymentStripe(ctx echo.Context) error {
 
 	resp.Status = http.StatusOK
 	resp.Data = map[string]interface{}{
-		"session_id": res.Nonce,
+		"session_id": res.Result,
 	}
 
 	return resp.ServerJSON(ctx)

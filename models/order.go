@@ -6,11 +6,13 @@ import (
 )
 
 const (
-	Pending   OrderStatus = "pending"
-	Confirmed OrderStatus = "confirmed"
-	Shipping  OrderStatus = "shipping"
-	Cancelled OrderStatus = "cancelled"
-	Delivered OrderStatus = "delivered"
+	Pending          OrderStatus = "pending"
+	Confirmed        OrderStatus = "confirmed"
+	Shipping         OrderStatus = "shipping"
+	Cancelled        OrderStatus = "cancelled"
+	PaymentCompleted OrderStatus = "payment_completed"
+	PaymentReversed  OrderStatus = "payment_reversed"
+	Delivered        OrderStatus = "delivered"
 )
 
 type OrderStatus string
@@ -29,9 +31,9 @@ type Order struct {
 	ShippingCharge       int         `json:"shipping_charge" sql:"shipping_charge"`
 	PaymentProcessingFee int         `json:"payment_processing_fee" sql:"payment_processing_fee"`
 	SubTotal             int         `json:"sub_total" sql:"sub_total"`
-	PaymentGateway       string      `json:"payment_gateway" sql:"payment_gateway"`
-	Nonce                string      `json:"nonce" sql:"nonce"`
-	TransactionID        string      `json:"transaction_id" json:"transaction_id"`
+	PaymentGateway       *string     `json:"payment_gateway" sql:"payment_gateway"`
+	Nonce                *string     `json:"nonce" sql:"nonce"`
+	TransactionID        *string     `json:"transaction_id" json:"transaction_id"`
 	GrandTotal           int         `json:"grand_total" sql:"grand_total"`
 	IsPaid               bool        `json:"is_paid" sql:"is_paid"`
 	Status               OrderStatus `json:"status" sql:"status"`
@@ -51,31 +53,5 @@ func (o *Order) ForeignKeys() []string {
 
 	return []string{
 		fmt.Sprintf("store_id;%s(id);RESTRICT;RESTRICT", s.TableName()),
-	}
-}
-
-type OrderedProduct struct {
-	OrderID   string `json:"order_id"`
-	ProductID string `json:"product_id"`
-	Name      string `json:"name"`
-	Quantity  int    `json:"quantity"`
-	Price     int    `json:"price" sql:"price"`
-	TotalVat  int    `json:"total_vat" sql:"total_vat"`
-	TotalTax  int    `json:"total_tax" sql:"total_tax"`
-	SubTotal  int    `json:"sub_total" sql:"sub_total"`
-	//CurrencyID string `json:"currency_id" sql:"currency_id"`
-}
-
-func (op *OrderedProduct) TableName() string {
-	return "ordered_products"
-}
-
-func (op *OrderedProduct) ForeignKeys() []string {
-	o := Order{}
-	p := Product{}
-
-	return []string{
-		fmt.Sprintf("order_id;%s(id);RESTRICT;RESTRICT", o.TableName()),
-		fmt.Sprintf("product_id;%s(id);RESTRICT;RESTRICT", p.TableName()),
 	}
 }

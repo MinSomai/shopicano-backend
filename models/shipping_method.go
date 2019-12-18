@@ -18,6 +18,6 @@ func (sm *ShippingMethod) TableName() string {
 }
 
 func (sm *ShippingMethod) CalculateDeliveryCharge(weight int) int {
-	// TODO : Currently weight doesn't have any impact on weight
+	// TODO : Currently weight doesn't have any impact on charge
 	return sm.DeliveryCharge
 }
