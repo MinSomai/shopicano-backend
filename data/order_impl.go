@@ -67,6 +67,114 @@ func (os *OrderRepositoryImpl) GetDetails(db *gorm.DB, orderID string) (*models.
 	return &order, nil
 }
 
+func (os *OrderRepositoryImpl) List(db *gorm.DB, userID string, offset, limit int) ([]models.OrderDetailsViewExternal, error) {
+	order := models.OrderDetailsViewExternal{}
+	var orders []models.OrderDetailsViewExternal
+
+	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "user_id = ?", userID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	for _, v := range orders {
+		oiv := models.OrderedItemViewExternal{}
+
+		var items []models.OrderedItemViewExternal
+		if err := db.Model(oiv).Find(&items, "order_id = ?", v.ID).Error; err != nil {
+			log.Log().Errorln(err)
+			return nil, err
+		}
+
+		v.Items = items
+	}
+
+	if len(orders) == 0 {
+		orders = []models.OrderDetailsViewExternal{}
+	}
+	return orders, nil
+}
+
+func (os *OrderRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, offset, limit int) ([]models.OrderDetailsViewExternal, error) {
+	order := models.OrderDetailsViewExternal{}
+	var orders []models.OrderDetailsViewExternal
+
+	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "store_id = ?", storeID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	for _, v := range orders {
+		oiv := models.OrderedItemViewExternal{}
+
+		var items []models.OrderedItemViewExternal
+		if err := db.Model(oiv).Find(&items, "order_id = ?", v.ID).Error; err != nil {
+			log.Log().Errorln(err)
+			return nil, err
+		}
+
+		v.Items = items
+	}
+
+	if len(orders) == 0 {
+		orders = []models.OrderDetailsViewExternal{}
+	}
+	return orders, nil
+}
+
+func (os *OrderRepositoryImpl) Search(db *gorm.DB, query, userID string, offset, limit int) ([]models.OrderDetailsView, error) {
+	order := models.OrderDetailsView{}
+	var orders []models.OrderDetailsView
+
+	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "user_id = ? AND hash = ?", userID, query).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	for _, v := range orders {
+		oiv := models.OrderedItemView{}
+
+		var items []models.OrderedItemView
+		if err := db.Model(oiv).Find(&items, "order_id = ?", v.ID).Error; err != nil {
+			log.Log().Errorln(err)
+			return nil, err
+		}
+
+		v.Items = items
+	}
+
+	if len(orders) == 0 {
+		orders = []models.OrderDetailsView{}
+	}
+	return orders, nil
+}
+
+func (os *OrderRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, query, storeID string, offset, limit int) ([]models.OrderDetailsView, error) {
+	order := models.OrderDetailsView{}
+	var orders []models.OrderDetailsView
+
+	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "store_id = ? AND hash = ?", storeID, query).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	for _, v := range orders {
+		oiv := models.OrderedItemView{}
+
+		var items []models.OrderedItemView
+		if err := db.Model(oiv).Find(&items, "order_id = ?", v.ID).Error; err != nil {
+			log.Log().Errorln(err)
+			return nil, err
+		}
+
+		v.Items = items
+	}
+
+	if len(orders) == 0 {
+		orders = []models.OrderDetailsView{}
+	}
+	return orders, nil
+}
+
 func (os *OrderRepositoryImpl) GetDetailsExternal(db *gorm.DB, userID, orderID string) (*models.OrderDetailsViewExternal, error) {
 	order := models.OrderDetailsViewExternal{}
 	if err := db.Model(&order).First(&order, "id = ?", orderID).Error; err != nil {

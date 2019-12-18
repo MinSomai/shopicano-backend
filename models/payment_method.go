@@ -29,7 +29,7 @@ func (pm *PaymentMethod) CalculateProcessingFee(bill int) int {
 	log.Log().Info("Bill : ", bill)
 	log.Log().Info("Pf : ", pm.ProcessingFee)
 
-	fee := ((bill * pm.ProcessingFee) / 100) / 100
+	fee := (bill * pm.ProcessingFee) / 100
 
 	log.Log().Info("Fee : ", fee)
 
