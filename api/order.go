@@ -373,7 +373,6 @@ func fetchOrders(ctx echo.Context, page, limit int64, isPublic bool) ([]models.O
 	ou := data.NewOrderRepository()
 
 	log.Log().Infoln("UserID : ", ctx.Get(utils.UserID).(string))
-	log.Log().Infoln("StoreID : ", ctx.Get(utils.StoreID).(string))
 	log.Log().Infoln("Offset : ", from)
 	log.Log().Infoln("Limit : ", limit)
 	log.Log().Infoln("IsPublic : ", isPublic)
@@ -381,6 +380,8 @@ func fetchOrders(ctx echo.Context, page, limit int64, isPublic bool) ([]models.O
 	if isPublic {
 		return ou.List(db, ctx.Get(utils.UserID).(string), int(from), int(limit))
 	}
+
+	log.Log().Infoln("StoreID : ", ctx.Get(utils.StoreID).(string))
 	return ou.ListAsStoreStuff(db, ctx.Get(utils.StoreID).(string), int(from), int(limit))
 }
 

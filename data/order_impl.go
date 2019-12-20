@@ -71,21 +71,25 @@ func (os *OrderRepositoryImpl) List(db *gorm.DB, userID string, offset, limit in
 	order := models.OrderDetailsViewExternal{}
 	var orders []models.OrderDetailsViewExternal
 
-	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "user_id = ?", userID).Error; err != nil {
+	if err := db.Table(order.TableName()).Offset(offset).Limit(limit).Find(&orders, "user_id = ?", userID).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}
 
-	for _, v := range orders {
+	for i, v := range orders {
 		oiv := models.OrderedItemViewExternal{}
 
 		var items []models.OrderedItemViewExternal
-		if err := db.Model(oiv).Find(&items, "order_id = ?", v.ID).Error; err != nil {
+		if err := db.Table(oiv.TableName()).Find(&items, "order_id = ?", v.ID).Error; err != nil {
 			log.Log().Errorln(err)
 			return nil, err
 		}
 
-		v.Items = items
+		if len(items) == 0 {
+			items = []models.OrderedItemViewExternal{}
+		}
+
+		orders[i].Items = items
 	}
 
 	if len(orders) == 0 {
@@ -103,7 +107,7 @@ func (os *OrderRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, off
 		return nil, err
 	}
 
-	for _, v := range orders {
+	for i, v := range orders {
 		oiv := models.OrderedItemViewExternal{}
 
 		var items []models.OrderedItemViewExternal
@@ -112,7 +116,11 @@ func (os *OrderRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, off
 			return nil, err
 		}
 
-		v.Items = items
+		if len(items) == 0 {
+			items = []models.OrderedItemViewExternal{}
+		}
+
+		orders[i].Items = items
 	}
 
 	if len(orders) == 0 {
@@ -130,7 +138,7 @@ func (os *OrderRepositoryImpl) Search(db *gorm.DB, query, userID string, offset,
 		return nil, err
 	}
 
-	for _, v := range orders {
+	for i, v := range orders {
 		oiv := models.OrderedItemView{}
 
 		var items []models.OrderedItemView
@@ -139,7 +147,11 @@ func (os *OrderRepositoryImpl) Search(db *gorm.DB, query, userID string, offset,
 			return nil, err
 		}
 
-		v.Items = items
+		if len(items) == 0 {
+			items = []models.OrderedItemView{}
+		}
+
+		orders[i].Items = items
 	}
 
 	if len(orders) == 0 {
@@ -157,7 +169,7 @@ func (os *OrderRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, query, storeID st
 		return nil, err
 	}
 
-	for _, v := range orders {
+	for i, v := range orders {
 		oiv := models.OrderedItemView{}
 
 		var items []models.OrderedItemView
@@ -166,7 +178,11 @@ func (os *OrderRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, query, storeID st
 			return nil, err
 		}
 
-		v.Items = items
+		if len(items) == 0 {
+			items = []models.OrderedItemView{}
+		}
+
+		orders[i].Items = items
 	}
 
 	if len(orders) == 0 {
