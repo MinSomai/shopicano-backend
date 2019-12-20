@@ -20,16 +20,18 @@ type UserStatus string
 type Permission string
 
 type User struct {
-	ID             string     `json:"id" sql:"id" gorm:"primary_key"`
-	Name           string     `json:"name" sql:"name" gorm:"not null"`
-	Email          string     `json:"email" sql:"email" gorm:"unique;not null"`
-	ProfilePicture *string    `json:"profile_picture,omitempty" sql:"profile_picture"`
-	Phone          *string    `json:"phone,omitempty" sql:"phone" gorm:"unique"`
-	Password       string     `json:"-" sql:"password" gorm:"not null"`
-	Status         UserStatus `json:"status" sql:"status" gorm:"index;not null"`
-	PermissionID   string     `json:"-" sql:"permission_id" gorm:"index;not null"`
-	CreatedAt      time.Time  `json:"created_at" sql:"created_at" gorm:"index"`
-	UpdatedAt      time.Time  `json:"updated_at" sql:"updated_at"`
+	ID                string     `json:"id" sql:"id" gorm:"primary_key"`
+	Name              string     `json:"name" sql:"name" gorm:"not null"`
+	Email             string     `json:"email" sql:"email" gorm:"unique;not null"`
+	ProfilePicture    *string    `json:"profile_picture,omitempty" sql:"profile_picture"`
+	Phone             *string    `json:"phone,omitempty" sql:"phone" gorm:"unique"`
+	Password          string     `json:"-" sql:"password" gorm:"not null"`
+	VerificationToken *string    `json:"-" sql:"verification_token" gorm:"unique"`
+	Status            UserStatus `json:"status" sql:"status" gorm:"index;not null"`
+	IsEmailVerified   bool       `json:"is_email_verified" json:"is_email_verified"`
+	PermissionID      string     `json:"-" sql:"permission_id" gorm:"index;not null"`
+	CreatedAt         time.Time  `json:"created_at" sql:"created_at" gorm:"index"`
+	UpdatedAt         time.Time  `json:"updated_at" sql:"updated_at"`
 }
 
 func (u *User) TableName() string {

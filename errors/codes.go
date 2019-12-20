@@ -31,6 +31,7 @@ const (
 	UserLoginFailed                   ErrorCode = "500008"
 	PaymentGatewayFailed              ErrorCode = "500009"
 	PaymentProcessingFailed           ErrorCode = "500009"
+	FailedToEnqueueTask               ErrorCode = "500010"
 	StoreAlreadyExists                ErrorCode = "409001"
 	StoreMemberAlreadyExists          ErrorCode = "409002"
 	CategoryAlreadyExists             ErrorCode = "409003"
@@ -64,4 +65,5 @@ const (
 	ProductUnavailable                ErrorCode = "404013"
 	OrderNotFound                     ErrorCode = "404014"
 	LoginCredentialsInvalid           ErrorCode = "401001"
+	VerificationTokenIsInvalid        ErrorCode = "401002"
 )
