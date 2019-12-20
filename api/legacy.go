@@ -253,16 +253,16 @@ func emailVerification(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if u.IsEmailVerified {
-		resp.Title = "Email already verified"
-		resp.Status = http.StatusOK
-		return resp.ServerJSON(ctx)
-	}
-
 	if u.VerificationToken == nil || *u.VerificationToken != token {
 		resp.Title = "Email verification failed"
 		resp.Status = http.StatusForbidden
 		resp.Code = errors.VerificationTokenIsInvalid
+		return resp.ServerJSON(ctx)
+	}
+
+	if u.IsEmailVerified {
+		resp.Title = "Email already verified"
+		resp.Status = http.StatusOK
 		return resp.ServerJSON(ctx)
 	}
 
