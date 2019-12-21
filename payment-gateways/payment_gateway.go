@@ -14,6 +14,7 @@ type PaymentGateway interface {
 
 type PaymentGatewayResponse struct {
 	Result                     string
+	Nonce                      string
 	BrainTreeTransactionStatus braintree.TransactionStatus
 }
 

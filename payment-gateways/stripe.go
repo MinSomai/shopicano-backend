@@ -75,7 +75,8 @@ func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*Pa
 	}
 
 	return &PaymentGatewayResponse{
-		Result: ss.ID,
+		Result: ss.PaymentIntent.ID,
+		Nonce:  ss.ID,
 	}, nil
 }
 

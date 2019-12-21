@@ -122,7 +122,6 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 		now := time.Now().UTC()
 		o.PaidAt = &now
 		o.IsPaid = true
-		o.TransactionID = &o.ID
 	} else {
 		o.Status = models.PaymentFailed
 	}
@@ -188,7 +187,8 @@ func generateStripePayNonce(ctx echo.Context, o *models.OrderDetailsView) error 
 		return resp.ServerJSON(ctx)
 	}
 
-	o.Nonce = &res.Result
+	o.TransactionID = &res.Result
+	o.Nonce = &res.Nonce
 
 	if err := or.UpdatePaymentInfo(db, o); err != nil {
 		resp.Title = "Failed to update payment info"
@@ -200,7 +200,7 @@ func generateStripePayNonce(ctx echo.Context, o *models.OrderDetailsView) error 
 
 	resp.Status = http.StatusOK
 	resp.Data = map[string]interface{}{
-		"nonce": res.Result,
+		"nonce": res.Nonce,
 	}
 	return resp.ServerJSON(ctx)
 }
