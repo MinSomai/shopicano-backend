@@ -16,6 +16,7 @@ type stripePaymentGateway struct {
 	SecretKey       string
 	SuccessCallback string
 	FailureCallback string
+	PublicKey       string
 }
 
 func NewStripePaymentGateway(cfg map[string]interface{}) (*stripePaymentGateway, error) {
@@ -23,6 +24,7 @@ func NewStripePaymentGateway(cfg map[string]interface{}) (*stripePaymentGateway,
 		SecretKey:       cfg["secret_key"].(string),
 		SuccessCallback: cfg["success_callback"].(string),
 		FailureCallback: cfg["failure_callback"].(string),
+		PublicKey:       cfg["public_key"].(string),
 	}, nil
 }
 
@@ -80,6 +82,12 @@ func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*Pa
 	}, nil
 }
 
-func (spg *stripePaymentGateway) GetClientToken() (string, error) {
-	return "", nil
+func (spg *stripePaymentGateway) GetConfig() (map[string]interface{}, error) {
+	cfg := map[string]interface{}{
+		"success_callback_url": spg.SuccessCallback,
+		"failure_callback_url": spg.FailureCallback,
+		"public_key":           spg.PublicKey,
+	}
+
+	return cfg, nil
 }
