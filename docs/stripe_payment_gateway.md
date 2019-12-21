@@ -5,16 +5,13 @@
 POST {{dev}}/orders
 ```
 
-2. Create ClientToken,
+2. Generate payment nonce,
 ```text
-POST {{dev}}/payment-gateways/token
+POST {{dev}}/orders/{{order_id}}/nonce
 ```
 
-3. Initiate Payment with callback from client with,
-```text
-callback_url: {{dev}}/orders/{{order_id}}/pay
-```
+3. Initiate payment with nonce
 
-4. If payment successful, BrainTree will send the callback to server.
-Once server gets the callback from BrainTree with Nonce, Server will call BrainTree for payment settlement.
+4. If payment successful, Stripe will send the callback to server.
+Once server gets the callback from Stripe as success, Server will mark the order as `payment_completed` else `payment_failed`.
 Thus the payment flow completes.
