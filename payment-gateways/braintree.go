@@ -10,6 +10,10 @@ import (
 )
 
 const (
+	BrainTreePaymentGatewayName = "brainTree"
+)
+
+const (
 	Sale BrainTreeTransactionType = "sale"
 )
 
@@ -19,6 +23,8 @@ type brainTreePaymentGateway struct {
 	SuccessCallback string
 	FailureCallback string
 	Token           string
+	PublicKey       string
+	PrivateKey      string
 	client          *braintree.Braintree
 }
 
@@ -34,11 +40,13 @@ func NewBrainTreePaymentGateway(cfg map[string]interface{}) (*brainTreePaymentGa
 		SuccessCallback: cfg["success_callback"].(string),
 		FailureCallback: cfg["failure_callback"].(string),
 		Token:           cfg["token"].(string),
+		PublicKey:       publicKey,
+		PrivateKey:      privateKey,
 	}, nil
 }
 
 func (bt *brainTreePaymentGateway) GetName() string {
-	return "brainTree"
+	return BrainTreePaymentGatewayName
 }
 
 func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error) {
@@ -120,6 +128,18 @@ func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*
 	}, nil
 }
 
-func (bt *brainTreePaymentGateway) GetClientToken() (string, error) {
-	return bt.client.ClientToken().Generate(context.Background())
+func (bt *brainTreePaymentGateway) GetConfig() (map[string]interface{}, error) {
+	token, err := bt.client.ClientToken().Generate(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := map[string]interface{}{
+		"client_token":         token,
+		"success_callback_url": bt.SuccessCallback,
+		"failure_callback_url": bt.FailureCallback,
+		"public_key":           bt.PublicKey,
+	}
+
+	return cfg, nil
 }

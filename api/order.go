@@ -13,14 +13,16 @@ import (
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
-	"time"
+	"strconv"
 )
 
 func RegisterOrderRoutes(g *echo.Group) {
 	g.POST("/:order_id/pay/", payOrder)
+	g.GET("/:order_id/pay/", payOrder)
+	g.POST("/:order_id/nonce/", generatePayNonce)
 
 	func(g echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffWithStoreActivation)
+		g.Use(middlewares.MustBeUserOrStoreStaffWithStoreActivation)
 		g.GET("/", listOrders)
 		g.GET("/:order_id/", getOrder)
 	}(*g)
@@ -288,239 +290,32 @@ func getOrder(ctx echo.Context) error {
 	return resp.ServerJSON(ctx)
 }
 
-func getOrderWithStore(ctx echo.Context) error {
-	//storeID := ctx.Get(utils.StoreID).(string)
-	//
-	//c, err := validateCreateCollection(ctx)
-	//
-	//resp := core.Response{}
-	//
-	//if err != nil {
-	//	resp.Title = "Invalid data"
-	//	resp.Status = http.StatusUnprocessableEntity
-	//	resp.Code = errors.CollectionCreationDataInvalid
-	//	resp.Errors = err
-	//	return resp.ServerJSON(ctx)
-	//}
-	//
-	//c.StoreID = storeID
-	//
-	//cu := NewCollectionRepository()
-	//if err := cu.CreateCollection(c); err != nil {
-	//	msg, ok := errors.IsDuplicateKeyError(err)
-	//	if ok {
-	//		resp.Title = msg
-	//		resp.Status = http.StatusConflict
-	//		resp.Code = errors.CollectionAlreadyExists
-	//		resp.Errors = err
-	//		return resp.ServerJSON(ctx)
-	//	}
-	//
-	//	resp.Title = "Database query failed"
-	//	resp.Status = http.StatusInternalServerError
-	//	resp.Code = errors.DatabaseQueryFailed
-	//	resp.Errors = err
-	//	return resp.ServerJSON(ctx)
-	//}
-	//
-	//resp.Status = http.StatusCreated
-	//resp.Data = c
-	//return resp.ServerJSON(ctx)
-	return nil
-}
-
-func searchOrders(ctx echo.Context) error {
-	//pageQ := ctx.Request().URL.Query().Get("page")
-	//limitQ := ctx.Request().URL.Query().Get("limit")
-	//query := ctx.Request().URL.Query().Get("query")
-	//
-	//page, err := strconv.ParseInt(pageQ, 10, 64)
-	//if err != nil {
-	//	page = 1
-	//}
-	//limit, err := strconv.ParseInt(limitQ, 10, 64)
-	//if err != nil {
-	//	limit = 10
-	//}
-	//
-	//resp := core.Response{}
-	//
-	//from := (page - 1) * limit
-	//cu := NewCollectionRepository()
-	//collections, err := cu.SearchCollections(query, int(from), int(limit))
-	//if err != nil {
-	//	resp.Title = "Database query failed"
-	//	resp.Status = http.StatusInternalServerError
-	//	resp.Code = errors.DatabaseQueryFailed
-	//	resp.Errors = err
-	//	return resp.ServerJSON(ctx)
-	//}
-	//
-	//resp.Status = http.StatusOK
-	//resp.Data = collections
-	//return resp.ServerJSON(ctx)
-	return nil
-}
-
-func searchOrdersWithStore(ctx echo.Context) error {
-	//pageQ := ctx.Request().URL.Query().Get("page")
-	//limitQ := ctx.Request().URL.Query().Get("limit")
-	//query := ctx.Request().URL.Query().Get("query")
-	//
-	//page, err := strconv.ParseInt(pageQ, 10, 64)
-	//if err != nil {
-	//	page = 1
-	//}
-	//limit, err := strconv.ParseInt(limitQ, 10, 64)
-	//if err != nil {
-	//	limit = 10
-	//}
-	//
-	//resp := core.Response{}
-	//
-	//from := (page - 1) * limit
-	//cu := NewCollectionRepository()
-	//collections, err := cu.SearchCollections(query, int(from), int(limit))
-	//if err != nil {
-	//	resp.Title = "Database query failed"
-	//	resp.Status = http.StatusInternalServerError
-	//	resp.Code = errors.DatabaseQueryFailed
-	//	resp.Errors = err
-	//	return resp.ServerJSON(ctx)
-	//}
-	//
-	//resp.Status = http.StatusOK
-	//resp.Data = collections
-	//return resp.ServerJSON(ctx)
-	return nil
-}
-
 func listOrders(ctx echo.Context) error {
-	//pageQ := ctx.Request().URL.Query().Get("page")
-	//limitQ := ctx.Request().URL.Query().Get("limit")
-	//
-	//page, err := strconv.ParseInt(pageQ, 10, 64)
-	//if err != nil {
-	//	page = 1
-	//}
-	//limit, err := strconv.ParseInt(limitQ, 10, 64)
-	//if err != nil {
-	//	limit = 10
-	//}
-	//
-	//resp := core.Response{}
-	//
-	//from := (page - 1) * limit
-	//cu := NewCollectionRepository()
-	//collections, err := cu.ListCollections(int(from), int(limit))
-	//if err != nil {
-	//	resp.Title = "Database query failed"
-	//	resp.Status = http.StatusInternalServerError
-	//	resp.Code = errors.DatabaseQueryFailed
-	//	resp.Errors = err
-	//	return resp.ServerJSON(ctx)
-	//}
-	//
-	//resp.Status = http.StatusOK
-	//resp.Data = collections
-	//return resp.ServerJSON(ctx)
-	return nil
-}
+	pageQ := ctx.Request().URL.Query().Get("page")
+	limitQ := ctx.Request().URL.Query().Get("limit")
+	query := ctx.Request().URL.Query().Get("query")
 
-func listOrdersWithStore(ctx echo.Context) error {
-	//pageQ := ctx.Request().URL.Query().Get("page")
-	//limitQ := ctx.Request().URL.Query().Get("limit")
-	//
-	//page, err := strconv.ParseInt(pageQ, 10, 64)
-	//if err != nil {
-	//	page = 1
-	//}
-	//limit, err := strconv.ParseInt(limitQ, 10, 64)
-	//if err != nil {
-	//	limit = 10
-	//}
-	//
-	//resp := core.Response{}
-	//
-	//from := (page - 1) * limit
-	//cu := NewCollectionRepository()
-	//collections, err := cu.ListCollections(int(from), int(limit))
-	//if err != nil {
-	//	resp.Title = "Database query failed"
-	//	resp.Status = http.StatusInternalServerError
-	//	resp.Code = errors.DatabaseQueryFailed
-	//	resp.Errors = err
-	//	return resp.ServerJSON(ctx)
-	//}
-	//
-	//resp.Status = http.StatusOK
-	//resp.Data = collections
-	//return resp.ServerJSON(ctx)
-	return nil
-}
-
-func payOrder(ctx echo.Context) error {
-	orderID := ctx.Param("order_id")
+	page, err := strconv.ParseInt(pageQ, 10, 64)
+	if err != nil {
+		page = 1
+	}
+	limit, err := strconv.ParseInt(limitQ, 10, 64)
+	if err != nil {
+		limit = 10
+	}
 
 	resp := core.Response{}
 
-	db := app.DB()
+	var r interface{}
 
-	ou := data.NewOrderRepository()
-	m, err := ou.GetDetails(db, orderID)
+	if query == "" {
+		r, err = fetchOrders(ctx, page, limit, !utils.IsStoreStaff(ctx))
+	} else {
+		r, err = searchOrders(ctx, query, page, limit, !utils.IsStoreStaff(ctx))
+	}
+
 	if err != nil {
-		resp.Title = "Order not found"
-		resp.Status = http.StatusNotFound
-		resp.Code = errors.OrderNotFound
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	switch m.PaymentGateway {
-	case "brainTree":
-		return processBrainTree(ctx, m)
-	}
-	return nil
-}
-
-type resBrainTreeNonce struct {
-	Nonce *string `json:"nonce"`
-}
-
-func processBrainTree(ctx echo.Context, o *models.OrderDetailsView) error {
-	resp := core.Response{}
-
-	db := app.DB()
-	or := data.NewOrderRepository()
-
-	body := resBrainTreeNonce{}
-	if err := ctx.Bind(&body); err != nil {
-		resp.Title = "Invalid data"
-		resp.Status = http.StatusUnprocessableEntity
-		resp.Code = errors.OrderPaymentDataInvalid
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	o.Nonce = body.Nonce
-
-	res, err := payment_gateways.GetActivePaymentGateway().Pay(o)
-	if err != nil {
-		resp.Title = "Failed to process payment"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.PaymentProcessingFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	now := time.Now().UTC()
-	o.TransactionID = &res.Result
-	o.Status = models.PaymentCompleted
-	o.PaidAt = &now
-	o.IsPaid = true
-
-	if err := or.UpdatePaymentInfo(db, o); err != nil {
-		resp.Title = "Failed to update payment info"
+		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
@@ -528,8 +323,35 @@ func processBrainTree(ctx echo.Context, o *models.OrderDetailsView) error {
 	}
 
 	resp.Status = http.StatusOK
-	resp.Data = map[string]interface{}{
-		"transaction_id": res.Result,
-	}
+	resp.Data = r
 	return resp.ServerJSON(ctx)
+}
+
+func fetchOrders(ctx echo.Context, page, limit int64, isPublic bool) ([]models.OrderDetailsViewExternal, error) {
+	db := app.DB()
+	from := (page - 1) * limit
+	ou := data.NewOrderRepository()
+
+	log.Log().Infoln("UserID : ", ctx.Get(utils.UserID).(string))
+	log.Log().Infoln("Offset : ", from)
+	log.Log().Infoln("Limit : ", limit)
+	log.Log().Infoln("IsPublic : ", isPublic)
+
+	if isPublic {
+		return ou.List(db, ctx.Get(utils.UserID).(string), int(from), int(limit))
+	}
+
+	log.Log().Infoln("StoreID : ", ctx.Get(utils.StoreID).(string))
+	return ou.ListAsStoreStuff(db, ctx.Get(utils.StoreID).(string), int(from), int(limit))
+}
+
+func searchOrders(ctx echo.Context, query string, page, limit int64, isPublic bool) ([]models.OrderDetailsView, error) {
+	db := app.DB()
+	from := (page - 1) * limit
+	ou := data.NewOrderRepository()
+
+	if isPublic {
+		return ou.Search(db, query, ctx.Get(utils.UserID).(string), int(from), int(limit))
+	}
+	return ou.SearchAsStoreStuff(db, query, ctx.Get(utils.StoreID).(string), int(from), int(limit))
 }

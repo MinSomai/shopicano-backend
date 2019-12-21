@@ -8,12 +8,13 @@ import (
 
 type PaymentGateway interface {
 	GetName() string
-	GetClientToken() (string, error)
+	GetConfig() (map[string]interface{}, error)
 	Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error)
 }
 
 type PaymentGatewayResponse struct {
 	Result                     string
+	Nonce                      string
 	BrainTreeTransactionStatus braintree.TransactionStatus
 }
 

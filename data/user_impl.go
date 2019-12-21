@@ -94,22 +94,24 @@ func (uu *UserRepositoryImpl) RefreshToken(db *gorm.DB, token string) (*models.S
 	return &s, nil
 }
 
-func (uu *UserRepositoryImpl) Update(db *gorm.DB, userID string, ud *models.User) (*models.User, error) {
-	u := models.User{}
-
-	if err := db.Model(&u).Where("id = ?", userID).First(&u).Error; err != nil {
-		return nil, err
+func (uu *UserRepositoryImpl) Update(db *gorm.DB, u *models.User) error {
+	if err := db.Table(u.TableName()).
+		Where("id = ?", u.ID).
+		Select("name, profile_picture, phone, password, verification_token, is_email_verified, status, permission_id, updated_at").
+		Updates(map[string]interface{}{
+			"name":               u.Name,
+			"profile_picture":    u.ProfilePicture,
+			"phone":              u.Phone,
+			"password":           u.Password,
+			"verification_token": u.VerificationToken,
+			"is_email_verified":  u.IsEmailVerified,
+			"status":             u.Status,
+			"permission_id":      u.PermissionID,
+			"updated_at":         u.UpdatedAt,
+		}).Error; err != nil {
+		return err
 	}
-
-	u.Name = ud.Name
-	u.ProfilePicture = ud.ProfilePicture
-	u.Phone = ud.Phone
-
-	if err := db.Model(&u).Where("id = ?", userID).Save(&u).Error; err != nil {
-		return nil, err
-	}
-
-	return &u, nil
+	return nil
 }
 
 func (uu *UserRepositoryImpl) GetPermission(db *gorm.DB, token string) (string, *models.Permission, error) {

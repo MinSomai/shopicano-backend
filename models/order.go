@@ -11,6 +11,7 @@ const (
 	Shipping         OrderStatus = "shipping"
 	Cancelled        OrderStatus = "cancelled"
 	PaymentCompleted OrderStatus = "payment_completed"
+	PaymentFailed    OrderStatus = "payment_failed"
 	PaymentReversed  OrderStatus = "payment_reversed"
 	Delivered        OrderStatus = "delivered"
 )

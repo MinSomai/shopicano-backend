@@ -43,6 +43,8 @@ func LoadConfig() error {
 	LoadDB()
 	LoadMinio()
 	LoadPaymentGateway()
+	LoadRabbitMQ()
+	LoadEmailService()
 
 	return nil
 }

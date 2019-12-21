@@ -1,12 +1,12 @@
 app:
   host: "0.0.0.0"
-  port: 9009
+  port: 9119
   log_level: "debug"
 
 database:
-  host: "127.0.0.1"
+  host: "0.0.0.0"
   port: 5432
-  username: "root"
+  username: "test"
   password: "test"
   name: "test"
   max_idle_connections: 2
@@ -14,17 +14,49 @@ database:
   max_connection_lifetime: 2
 
 minio:
-  base_url: "localhost:9001"
-  serve_url: "http://localhost:9001"
+  base_url: "0.0.0.0:9000"
+  serve_url: "http://0.0.0.0:9000"
   key: "MINIO_ACCESS_KEY"
   secret: "MINIO_SECRET_KEY"
   bucket: "shopicano"
   location: "us"
   sign_duration: 5
 
+rabbitmq:
+  broker: "amqp://guest:guest@0.0.0.0:5672/"
+  default_queue: "shopicano_tasks"
+  result_backend: "amqp://guest:guest@0.0.0.0:5672/"
+  amqp:
+    exchange: "shopicano_exchange"
+    exchange_type: "direct"
+    binding_key: "shopicano_tasks"
+    prefetch_count: 5
+  worker:
+    name: "worker-1"
+    count: 5
+
+#payment_gateway:
+#  name: "stripe"
+#  configs:
+#    secret_key: "sk_test_4NbdmxYcZ8rvd5uaeahwianbA"
+#    public_key: "pk_test_EBmqabVLFZiauwnan1kaiakEulkz"
+#    success_callback: "https://414b062211.ngrok.io/v1/orders/%s/pay"
+#    failure_callback: "https://414b09911.ngrok.io/v1/orders/%s/pay"
+
 payment_gateway:
-  name: "stripe"
+  name: "brainTree"
   configs:
-    secret_key: "{STRIPE_SECRET_KEY}"
-    success_callback: "{IPN_SUCCESS_CALLBACK}"
-    failure_callback: "{IPN_FAILURE_CALLBACK}"
+    token: "sandbox_mf8nfbgp_7jqb4j4oe78ahahbahhabeqj"
+    public_key: "2k6v48t96p9anaqkanbfukak"
+    private_key: "00eb8c46af1fpoqjba9873ma425074c4a6624"
+    merchant_id: "mb7ffspvgb98anh"
+    success_callback: "https://414b31121.ngrok.io/v1/orders/%s/pay"
+    failure_callback: "https://4111221.ngrok.io/v1/orders/%s/pay"
+
+email_service:
+  smtp_host: "example.example.com"
+  smtp_port: 587
+  smtp_username: "no-reply@example.com"
+  smtp_password: "password"
+  from_email_address: "no-reply@example.com"
+  verification_url: "https://414b11111.ngrok.io"

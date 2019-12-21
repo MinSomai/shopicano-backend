@@ -4,6 +4,7 @@ import (
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/config"
 	"github.com/shopicano/shopicano-backend/log"
+	"github.com/shopicano/shopicano-backend/machinery"
 	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
 	"github.com/shopicano/shopicano-backend/server"
 	"github.com/spf13/cobra"
@@ -20,6 +21,17 @@ var serveCmd = &cobra.Command{
 func preServe(cmd *cobra.Command, args []string) {
 	if err := app.ConnectMinio(); err != nil {
 		log.Log().Errorln("Failed to connect to minio : ", err)
+		os.Exit(-1)
+	}
+
+	if err := machinery.NewRabbitMQConnection(); err != nil {
+		log.Log().Errorln("Failed to connect to rabbitmq : ", err)
+		os.Exit(-1)
+	}
+	go machinery.RunRabbitMQWorker()
+
+	if err := machinery.RegisterRabbitMQTasks(); err != nil {
+		log.Log().Errorln("Failed to register rabbitmq tasks : ", err)
 		os.Exit(-1)
 	}
 }

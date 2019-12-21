@@ -10,7 +10,7 @@ POST {{dev}}/orders
 POST {{dev}}/payment-gateways/token
 ```
 
-3. Initiate Payment with callback from client with,
+3. Initiate Payment with callback from brainTree client with,
 ```text
 callback_url: {{dev}}/orders/{{order_id}}/pay
 ```
