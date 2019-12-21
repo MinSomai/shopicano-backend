@@ -42,6 +42,7 @@ const (
 	UserAlreadyExists                 ErrorCode = "409008"
 	ProductAlreadyExists              ErrorCode = "409009"
 	AdditionalChargeAlreadyExists     ErrorCode = "409010"
+	PaymentAlreadyProcessed           ErrorCode = "409011"
 	UserHasAStore                     ErrorCode = "403001"
 	UserSignUpDisabled                ErrorCode = "403002"
 	StoreCreationDisabled             ErrorCode = "403003"

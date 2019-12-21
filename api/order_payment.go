@@ -45,7 +45,7 @@ func payOrder(ctx echo.Context) error {
 	if m.Status == models.PaymentCompleted {
 		resp.Title = "Order already paid"
 		resp.Status = http.StatusConflict
-		resp.Code = errors.PaymentProcessingFailed
+		resp.Code = errors.PaymentAlreadyProcessed
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
@@ -159,7 +159,7 @@ func generatePayNonce(ctx echo.Context) error {
 	if m.Status == models.PaymentCompleted {
 		resp.Title = "Order already paid"
 		resp.Status = http.StatusConflict
-		resp.Code = errors.PaymentProcessingFailed
+		resp.Code = errors.PaymentAlreadyProcessed
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
