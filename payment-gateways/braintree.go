@@ -10,6 +10,10 @@ import (
 )
 
 const (
+	BrainTreePaymentGatewayName = "brainTree"
+)
+
+const (
 	Sale BrainTreeTransactionType = "sale"
 )
 
@@ -38,7 +42,7 @@ func NewBrainTreePaymentGateway(cfg map[string]interface{}) (*brainTreePaymentGa
 }
 
 func (bt *brainTreePaymentGateway) GetName() string {
-	return "brainTree"
+	return BrainTreePaymentGatewayName
 }
 
 func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error) {

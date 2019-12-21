@@ -28,6 +28,7 @@ func (os *OrderRepositoryImpl) Create(db *gorm.DB, o *models.Order) error {
 func (os *OrderRepositoryImpl) UpdatePaymentInfo(db *gorm.DB, o *models.OrderDetailsView) error {
 	order := models.Order{}
 	if err := db.Table(order.TableName()).
+		Where("id = ?", o.ID).
 		Select("nonce, transaction_id, is_paid, status, paid_at").
 		Updates(map[string]interface{}{
 			"nonce":          o.Nonce,
@@ -35,7 +36,7 @@ func (os *OrderRepositoryImpl) UpdatePaymentInfo(db *gorm.DB, o *models.OrderDet
 			"is_paid":        o.IsPaid,
 			"status":         o.Status,
 			"paid_at":        o.PaidAt,
-		}).Where("id = ?", o.ID).Error; err != nil {
+		}).Error; err != nil {
 		return err
 	}
 	return nil

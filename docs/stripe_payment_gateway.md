@@ -1,4 +1,4 @@
-# BrainTree payment processing flow
+# Stripe payment processing flow
 
 1. Create Order,
 ```text

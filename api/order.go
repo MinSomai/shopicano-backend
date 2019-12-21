@@ -14,11 +14,12 @@ import (
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 func RegisterOrderRoutes(g *echo.Group) {
 	g.POST("/:order_id/pay/", payOrder)
+	g.GET("/:order_id/pay/", payOrder)
+	g.POST("/:order_id/nonce/", generatePayNonce)
 
 	func(g echo.Group) {
 		g.Use(middlewares.MustBeUserOrStoreStaffWithStoreActivation)
@@ -289,47 +290,6 @@ func getOrder(ctx echo.Context) error {
 	return resp.ServerJSON(ctx)
 }
 
-func getOrderWithStore(ctx echo.Context) error {
-	//storeID := ctx.Get(utils.StoreID).(string)
-	//
-	//c, err := validateCreateCollection(ctx)
-	//
-	//resp := core.Response{}
-	//
-	//if err != nil {
-	//	resp.Title = "Invalid data"
-	//	resp.Status = http.StatusUnprocessableEntity
-	//	resp.Code = errors.CollectionCreationDataInvalid
-	//	resp.Errors = err
-	//	return resp.ServerJSON(ctx)
-	//}
-	//
-	//c.StoreID = storeID
-	//
-	//cu := NewCollectionRepository()
-	//if err := cu.CreateCollection(c); err != nil {
-	//	msg, ok := errors.IsDuplicateKeyError(err)
-	//	if ok {
-	//		resp.Title = msg
-	//		resp.Status = http.StatusConflict
-	//		resp.Code = errors.CollectionAlreadyExists
-	//		resp.Errors = err
-	//		return resp.ServerJSON(ctx)
-	//	}
-	//
-	//	resp.Title = "Database query failed"
-	//	resp.Status = http.StatusInternalServerError
-	//	resp.Code = errors.DatabaseQueryFailed
-	//	resp.Errors = err
-	//	return resp.ServerJSON(ctx)
-	//}
-	//
-	//resp.Status = http.StatusCreated
-	//resp.Data = c
-	//return resp.ServerJSON(ctx)
-	return nil
-}
-
 func listOrders(ctx echo.Context) error {
 	pageQ := ctx.Request().URL.Query().Get("page")
 	limitQ := ctx.Request().URL.Query().Get("limit")
@@ -394,79 +354,4 @@ func searchOrders(ctx echo.Context, query string, page, limit int64, isPublic bo
 		return ou.Search(db, query, ctx.Get(utils.UserID).(string), int(from), int(limit))
 	}
 	return ou.SearchAsStoreStuff(db, query, ctx.Get(utils.StoreID).(string), int(from), int(limit))
-}
-
-func payOrder(ctx echo.Context) error {
-	orderID := ctx.Param("order_id")
-
-	resp := core.Response{}
-
-	db := app.DB()
-
-	ou := data.NewOrderRepository()
-	m, err := ou.GetDetails(db, orderID)
-	if err != nil {
-		resp.Title = "Order not found"
-		resp.Status = http.StatusNotFound
-		resp.Code = errors.OrderNotFound
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	switch m.PaymentGateway {
-	case "brainTree":
-		return processBrainTree(ctx, m)
-	}
-	return nil
-}
-
-type resBrainTreeNonce struct {
-	Nonce *string `json:"nonce"`
-}
-
-func processBrainTree(ctx echo.Context, o *models.OrderDetailsView) error {
-	resp := core.Response{}
-
-	db := app.DB()
-	or := data.NewOrderRepository()
-
-	body := resBrainTreeNonce{}
-	if err := ctx.Bind(&body); err != nil {
-		resp.Title = "Invalid data"
-		resp.Status = http.StatusUnprocessableEntity
-		resp.Code = errors.OrderPaymentDataInvalid
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	o.Nonce = body.Nonce
-
-	res, err := payment_gateways.GetActivePaymentGateway().Pay(o)
-	if err != nil {
-		resp.Title = "Failed to process payment"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.PaymentProcessingFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	now := time.Now().UTC()
-	o.TransactionID = &res.Result
-	o.Status = models.PaymentCompleted
-	o.PaidAt = &now
-	o.IsPaid = true
-
-	if err := or.UpdatePaymentInfo(db, o); err != nil {
-		resp.Title = "Failed to update payment info"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	resp.Status = http.StatusOK
-	resp.Data = map[string]interface{}{
-		"transaction_id": res.Result,
-	}
-	return resp.ServerJSON(ctx)
 }

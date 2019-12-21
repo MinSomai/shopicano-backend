@@ -16,6 +16,7 @@ require (
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
+	github.com/stripe/stripe-go v68.3.0+incompatible
 	github.com/teris-io/shortid v0.0.0-20171029131806-771a37caa5cf
 	github.com/ugorji/go v1.1.4
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc
