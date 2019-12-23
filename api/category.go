@@ -26,6 +26,7 @@ func RegisterCategoryRoutes(g *echo.Group) {
 		g.POST("/", createCategory)
 		g.DELETE("/:category_id/", deleteCategory)
 		g.PATCH("/:category_id/", updateCategory)
+		g.GET("/:category_id/", getCategory)
 	}(g)
 }
 
@@ -213,6 +214,37 @@ func updateCategory(ctx echo.Context) error {
 	c.UpdatedAt = time.Now().UTC()
 
 	if err := cu.Update(db, c); err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = c
+	return resp.ServerJSON(ctx)
+}
+
+func getCategory(ctx echo.Context) error {
+	categoryID := ctx.Param("category_id")
+	storeID := ctx.Get(utils.StoreID).(string)
+
+	resp := core.Response{}
+
+	db := app.DB()
+	cu := data.NewCategoryRepository()
+
+	c, err := cu.Get(db, storeID, categoryID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Category not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.CategoryNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed

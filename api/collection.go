@@ -27,6 +27,7 @@ func RegisterCollectionRoutes(g *echo.Group) {
 		g.POST("/", createCollection)
 		g.DELETE("/:collection_id/", deleteCollection)
 		g.PATCH("/:collection_id/", updateCollection)
+		g.GET("/:collection_id/", getCollection)
 	}(g)
 }
 
@@ -68,70 +69,6 @@ func createCollection(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusCreated
-	resp.Data = c
-	return resp.ServerJSON(ctx)
-}
-
-func updateCollection(ctx echo.Context) error {
-	collectionID := ctx.Param("collection_id")
-	storeID := ctx.Get(utils.StoreID).(string)
-
-	pld, err := validators.ValidateUpdateCollection(ctx)
-
-	resp := core.Response{}
-
-	if err != nil {
-		resp.Title = "Invalid data"
-		resp.Status = http.StatusUnprocessableEntity
-		resp.Code = errors.CollectionCreationDataInvalid
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	db := app.DB()
-	cu := data.NewCollectionRepository()
-
-	c, err := cu.Get(db, storeID, collectionID)
-	if err != nil {
-		if errors.IsRecordNotFoundError(err) {
-			resp.Title = "Collection not found"
-			resp.Status = http.StatusNotFound
-			resp.Code = errors.CollectionNotFound
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
-		}
-
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	if pld.Name != nil {
-		c.Name = *pld.Name
-	}
-	if pld.Description != nil {
-		c.Description = *pld.Description
-	}
-	if pld.Image != nil {
-		c.Image = *pld.Image
-	}
-	if pld.IsPublished != nil {
-		c.IsPublished = *pld.IsPublished
-	}
-
-	c.UpdatedAt = time.Now().UTC()
-
-	if err := cu.Update(db, c); err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	resp.Status = http.StatusOK
 	resp.Data = c
 	return resp.ServerJSON(ctx)
 }
@@ -224,4 +161,99 @@ func fetchCollections(ctx echo.Context, page, limit int64, isPublic bool) ([]mod
 		return cu.List(db, int(from), int(limit))
 	}
 	return cu.ListAsStoreStuff(db, ctx.Get(utils.StoreID).(string), int(from), int(limit))
+}
+
+func updateCollection(ctx echo.Context) error {
+	collectionID := ctx.Param("collection_id")
+	storeID := ctx.Get(utils.StoreID).(string)
+
+	pld, err := validators.ValidateUpdateCollection(ctx)
+
+	resp := core.Response{}
+
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.CollectionCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB()
+	cu := data.NewCollectionRepository()
+
+	c, err := cu.Get(db, storeID, collectionID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Collection not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.CollectionNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if pld.Name != nil {
+		c.Name = *pld.Name
+	}
+	if pld.Description != nil {
+		c.Description = *pld.Description
+	}
+	if pld.Image != nil {
+		c.Image = *pld.Image
+	}
+	if pld.IsPublished != nil {
+		c.IsPublished = *pld.IsPublished
+	}
+
+	c.UpdatedAt = time.Now().UTC()
+
+	if err := cu.Update(db, c); err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = c
+	return resp.ServerJSON(ctx)
+}
+
+func getCollection(ctx echo.Context) error {
+	collectionID := ctx.Param("collection_id")
+	storeID := ctx.Get(utils.StoreID).(string)
+
+	resp := core.Response{}
+
+	db := app.DB()
+	cu := data.NewCollectionRepository()
+
+	c, err := cu.Get(db, storeID, collectionID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Collection not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.CollectionNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = c
+	return resp.ServerJSON(ctx)
 }
