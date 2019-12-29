@@ -243,8 +243,8 @@ func (pu *ProductRepositoryImpl) Stats(db *gorm.DB, from, limit int) ([]helpers.
 	oi := models.OrderedItem{}
 
 	if err := db.Table(fmt.Sprintf("%s AS p", p.TableName())).
-		Select("p.id AS id, p.name AS name, p.stock AS stock, p.price AS price, p.image AS image, p.description AS description, COUNT(p.id) AS number_of_sells").
-		Joins(fmt.Sprintf("JOIN %s AS oi ON p.id = oi.product_id", oi.TableName())).
+		Select("p.id AS id, p.name AS name, p.stock AS stock, p.price AS price, p.image AS image, p.description AS description, COUNT(oi.product_id) AS number_of_sells").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS oi ON p.id = oi.product_id", oi.TableName())).
 		Group("p.id, p.name, p.stock, p.price, p.image, p.description").
 		Order("number_of_sells DESC").
 		Offset(from).
@@ -267,8 +267,8 @@ func (pu *ProductRepositoryImpl) StatsAsStoreStuff(db *gorm.DB, storeID string, 
 	oi := models.OrderedItem{}
 
 	if err := db.Table(fmt.Sprintf("%s AS p", p.TableName())).
-		Select("p.id AS id, p.name AS name, p.stock AS stock, p.price AS price, p.image AS image, p.description AS description, COUNT(p.id) AS number_of_sells").
-		Joins(fmt.Sprintf("JOIN %s AS oi ON p.id = oi.product_id", oi.TableName())).
+		Select("p.id AS id, p.name AS name, p.stock AS stock, p.price AS price, p.image AS image, p.description AS description, COUNT(oi.product_id) AS number_of_sells").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS oi ON p.id = oi.product_id", oi.TableName())).
 		Group("p.id, p.name, p.stock, p.price, p.image, p.description").
 		Order("number_of_sells DESC").
 		Offset(from).
