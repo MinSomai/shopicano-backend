@@ -89,15 +89,6 @@ func initCmd(cmd *cobra.Command, args []string) {
 		log.Log().Errorln(err)
 		return
 	}
-	stUser := models.StorePermission{
-		ID:         values.UserGroupID,
-		Permission: models.UserPerm,
-	}
-	if err := tx.Table(stUser.TableName()).Create(&stUser).Error; err != nil {
-		tx.Rollback()
-		log.Log().Errorln(err)
-		return
-	}
 
 	password, _ := utils.GeneratePassword("admin")
 

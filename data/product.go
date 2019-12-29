@@ -2,6 +2,7 @@ package data
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/shopicano/shopicano-backend/helpers"
 	"github.com/shopicano/shopicano-backend/models"
 )
 
@@ -17,4 +18,6 @@ type ProductRepository interface {
 	GetDetails(db *gorm.DB, productID string) (*models.ProductDetails, error)
 	GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.ProductDetailsInternal, error)
 	GetForOrder(db *gorm.DB, storeID, productID string, quantity int) (*models.Product, error)
+	StatsAsStoreStuff(db *gorm.DB, storeID string, offset, limit int) ([]helpers.ProductStats, error)
+	Stats(db *gorm.DB, offset, limit int) ([]helpers.ProductStats, error)
 }
