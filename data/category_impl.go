@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/shopicano/shopicano-backend/helpers"
 	"github.com/shopicano/shopicano-backend/models"
 	"strings"
 )
@@ -122,4 +123,55 @@ func (cu *CategoryRepositoryImpl) Update(db *gorm.DB, c *models.Category) error 
 		return err
 	}
 	return nil
+}
+
+func (cu *CategoryRepositoryImpl) Stats(db *gorm.DB, from, limit int) ([]helpers.CategoryStats, error) {
+	var stats []helpers.CategoryStats
+
+	c := models.Category{}
+	p := models.Product{}
+	oi := models.OrderedItem{}
+
+	if err := db.Table(fmt.Sprintf("%s AS c", c.TableName())).
+		Select("c.id AS id, c.name AS name, c.image AS image, c.description AS description, COALESCE(SUM(oi.quantity), 0) AS number_of_sells").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS p ON c.id = p.category_id", p.TableName())).
+		Joins(fmt.Sprintf("LEFT JOIN %s AS oi ON oi.product_id = p.id", oi.TableName())).
+		Group("c.id, c.name, c.image, c.description").
+		Order("number_of_sells DESC").
+		Offset(from).
+		Limit(limit).
+		Find(&stats).Error; err != nil {
+		return nil, err
+	}
+
+	if stats == nil {
+		stats = []helpers.CategoryStats{}
+	}
+
+	return stats, nil
+}
+
+func (cu *CategoryRepositoryImpl) StatsAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]helpers.CategoryStats, error) {
+	var stats []helpers.CategoryStats
+
+	p := models.Product{}
+	oi := models.OrderedItem{}
+
+	if err := db.Table(fmt.Sprintf("%s AS p", p.TableName())).
+		Select("c.id AS id, c.name AS name, c.image AS image, c.description AS description, COALESCE(SUM(oi.quantity), 0) AS number_of_sells").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS p ON c.id = p.category_id", p.TableName())).
+		Joins(fmt.Sprintf("LEFT JOIN %s AS oi ON oi.product_id = p.id", oi.TableName())).
+		Group("c.id, c.name, c.image, c.description").
+		Order("number_of_sells DESC").
+		Offset(from).
+		Limit(limit).
+		Find(&stats, "p.store_id = ?", storeID).Error; err != nil {
+		return nil, err
+	}
+
+	if stats == nil {
+		stats = []helpers.CategoryStats{}
+	}
+
+	return stats, nil
 }

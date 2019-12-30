@@ -2,6 +2,7 @@ package data
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/shopicano/shopicano-backend/helpers"
 	"github.com/shopicano/shopicano-backend/models"
 )
 
@@ -14,4 +15,6 @@ type CategoryRepository interface {
 	Delete(db *gorm.DB, storeID, categoryID string) error
 	Get(db *gorm.DB, storeID, categoryID string) (*models.Category, error)
 	Update(db *gorm.DB, c *models.Category) error
+	Stats(db *gorm.DB, from, limit int) ([]helpers.CategoryStats, error)
+	StatsAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]helpers.CategoryStats, error)
 }
