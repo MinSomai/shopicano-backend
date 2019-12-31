@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/shopicano/shopicano-backend/helpers"
 	"github.com/shopicano/shopicano-backend/models"
 	"strings"
 )
@@ -233,4 +234,52 @@ func (pu *ProductRepositoryImpl) GetForOrder(db *gorm.DB, storeID, productID str
 	}
 
 	return &p, nil
+}
+
+func (pu *ProductRepositoryImpl) Stats(db *gorm.DB, from, limit int) ([]helpers.ProductStats, error) {
+	var stats []helpers.ProductStats
+
+	p := models.Product{}
+	oi := models.OrderedItem{}
+
+	if err := db.Table(fmt.Sprintf("%s AS p", p.TableName())).
+		Select("p.id AS id, p.name AS name, p.stock AS stock, p.price AS price, p.image AS image, p.description AS description, COALESCE(SUM(oi.quantity), 0) AS number_of_sells").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS oi ON p.id = oi.product_id", oi.TableName())).
+		Group("p.id, p.name, p.stock, p.price, p.image, p.description").
+		Order("number_of_sells DESC").
+		Offset(from).
+		Limit(limit).
+		Find(&stats).Error; err != nil {
+		return nil, err
+	}
+
+	if stats == nil {
+		stats = []helpers.ProductStats{}
+	}
+
+	return stats, nil
+}
+
+func (pu *ProductRepositoryImpl) StatsAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]helpers.ProductStats, error) {
+	var stats []helpers.ProductStats
+
+	p := models.Product{}
+	oi := models.OrderedItem{}
+
+	if err := db.Table(fmt.Sprintf("%s AS p", p.TableName())).
+		Select("p.id AS id, p.name AS name, p.stock AS stock, p.price AS price, p.image AS image, p.description AS description, COALESCE(SUM(oi.quantity), 0) AS number_of_sells").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS oi ON p.id = oi.product_id", oi.TableName())).
+		Group("p.id, p.name, p.stock, p.price, p.image, p.description").
+		Order("number_of_sells DESC").
+		Offset(from).
+		Limit(limit).
+		Find(&stats, "p.store_id = ?", storeID).Error; err != nil {
+		return nil, err
+	}
+
+	if stats == nil {
+		stats = []helpers.ProductStats{}
+	}
+
+	return stats, nil
 }

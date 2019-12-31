@@ -38,5 +38,9 @@ func ParseBearerToken(ctx echo.Context) (string, error) {
 
 func IsStoreStaff(ctx echo.Context) bool {
 	perm := ctx.Get(StorePermission)
-	return perm != nil && (perm.(models.Permission) == models.ManagerPerm || perm.(models.Permission) == models.AdminPerm)
+	return ctx.Get(StoreID) != nil && perm != nil && (perm.(models.Permission) == models.ManagerPerm || perm.(models.Permission) == models.AdminPerm)
+}
+
+func GetStoreID(ctx echo.Context) string {
+	return ctx.Get(StoreID).(string)
 }

@@ -43,6 +43,7 @@ func registerV1Routes() {
 	ordersGroup := v1.Group("/orders")
 	paymentGroup := v1.Group("/payments")
 	customersGroup := v1.Group("/customers")
+	statsGroup := v1.Group("/stats")
 
 	fsGroup := v1.Group("/fs")
 
@@ -58,4 +59,5 @@ func registerV1Routes() {
 	api.RegisterOrderRoutes(ordersGroup)
 	api.RegisterPaymentRoutes(paymentGroup)
 	api.RegisterCustomerRoutes(customersGroup)
+	api.RegisterStatsRoutes(statsGroup)
 }
