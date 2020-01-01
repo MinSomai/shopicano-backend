@@ -59,8 +59,8 @@ type OrderDetailsView struct {
 	UserID                 string            `json:"user_id"`
 	UserName               string            `json:"user_name"`
 	UserEmail              string            `json:"user_email"`
-	UserPhone              string            `json:"user_phone"`
-	UserPicture            string            `json:"user_picture"`
+	UserPhone              *string           `json:"user_phone,omitempty"`
+	UserPicture            *string           `json:"user_picture,omitempty"`
 }
 
 func (odv *OrderDetailsView) TableName() string {
