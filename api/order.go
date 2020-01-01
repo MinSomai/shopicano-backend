@@ -19,7 +19,6 @@ import (
 func RegisterOrderRoutes(g *echo.Group) {
 	g.POST("/:order_id/pay/", payOrder)
 	g.GET("/:order_id/pay/", payOrder)
-	g.POST("/:order_id/nonce/", generatePayNonce)
 
 	func(g echo.Group) {
 		g.Use(middlewares.MustBeUserOrStoreStaffWithStoreActivation)
@@ -30,6 +29,7 @@ func RegisterOrderRoutes(g *echo.Group) {
 	func(g echo.Group) {
 		g.Use(middlewares.AuthUser)
 		g.POST("/", createOrder)
+		g.POST("/:order_id/nonce/", generatePayNonce)
 	}(*g)
 
 	func(g echo.Group) {
@@ -275,8 +275,17 @@ func getOrder(ctx echo.Context) error {
 
 	db := app.DB()
 
+	var r interface{}
+	var err error
+
 	ou := data.NewOrderRepository()
-	m, err := ou.GetDetails(db, orderID)
+
+	if utils.IsStoreStaff(ctx) {
+		r, err = ou.GetDetailsAsStoreStuff(db, utils.GetStoreID(ctx), orderID)
+	} else {
+		r, err = ou.GetDetailsAsUser(db, utils.GetUserID(ctx), orderID)
+	}
+
 	if err != nil {
 		resp.Title = "Order not found"
 		resp.Status = http.StatusNotFound
@@ -286,7 +295,7 @@ func getOrder(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusOK
-	resp.Data = m
+	resp.Data = r
 	return resp.ServerJSON(ctx)
 }
 

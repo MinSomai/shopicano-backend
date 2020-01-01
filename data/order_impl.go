@@ -49,25 +49,6 @@ func (os *OrderRepositoryImpl) AddOrderedItem(db *gorm.DB, oi *models.OrderedIte
 	return nil
 }
 
-func (os *OrderRepositoryImpl) GetDetails(db *gorm.DB, orderID string) (*models.OrderDetailsView, error) {
-	order := models.OrderDetailsView{}
-	if err := db.Model(&order).First(&order, "id = ?", orderID).Error; err != nil {
-		log.Log().Errorln(err)
-		return nil, err
-	}
-
-	oiv := models.OrderedItemView{}
-
-	var items []models.OrderedItemView
-	if err := db.Model(oiv).Find(&items, "order_id = ?", orderID).Error; err != nil {
-		log.Log().Errorln(err)
-		return nil, err
-	}
-
-	order.Items = items
-	return &order, nil
-}
-
 func (os *OrderRepositoryImpl) List(db *gorm.DB, userID string, offset, limit int) ([]models.OrderDetailsViewExternal, error) {
 	order := models.OrderDetailsViewExternal{}
 	var orders []models.OrderDetailsViewExternal
@@ -192,9 +173,47 @@ func (os *OrderRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, query, storeID st
 	return orders, nil
 }
 
-func (os *OrderRepositoryImpl) GetDetailsExternal(db *gorm.DB, userID, orderID string) (*models.OrderDetailsViewExternal, error) {
-	order := models.OrderDetailsViewExternal{}
+func (os *OrderRepositoryImpl) GetDetails(db *gorm.DB, orderID string) (*models.OrderDetailsView, error) {
+	order := models.OrderDetailsView{}
 	if err := db.Model(&order).First(&order, "id = ?", orderID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	oiv := models.OrderedItemView{}
+
+	var items []models.OrderedItemView
+	if err := db.Model(oiv).Find(&items, "order_id = ?", orderID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	order.Items = items
+	return &order, nil
+}
+
+func (os *OrderRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, orderID string) (*models.OrderDetailsView, error) {
+	order := models.OrderDetailsView{}
+	if err := db.Model(&order).First(&order, "id = ? AND store_id = ?", orderID, storeID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	oiv := models.OrderedItemView{}
+
+	var items []models.OrderedItemView
+	if err := db.Model(oiv).Find(&items, "order_id = ?", orderID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+
+	order.Items = items
+	return &order, nil
+}
+
+func (os *OrderRepositoryImpl) GetDetailsAsUser(db *gorm.DB, userID, orderID string) (*models.OrderDetailsViewExternal, error) {
+	order := models.OrderDetailsViewExternal{}
+	if err := db.Model(&order).First(&order, "id = ? AND user_id = ?", orderID, userID).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}

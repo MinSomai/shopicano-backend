@@ -11,8 +11,8 @@ type OrderDetailsViewExternal struct {
 	PaymentProcessingFee   int64                     `json:"payment_processing_fee"`
 	SubTotal               int64                     `json:"sub_total"`
 	PaymentGateway         string                    `json:"payment_gateway"`
-	Nonce                  *string                   `json:"nonce,omitempty"`          // Private
-	TransactionID          *string                   `json:"transaction_id,omitempty"` //Private
+	Nonce                  *string                   `json:"nonce,omitempty"`
+	TransactionID          *string                   `json:"transaction_id,omitempty"`
 	GrandTotal             int64                     `json:"grand_total"`
 	IsPaid                 bool                      `json:"is_paid"`
 	Status                 OrderStatus               `json:"status"`
@@ -52,6 +52,11 @@ type OrderDetailsViewExternal struct {
 	PaymentMethodName      string                    `json:"payment_method_name"`
 	PaymentMethodIsOffline bool                      `json:"payment_method_is_offline"`
 	Items                  []OrderedItemViewExternal `json:"items"`
+	UserID                 string                    `json:"user_id"`
+	UserName               string                    `json:"user_name"`
+	UserEmail              string                    `json:"user_email"`
+	UserPhone              string                    `json:"user_phone"`
+	UserPicture            string                    `json:"user_picture"`
 }
 
 func (odi *OrderDetailsViewExternal) TableName() string {
