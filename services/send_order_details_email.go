@@ -83,7 +83,7 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 			},
 			Actions: []hermes.Action{
 				{
-					Instructions: "Thanks for using our service. Please,",
+					Instructions: "",
 					Button: hermes.Button{
 						Link:      fmt.Sprintf("%s/v1/orders/%s", config.EmailService().VerificationUrl, order.ID),
 						Color:     "white",
