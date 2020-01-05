@@ -215,14 +215,16 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
-		db.Rollback()
+	if m.PaymentMethodIsOffline {
+		if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
+			db.Rollback()
 
-		resp.Title = "Failed to queue send order details"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.FailedToEnqueueTask
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+			resp.Title = "Failed to queue send order details"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.FailedToEnqueueTask
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
 	}
 
 	if err := db.Commit().Error; err != nil {
