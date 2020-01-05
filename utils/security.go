@@ -44,3 +44,7 @@ func IsStoreStaff(ctx echo.Context) bool {
 func GetStoreID(ctx echo.Context) string {
 	return ctx.Get(StoreID).(string)
 }
+
+func GetUserID(ctx echo.Context) string {
+	return ctx.Get(UserID).(string)
+}

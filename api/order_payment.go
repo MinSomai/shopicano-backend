@@ -6,10 +6,8 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
-	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -19,16 +17,6 @@ func payOrder(ctx echo.Context) error {
 	orderID := ctx.Param("order_id")
 
 	resp := core.Response{}
-
-	b, _ := ioutil.ReadAll(ctx.Request().Body)
-	log.Log().Infoln(string(b))
-	for k, v := range ctx.QueryParams() {
-		log.Log().Infoln(k, " Q<==>Q ", v[0])
-	}
-
-	for _, v := range ctx.ParamNames() {
-		log.Log().Infoln(v, " P<==>P ", ctx.Param(v))
-	}
 
 	db := app.DB()
 

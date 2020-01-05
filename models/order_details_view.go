@@ -56,6 +56,11 @@ type OrderDetailsView struct {
 	PaymentMethodName      string            `json:"payment_method_name"`
 	PaymentMethodIsOffline bool              `json:"payment_method_is_offline"`
 	Items                  []OrderedItemView `json:"items"`
+	UserID                 string            `json:"user_id"`
+	UserName               string            `json:"user_name"`
+	UserEmail              string            `json:"user_email"`
+	UserPhone              *string           `json:"user_phone,omitempty"`
+	UserPicture            *string           `json:"user_picture,omitempty"`
 }
 
 func (odv *OrderDetailsView) TableName() string {
@@ -63,7 +68,8 @@ func (odv *OrderDetailsView) TableName() string {
 }
 
 func (odv *OrderDetailsView) CreateView(tx *gorm.DB) error {
-	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT o.id AS id, o.hash AS hash, o.user_id AS user_id, o.total_vat AS total_vat, o.total_tax AS total_tax,"+
+	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT o.id AS id, o.hash AS hash, o.user_id AS user_id, o.total_vat AS total_vat,"+
+		" o.total_tax AS total_tax, u.name AS user_name, u.email AS user_email, u.phone AS user_phone, u.profile_picture AS user_picture,"+
 		" o.shipping_charge AS shipping_charge, o.payment_processing_fee AS payment_processing_fee, o.sub_total AS sub_total,"+
 		" o.payment_gateway AS payment_gateway, o.nonce AS nonce, o.transaction_id AS transaction_id, o.grand_total AS grand_total, o.is_paid AS is_paid,"+
 		" o.status AS status, o.paid_at AS paid_at, o.confirmed_at AS confirmed_at, o.completed_at AS completed_at, o.created_at AS created_at,"+
@@ -78,6 +84,7 @@ func (odv *OrderDetailsView) CreateView(tx *gorm.DB) error {
 		" LEFT JOIN addresses AS sa ON o.shipping_address_id = sa.id"+
 		" LEFT JOIN addresses AS ba ON o.billing_address_id = ba.id"+
 		" LEFT JOIN stores AS s ON o.store_id = s.id"+
+		" LEFT JOIN users AS u ON o.user_id = u.id"+
 		" LEFT JOIN payment_methods AS pm ON o.payment_method_id = pm.id;", odv.TableName())
 
 	if err := tx.Exec(sql).Error; err != nil {

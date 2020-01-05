@@ -8,7 +8,8 @@ import (
 type OrderRepository interface {
 	Create(db *gorm.DB, o *models.Order) error
 	AddOrderedItem(db *gorm.DB, item *models.OrderedItem) error
-	GetDetailsExternal(db *gorm.DB, userID, orderID string) (*models.OrderDetailsViewExternal, error)
+	GetDetailsAsUser(db *gorm.DB, userID, orderID string) (*models.OrderDetailsViewExternal, error)
+	GetDetailsAsStoreStuff(db *gorm.DB, storeID, orderID string) (*models.OrderDetailsView, error)
 	GetDetails(db *gorm.DB, orderID string) (*models.OrderDetailsView, error)
 	UpdatePaymentInfo(db *gorm.DB, o *models.OrderDetailsView) error
 	List(db *gorm.DB, userID string, offset, limit int) ([]models.OrderDetailsViewExternal, error)
