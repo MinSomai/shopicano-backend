@@ -6,8 +6,8 @@ type Customer struct {
 	Email             string `json:"email"`
 	ProfilePicture    string `json:"profile_picture"`
 	Phone             string `json:"phone"`
-	IsEmailVerified   bool
-	IsPhoneVerified   bool
+	IsEmailVerified   bool   `json:"is_email_verified"`
+	IsPhoneVerified   bool   `json:"is_phone_verified"`
 	StoreID           string `json:"store_id"`
 	NumberOfPurchases int    `json:"number_of_purchases"`
 }

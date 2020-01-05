@@ -27,10 +27,10 @@ func (uu *UserRepositoryImpl) Register(db *gorm.DB, u *models.User) error {
 	return nil
 }
 
-func (uu *UserRepositoryImpl) Login(db *gorm.DB, email, password string) (*models.Session, error) {
+func (uu *UserRepositoryImpl) Login(db *gorm.DB, email, password string) (*models.User, error) {
 	u := models.User{}
 
-	if err := db.Model(&u).Where("email = ? AND status = ?", email, models.UserActive).First(&u).Error; err != nil {
+	if err := db.Model(&u).Where("email = ?", email).First(&u).Error; err != nil {
 		return nil, err
 	}
 
@@ -38,20 +38,14 @@ func (uu *UserRepositoryImpl) Login(db *gorm.DB, email, password string) (*model
 		return nil, gorm.ErrRecordNotFound
 	}
 
-	s := models.Session{
-		ID:           utils.NewUUID(),
-		UserID:       u.ID,
-		AccessToken:  utils.NewToken(),
-		RefreshToken: utils.NewToken(),
-		CreatedAt:    time.Now().UTC(),
-		ExpireOn:     time.Now().Add(time.Hour * 48).Unix(),
-	}
+	return &u, nil
+}
 
+func (uu *UserRepositoryImpl) CreateSession(db *gorm.DB, s *models.Session) error {
 	if err := db.Model(&s).Create(&s).Error; err != nil {
-		return nil, err
+		return err
 	}
-
-	return &s, nil
+	return nil
 }
 
 func (uu *UserRepositoryImpl) Logout(db *gorm.DB, token string) error {
@@ -156,6 +150,15 @@ func (uu *UserRepositoryImpl) Get(db *gorm.DB, userID string) (*models.User, err
 	u := models.User{}
 
 	if err := db.Model(&u).Where("id = ?", userID).First(&u).Error; err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (uu *UserRepositoryImpl) GetByEmail(db *gorm.DB, email string) (*models.User, error) {
+	u := models.User{}
+
+	if err := db.Model(&u).Where("email = ?", email).First(&u).Error; err != nil {
 		return nil, err
 	}
 	return &u, nil

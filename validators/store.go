@@ -6,6 +6,7 @@ import (
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
+	"github.com/shopicano/shopicano-backend/values"
 	"time"
 )
 
@@ -53,4 +54,32 @@ func ValidateCreateStore(ctx echo.Context) (*models.Store, error) {
 	}
 
 	return nil, &ve
+}
+
+func ValidateCreateOrUpdateStoreStaff(ctx echo.Context) (*string, *string, error) {
+	pld := struct {
+		Email        string `json:"email" valid:"required,email"`
+		PermissionID string `json:"permission_id" valid:"required"`
+	}{}
+
+	if err := ctx.Bind(&pld); err != nil {
+		return nil, nil, err
+	}
+
+	ve := errors.ValidationError{}
+
+	ok, err := govalidator.ValidateStruct(&pld)
+	if ok {
+		if pld.PermissionID == values.AdminGroupID || pld.PermissionID == values.ManagerGroupID {
+			return &pld.Email, &pld.PermissionID, nil
+		}
+
+		ve.Add("permission_id", "is invalid")
+	}
+
+	for k, v := range govalidator.ErrorsByField(err) {
+		ve.Add(k, v)
+	}
+
+	return nil, nil, &ve
 }

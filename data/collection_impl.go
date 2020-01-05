@@ -111,3 +111,18 @@ func (cu *CollectionRepositoryImpl) Update(db *gorm.DB, c *models.Collection) er
 	}
 	return nil
 }
+
+func (cu *CollectionRepositoryImpl) AddProducts(db *gorm.DB, cop *models.CollectionOfProduct) error {
+	if err := db.Table(cop.TableName()).Create(cop).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (cu *CollectionRepositoryImpl) RemoveProducts(db *gorm.DB, cop *models.CollectionOfProduct) error {
+	if err := db.Table(cop.TableName()).
+		Delete(cop, "collection_id = ? AND product_id = ?", cop.CollectionID, cop.ProductID).Error; err != nil {
+		return err
+	}
+	return nil
+}

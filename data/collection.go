@@ -14,4 +14,6 @@ type CollectionRepository interface {
 	Delete(db *gorm.DB, storeID, collectionID string) error
 	Get(db *gorm.DB, storeID, collectionID string) (*models.Collection, error)
 	Update(db *gorm.DB, c *models.Collection) error
+	AddProducts(db *gorm.DB, cop *models.CollectionOfProduct) error
+	RemoveProducts(db *gorm.DB, cop *models.CollectionOfProduct) error
 }

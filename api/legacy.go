@@ -14,6 +14,7 @@ import (
 	"github.com/shopicano/shopicano-backend/validators"
 	"github.com/shopicano/shopicano-backend/values"
 	"net/http"
+	"time"
 )
 
 func RegisterLegacyRoutes(g *echo.Group) {
@@ -45,7 +46,7 @@ func login(ctx echo.Context) error {
 	db := app.DB()
 
 	uc := data.NewUserRepository()
-	s, err := uc.Login(db, e, p)
+	u, err := uc.Login(db, e, p)
 
 	if err != nil {
 		log.Log().Errorln(err)
@@ -58,6 +59,31 @@ func login(ctx echo.Context) error {
 			return resp.ServerJSON(ctx)
 		}
 
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if u.Status != models.UserActive {
+		resp.Title = "User isn't active"
+		resp.Status = http.StatusForbidden
+		resp.Code = errors.UserNotActive
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	s := models.Session{
+		ID:           utils.NewUUID(),
+		UserID:       u.ID,
+		AccessToken:  utils.NewToken(),
+		RefreshToken: utils.NewToken(),
+		CreatedAt:    time.Now().UTC(),
+		ExpireOn:     time.Now().Add(time.Hour * 48).Unix(),
+	}
+
+	if err := uc.CreateSession(db, &s); err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed

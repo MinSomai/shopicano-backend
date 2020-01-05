@@ -7,7 +7,8 @@ import (
 
 type UserRepository interface {
 	Register(db *gorm.DB, u *models.User) error
-	Login(db *gorm.DB, email, password string) (*models.Session, error)
+	Login(db *gorm.DB, email, password string) (*models.User, error)
+	CreateSession(db *gorm.DB, s *models.Session) error
 	Logout(db *gorm.DB, token string) error
 	RefreshToken(db *gorm.DB, token string) (*models.Session, error)
 	Update(db *gorm.DB, u *models.User) error
@@ -16,4 +17,5 @@ type UserRepository interface {
 	Get(db *gorm.DB, userID string) (*models.User, error)
 	IsSignUpEnabled(db *gorm.DB) (bool, error)
 	IsStoreCreationEnabled(db *gorm.DB) (bool, error)
+	GetByEmail(db *gorm.DB, email string) (*models.User, error)
 }

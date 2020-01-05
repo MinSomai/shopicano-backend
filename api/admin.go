@@ -424,11 +424,11 @@ func createAdditionalCharge(ctx echo.Context) error {
 	}
 
 	m := &models.AdditionalCharge{
-		ID:          utils.NewUUID(),
-		Name:        req.Name,
-		Amount:      req.Amount,
-		ChargeType:  models.AdditionalChargeType(req.ChargeType),
-		AmountType:  models.AdditionalChargeAmountType(req.AmountType),
+		ID:     utils.NewUUID(),
+		Name:   req.Name,
+		Amount: req.Amount,
+		//ChargeType:  models.AdditionalChargeType(req.ChargeType),
+		//AmountType:  models.AdditionalChargeAmountType(req.AmountType),
 		AmountMin:   req.AmountMin,
 		AmountMax:   req.AmountMax,
 		IsPublished: req.IsPublished,
@@ -496,8 +496,8 @@ func updateAdditionalCharge(ctx echo.Context) error {
 	m.IsPublished = req.IsPublished
 	m.Amount = req.Amount
 	m.AmountMin = req.AmountMin
-	m.AmountType = models.AdditionalChargeAmountType(req.AmountType)
-	m.ChargeType = models.AdditionalChargeType(req.ChargeType)
+	//m.AmountType = models.AdditionalChargeAmountType(req.AmountType)
+	//m.ChargeType = models.AdditionalChargeType(req.ChargeType)
 	m.AmountMax = req.AmountMax
 	m.UpdatedAt = time.Now()
 

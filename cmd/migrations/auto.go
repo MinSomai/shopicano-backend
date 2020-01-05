@@ -23,7 +23,7 @@ func auto(cmd *cobra.Command, args []string) {
 	tables = append(tables, &models.UserPermission{}, &models.User{}, &models.Session{})
 	tables = append(tables, &models.StorePermission{}, &models.Store{}, &models.Staff{})
 	tables = append(tables, &models.ShippingMethod{}, &models.PaymentMethod{}, &models.Settings{})
-	tables = append(tables, &models.Category{}, &models.Collection{}, &models.Product{}, &models.ProductOfCollection{})
+	tables = append(tables, &models.Category{}, &models.Collection{}, &models.Product{}, &models.CollectionOfProduct{})
 	tables = append(tables, &models.Order{}, &models.OrderedItem{})
 	tables = append(tables, &models.AdditionalCharge{}, &models.AdditionalChargeOfProduct{})
 
@@ -38,7 +38,7 @@ func auto(cmd *cobra.Command, args []string) {
 	var tForeignKeys []core.Model
 	tForeignKeys = append(tForeignKeys, &models.Address{}, &models.Category{}, &models.Collection{})
 	tForeignKeys = append(tForeignKeys, &models.Order{}, &models.OrderedItem{})
-	tForeignKeys = append(tForeignKeys, &models.Product{}, &models.ProductOfCollection{})
+	tForeignKeys = append(tForeignKeys, &models.Product{}, &models.CollectionOfProduct{})
 	tForeignKeys = append(tForeignKeys, &models.Settings{}, &models.Store{}, &models.Staff{})
 	tForeignKeys = append(tForeignKeys, &models.User{}, &models.Session{})
 

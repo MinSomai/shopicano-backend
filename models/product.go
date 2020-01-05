@@ -38,25 +38,3 @@ func (p *Product) ForeignKeys() []string {
 		fmt.Sprintf("category_id;%s(id);RESTRICT;RESTRICT", c.TableName()),
 	}
 }
-
-type ProductOfCollection struct {
-	CollectionID string `json:"collection_id" sql:"collection_id" gorm:"primary_key"`
-	ProductID    string `json:"product_id" sql:"product_id" gorm:"primary_key"`
-	StoreID      string `json:"store_id" sql:"store_id" gorm:"primary_key"`
-}
-
-func (cop *ProductOfCollection) TableName() string {
-	return "product_of_collections"
-}
-
-func (cop *ProductOfCollection) ForeignKeys() []string {
-	col := Collection{}
-	p := Product{}
-	s := Store{}
-
-	return []string{
-		fmt.Sprintf("product_id;%s(id);RESTRICT;RESTRICT", p.TableName()),
-		fmt.Sprintf("collection_id;%s(id);RESTRICT;RESTRICT", col.TableName()),
-		fmt.Sprintf("store_id;%s(id);RESTRICT;RESTRICT", s.TableName()),
-	}
-}

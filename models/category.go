@@ -6,14 +6,14 @@ import (
 )
 
 type Category struct {
-	ID          string    `json:"id" sql:"id" gorm:"unique;not null"`
-	Name        string    `json:"name" sql:"name" gorm:"primary_key"`
-	StoreID     string    `json:"-" sql:"store_id" gorm:"primary_key"`
-	Description string    `json:"description" sql:"description" gorm:"not null"`
-	Image       string    `json:"image" sql:"image" gorm:"not null"`
-	IsPublished bool      `json:"is_published" sql:"is_published" gorm:"index"`
-	CreatedAt   time.Time `json:"created_at" sql:"created_at" gorm:"index"`
-	UpdatedAt   time.Time `json:"updated_at" sql:"updated_at"`
+	ID          string    `json:"id" gorm:"column:id;unique;not null"`
+	Name        string    `json:"name" gorm:"column:name;primary_key"`
+	StoreID     string    `json:"-" gorm:"column:store_id;primary_key"`
+	Description string    `json:"description" gorm:"column:description;not null"`
+	Image       string    `json:"image" gorm:"column:image;not null"`
+	IsPublished bool      `json:"is_published" gorm:"column:is_published;index"`
+	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at;index"`
+	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 func (c *Category) TableName() string {

@@ -3,14 +3,43 @@ package services
 import (
 	"fmt"
 	"github.com/go-gomail/gomail"
+	"github.com/matcornic/hermes/v2"
 	"github.com/shopicano/shopicano-backend/config"
 )
 
 func SendSignUpVerificationEmail(name, email, userID, verificationToken string) error {
-	body := fmt.Sprintf(`Hello %s,<br><br>`+
-		`Please <a href="%s/v1/email-verification?uid=%s&token=%s">click here to verify your email.</a><br><br><br>`+
-		`With love,<br/>`+
-		`Shopicano Ltd.`, name, config.EmailService().VerificationUrl, userID, verificationToken)
+	h := hermes.Hermes{
+		Product: hermes.Product{
+			Name:      "Shopicano",
+			Link:      "http://shopicano.com",
+			Copyright: "Copyright © 2020 Shopicano. All rights reserved.",
+		},
+	}
+
+	emailTemplate := hermes.Email{
+		Body: hermes.Body{
+			Greeting:  "Hello",
+			Signature: "With Love",
+			Name:      name,
+			Actions: []hermes.Action{
+				{
+					Instructions: "Thanks for using our service. Please,",
+					Button: hermes.Button{
+						Link: fmt.Sprintf("%s/v1/email-verification?uid=%s&token=%s",
+							config.EmailService().VerificationUrl, userID, verificationToken),
+						Color:     "green",
+						Text:      "Activate your account",
+						TextColor: "black",
+					},
+				},
+			},
+		},
+	}
+
+	body, err := h.GenerateHTML(emailTemplate)
+	if err != nil {
+		return err
+	}
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", fmt.Sprintf("%s", config.EmailService().FromEmailAddress))

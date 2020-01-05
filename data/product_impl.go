@@ -109,11 +109,6 @@ func (pu *ProductRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, storeID, query 
 }
 
 func (pu *ProductRepositoryImpl) Delete(db *gorm.DB, storeID, productID string) error {
-	poc := models.ProductOfCollection{}
-	if err := db.Table(poc.TableName()).Where("store_id = ? AND product_id = ?", storeID, productID).Delete(&poc).Error; err != nil {
-		return err
-	}
-
 	p := models.Product{}
 	if err := db.Table(p.TableName()).
 		Where("store_id = ? AND id = ?", storeID, productID).
@@ -148,10 +143,10 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 		return nil, err
 	}
 
-	poc := models.ProductOfCollection{}
 	c := models.Collection{}
-	var collections []models.CollectionDetails
-	if err := db.Table(fmt.Sprintf("%s AS poc", poc.TableName())).
+	cop := models.CollectionOfProduct{}
+	var collections []models.Collection
+	if err := db.Table(fmt.Sprintf("%s AS poc", cop.TableName())).
 		Select("c.id, c.name, c.description").
 		Joins(fmt.Sprintf("JOIN %s AS c ON poc.collection_id = c.id", c.TableName())).
 		Where("poc.product_id = ?", productID).
@@ -161,7 +156,7 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 
 	acp := models.AdditionalChargeOfProduct{}
 	ac := models.AdditionalCharge{}
-	var additionalCharges []models.AdditionalChargeDetails
+	var additionalCharges []models.AdditionalCharge
 	if err := db.Table(fmt.Sprintf("%s AS acp", acp.TableName())).
 		Select("ac.id, ac.name, ac.charge_type, ac.amount, ac.amount_type, ac.amount_max, ac.amount_min").
 		Joins(fmt.Sprintf("JOIN %s AS ac ON acp.additional_charge_id = ac.id", ac.TableName())).
@@ -191,10 +186,10 @@ func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID
 		return nil, err
 	}
 
-	poc := models.ProductOfCollection{}
+	cop := models.CollectionOfProduct{}
 	c := models.Collection{}
-	var collections []models.CollectionDetails
-	if err := db.Table(fmt.Sprintf("%s AS poc", poc.TableName())).
+	var collections []models.Collection
+	if err := db.Table(fmt.Sprintf("%s AS poc", cop.TableName())).
 		Select("c.id, c.name, c.description").
 		Joins(fmt.Sprintf("JOIN %s AS c ON poc.collection_id = c.id", c.TableName())).
 		Where("poc.store_id = ? AND poc.product_id = ?", storeID, productID).
@@ -204,7 +199,7 @@ func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID
 
 	acp := models.AdditionalChargeOfProduct{}
 	ac := models.AdditionalCharge{}
-	var additionalCharges []models.AdditionalChargeDetails
+	var additionalCharges []models.AdditionalCharge
 	if err := db.Table(fmt.Sprintf("%s AS acp", acp.TableName())).
 		Select("ac.id, ac.name, ac.charge_type, ac.amount, ac.amount_type, ac.amount_max, ac.amount_min").
 		Joins(fmt.Sprintf("JOIN %s AS ac ON acp.additional_charge_id = ac.id", ac.TableName())).

@@ -21,6 +21,7 @@ const (
 	AdditionalChargeDataInvalid       ErrorCode = "422012"
 	OrderDataInvalid                  ErrorCode = "422013"
 	OrderPaymentDataInvalid           ErrorCode = "422014"
+	AddStoreStaffDataInvalid          ErrorCode = "422015"
 	StoreCreationQueryFailed          ErrorCode = "500001"
 	DatabaseQueryFailed               ErrorCode = "500002"
 	PasswordEncryptionFailed          ErrorCode = "500003"
@@ -67,4 +68,5 @@ const (
 	OrderNotFound                     ErrorCode = "404014"
 	LoginCredentialsInvalid           ErrorCode = "401001"
 	VerificationTokenIsInvalid        ErrorCode = "401002"
+	UserNotActive                     ErrorCode = "401003"
 )
