@@ -10,6 +10,7 @@ import (
 	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
+	"github.com/shopicano/shopicano-backend/queue"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -210,6 +211,16 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		resp.Title = "Order not found"
 		resp.Status = http.StatusNotFound
 		resp.Code = errors.OrderNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to queue send order details"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.FailedToEnqueueTask
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}

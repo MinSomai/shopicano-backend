@@ -4,18 +4,11 @@ import (
 	"fmt"
 	"github.com/go-gomail/gomail"
 	"github.com/matcornic/hermes/v2"
+	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/config"
 )
 
 func SendSignUpVerificationEmail(name, email, userID, verificationToken string) error {
-	h := hermes.Hermes{
-		Product: hermes.Product{
-			Name:      "Shopicano",
-			Link:      "http://shopicano.com",
-			Copyright: "Copyright © 2020 Shopicano. All rights reserved.",
-		},
-	}
-
 	emailTemplate := hermes.Email{
 		Body: hermes.Body{
 			Greeting:  "Hello",
@@ -36,7 +29,7 @@ func SendSignUpVerificationEmail(name, email, userID, verificationToken string) 
 		},
 	}
 
-	body, err := h.GenerateHTML(emailTemplate)
+	body, err := app.Hermes().GenerateHTML(emailTemplate)
 	if err != nil {
 		return err
 	}
