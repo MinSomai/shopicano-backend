@@ -37,6 +37,14 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 	// Tax
 	var taxRows []hermes.Entry
 	taxRows = append(taxRows, hermes.Entry{
+		Key:   "Item",
+		Value: "",
+	})
+	taxRows = append(taxRows, hermes.Entry{
+		Key:   "Quantity",
+		Value: "",
+	})
+	taxRows = append(taxRows, hermes.Entry{
 		Key:   "Price",
 		Value: "Tax",
 	})
@@ -49,6 +57,14 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 	// Vat
 	var vatRows []hermes.Entry
 	vatRows = append(vatRows, hermes.Entry{
+		Key:   "Item",
+		Value: "",
+	})
+	vatRows = append(vatRows, hermes.Entry{
+		Key:   "Quantity",
+		Value: "",
+	})
+	vatRows = append(vatRows, hermes.Entry{
 		Key:   "Price",
 		Value: "Vat",
 	})
@@ -60,6 +76,14 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 
 	// Grand Total
 	var rows []hermes.Entry
+	rows = append(rows, hermes.Entry{
+		Key:   "Item",
+		Value: "",
+	})
+	rows = append(rows, hermes.Entry{
+		Key:   "Quantity",
+		Value: "",
+	})
 	rows = append(rows, hermes.Entry{
 		Key:   "Price",
 		Value: "Grand Total",
