@@ -46,7 +46,7 @@ type Staff struct {
 	UserID       string `json:"user_id" sql:"user_id" gorm:"primary_key"`
 	StoreID      string `json:"store_id" sql:"store_id" gorm:"primary_key"`
 	PermissionID string `json:"permission_id" sql:"permission_id" gorm:"primary_key"`
-	IsCreator    bool   `json:"is_creator" sql:"is_creator" gorm:"not null;index"`
+	IsCreator    bool   `json:"is_creator" sql:"is_creator" gorm:"index"`
 }
 
 func (sf *Staff) TableName() string {

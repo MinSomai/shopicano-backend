@@ -146,13 +146,23 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 	c := models.Collection{}
 	cop := models.CollectionOfProduct{}
 	var collections []models.Collection
-	if err := db.Table(fmt.Sprintf("%s AS poc", cop.TableName())).
+	if err := db.Table(fmt.Sprintf("%s AS cop", cop.TableName())).
 		Select("c.id, c.name, c.description").
-		Joins(fmt.Sprintf("JOIN %s AS c ON poc.collection_id = c.id", c.TableName())).
-		Where("poc.product_id = ?", productID).
+		Joins(fmt.Sprintf("JOIN %s AS c ON cop.collection_id = c.id", c.TableName())).
+		Where("cop.product_id = ?", productID).
 		Scan(&collections).Error; err != nil {
 		return nil, err
 	}
+
+	a := models.ProductAttribute{}
+	var attributes []models.ProductAttribute
+	if err := db.Table(fmt.Sprintf("%s AS pa", a.TableName())).
+		Select("pa.key AS key, pa.value AS value").
+		Where("pa.product_id = ?", productID).
+		Scan(&attributes).Error; err != nil {
+		return nil, err
+	}
+	ps.Attributes = attributes
 
 	acp := models.AdditionalChargeOfProduct{}
 	ac := models.AdditionalCharge{}
@@ -189,13 +199,23 @@ func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID
 	cop := models.CollectionOfProduct{}
 	c := models.Collection{}
 	var collections []models.Collection
-	if err := db.Table(fmt.Sprintf("%s AS poc", cop.TableName())).
+	if err := db.Table(fmt.Sprintf("%s AS cop", cop.TableName())).
 		Select("c.id, c.name, c.description").
-		Joins(fmt.Sprintf("JOIN %s AS c ON poc.collection_id = c.id", c.TableName())).
-		Where("poc.store_id = ? AND poc.product_id = ?", storeID, productID).
+		Joins(fmt.Sprintf("JOIN %s AS c ON cop.collection_id = c.id", c.TableName())).
+		Where("c.store_id = ? AND cop.product_id = ?", storeID, productID).
 		Scan(&collections).Error; err != nil {
 		return nil, err
 	}
+
+	a := models.ProductAttribute{}
+	var attributes []models.ProductAttribute
+	if err := db.Table(fmt.Sprintf("%s AS pa", a.TableName())).
+		Select("pa.key AS key, pa.value AS value").
+		Where("pa.product_id = ?", productID).
+		Scan(&attributes).Error; err != nil {
+		return nil, err
+	}
+	ps.Attributes = attributes
 
 	acp := models.AdditionalChargeOfProduct{}
 	ac := models.AdditionalCharge{}
@@ -277,4 +297,19 @@ func (pu *ProductRepositoryImpl) StatsAsStoreStuff(db *gorm.DB, storeID string, 
 	}
 
 	return stats, nil
+}
+
+func (pu *ProductRepositoryImpl) AddAttribute(db *gorm.DB, v *models.ProductAttribute) error {
+	if err := db.Table(v.TableName()).Create(v).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pu *ProductRepositoryImpl) RemoveAttribute(db *gorm.DB, productID, attributeKey string) error {
+	v := models.ProductAttribute{}
+	if err := db.Table(v.TableName()).Delete(&v, "product_id = ? AND key = ?", productID, attributeKey).Error; err != nil {
+		return err
+	}
+	return nil
 }

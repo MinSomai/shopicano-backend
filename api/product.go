@@ -29,6 +29,8 @@ func RegisterProductRoutes(g *echo.Group) {
 		g.POST("/", createProduct)
 		g.PATCH("/:product_id/", updateProduct)
 		g.DELETE("/:product_id/", deleteProduct)
+		g.PUT("/:product_id/attributes/", addProductAttribute)
+		g.DELETE("/:product_id/attributes/:attribute_key/", deleteProductAttribute)
 	}(g)
 }
 
@@ -323,4 +325,92 @@ func searchProducts(ctx echo.Context, query string, page int64, limit int64, isP
 		return pu.Search(db, query, int(from), int(limit))
 	}
 	return pu.SearchAsStoreStuff(db, query, ctx.Get(utils.StoreID).(string), int(from), int(limit))
+}
+
+func addProductAttribute(ctx echo.Context) error {
+	storeID := ctx.Get(utils.StoreID).(string)
+	productID := ctx.Param("product_id")
+
+	resp := core.Response{}
+
+	req, err := validators.ValidateAddProductAttribute(ctx)
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.ProductAttributeCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB()
+	pu := data.NewProductRepository()
+
+	p, err := pu.GetAsStoreStuff(db, storeID, productID)
+	if err != nil {
+		resp.Title = "Product not found"
+		resp.Status = http.StatusNotFound
+		resp.Code = errors.ProductNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	v := models.ProductAttribute{
+		ProductID: p.ID,
+		Key:       req.Key,
+		Value:     req.Value,
+	}
+
+	err = pu.AddAttribute(db, &v)
+	if err != nil {
+		msg, ok := errors.IsDuplicateKeyError(err)
+		if ok {
+			resp.Title = msg
+			resp.Status = http.StatusConflict
+			resp.Code = errors.ProductAttributeAlreadyExists
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Title = "Product attribute added"
+	return resp.ServerJSON(ctx)
+}
+
+func deleteProductAttribute(ctx echo.Context) error {
+	storeID := ctx.Get(utils.StoreID).(string)
+	productID := ctx.Param("product_id")
+	attributeKey := ctx.Param("attribute_key")
+
+	resp := core.Response{}
+
+	db := app.DB()
+	pu := data.NewProductRepository()
+
+	p, err := pu.GetAsStoreStuff(db, storeID, productID)
+	if err != nil {
+		resp.Title = "Product not found"
+		resp.Status = http.StatusNotFound
+		resp.Code = errors.ProductNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	err = pu.RemoveAttribute(db, p.ID, attributeKey)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusNoContent
+	return resp.ServerJSON(ctx)
 }

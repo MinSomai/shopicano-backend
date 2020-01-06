@@ -3,15 +3,15 @@ package models
 import "time"
 
 type AdditionalCharge struct {
-	ID           string    `json:"id" sql:"id" gorm:"primary_key"`
-	Name         string    `json:"name" sql:"name" gorm:"unique"`
-	Amount       int       `json:"amount" sql:"amount"`
-	IsFlatAmount bool      `json:"is_flat_amount" json:"is_flat_amount"`
-	AmountMax    int       `json:"amount_max" sql:"amount_max"`
-	AmountMin    int       `json:"amount_min" sql:"amount_min"`
-	IsPublished  bool      `json:"is_published" sql:"is_published" gorm:"index"`
-	CreatedAt    time.Time `json:"created_at" sql:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" sql:"updated_at"`
+	ID           string    `json:"id" gorm:"column:id;unique_index"`
+	StoreID      string    `json:"store_id" gorm:"column:store_id;primary_key"`
+	Name         string    `json:"name" gorm:"column:name;primary_key"`
+	Amount       int       `json:"amount" gomr:"column:amount"`
+	IsFlatAmount bool      `json:"is_flat_amount" gorm:"column:is_flat_amount"`
+	AmountMax    int       `json:"amount_max" gorm:"column:amount_max"`
+	AmountMin    int       `json:"amount_min" gorm:"column:amount_min"`
+	CreatedAt    time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt    time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 func (ac *AdditionalCharge) TableName() string {
@@ -19,7 +19,7 @@ func (ac *AdditionalCharge) TableName() string {
 }
 
 func (ac *AdditionalCharge) CalculateAdditionalCharge(value int) int {
-	if ac.Amount == 0 {
+	if ac.Amount == 0 || value == 0 {
 		return 0
 	}
 

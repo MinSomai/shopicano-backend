@@ -23,6 +23,7 @@ type ProductDetails struct {
 	UpdatedAt         time.Time          `json:"updated_at"`
 	Collections       []Collection       `json:"collections,omitempty"`
 	AdditionalCharges []AdditionalCharge `json:"additional_charges,omitempty"`
+	Attributes        []ProductAttribute `json:"attributes,omitempty"`
 }
 
 type ProductDetailsInternal struct {
@@ -47,4 +48,5 @@ type ProductDetailsInternal struct {
 	UpdatedAt           time.Time          `json:"updated_at"`
 	Collections         []Collection       `json:"collections,omitempty"`
 	AdditionalCharges   []AdditionalCharge `json:"additional_charges,omitempty"`
+	Attributes          []ProductAttribute `json:"attributes,omitempty"`
 }

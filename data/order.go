@@ -3,6 +3,7 @@ package data
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/models"
+	"time"
 )
 
 type OrderRepository interface {
@@ -16,4 +17,5 @@ type OrderRepository interface {
 	ListAsStoreStuff(db *gorm.DB, storeID string, offset, limit int) ([]models.OrderDetailsViewExternal, error)
 	Search(db *gorm.DB, query, userID string, offset, limit int) ([]models.OrderDetailsView, error)
 	SearchAsStoreStuff(db *gorm.DB, query, storeID string, offset, limit int) ([]models.OrderDetailsView, error)
+	CountByTimeAsStoreStuff(db *gorm.DB, storeID string, from, end time.Time) (int, error)
 }

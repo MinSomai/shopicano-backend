@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
+	"time"
 )
 
 type OrderRepositoryImpl struct {
@@ -228,4 +229,19 @@ func (os *OrderRepositoryImpl) GetDetailsAsUser(db *gorm.DB, userID, orderID str
 
 	order.Items = items
 	return &order, nil
+}
+
+func (os *OrderRepositoryImpl) CountByTimeAsStoreStuff(db *gorm.DB, storeID string, from, end time.Time) (int, error) {
+	order := models.OrderDetailsViewExternal{}
+
+	var count int
+
+	if err := db.Table(order.TableName()).
+		Where("store_id = ? AND (created_at >= ? AND created_at <= ?)", storeID, from, end).
+		Count(&count).Error; err != nil {
+		log.Log().Errorln(err)
+		return 0, err
+	}
+
+	return count, nil
 }

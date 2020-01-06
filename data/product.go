@@ -20,4 +20,6 @@ type ProductRepository interface {
 	GetForOrder(db *gorm.DB, storeID, productID string, quantity int) (*models.Product, error)
 	StatsAsStoreStuff(db *gorm.DB, storeID string, offset, limit int) ([]helpers.ProductStats, error)
 	Stats(db *gorm.DB, offset, limit int) ([]helpers.ProductStats, error)
+	AddAttribute(db *gorm.DB, v *models.ProductAttribute) error
+	RemoveAttribute(db *gorm.DB, productID, attributeKey string) error
 }

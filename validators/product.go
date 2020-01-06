@@ -87,3 +87,29 @@ func ValidateUpdateProduct(ctx echo.Context) (*ReqProductUpdate, error) {
 
 	return nil, &ve
 }
+
+type ReqAddProductAttribute struct {
+	Key   string `json:"key" valid:"required"`
+	Value string `json:"value" valid:"required"`
+}
+
+func ValidateAddProductAttribute(ctx echo.Context) (*ReqAddProductAttribute, error) {
+	pld := ReqAddProductAttribute{}
+
+	if err := ctx.Bind(&pld); err != nil {
+		return nil, err
+	}
+
+	ok, err := govalidator.ValidateStruct(&pld)
+	if ok {
+		return &pld, nil
+	}
+
+	ve := errors.ValidationError{}
+
+	for k, v := range govalidator.ErrorsByField(err) {
+		ve.Add(k, v)
+	}
+
+	return nil, &ve
+}
