@@ -15,6 +15,7 @@ import (
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func RegisterOrderRoutes(g *echo.Group) {
@@ -76,6 +77,8 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	o.PaymentMethodID = pld.PaymentMethodID
 	o.ShippingMethodID = pld.ShippingMethodID
 	o.IsPaid = false
+	o.Status = models.OrderPending
+	o.PaymentStatus = models.PaymentPending
 
 	pu := data.NewProductRepository()
 	ou := data.NewOrderRepository()
@@ -158,8 +161,8 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		availableItems = append(availableItems, oi)
 
 		o.SubTotal += oi.SubTotal
-		o.TotalTax += oi.TotalTax
-		o.TotalVat += oi.TotalVat
+		// TODO :
+		//o.TotalAdditionalCharge += oi.TotalTax
 	}
 
 	if o.ShippingMethodID != nil {
@@ -168,10 +171,9 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 
 	pgName := payment_gateways.GetActivePaymentGateway().GetName()
 
-	o.GrandTotal = o.SubTotal + o.TotalTax + o.TotalVat + o.ShippingCharge
+	o.GrandTotal = o.SubTotal + o.TotalAdditionalCharge + o.ShippingCharge
 	o.PaymentProcessingFee = pm.CalculateProcessingFee(o.GrandTotal)
 	o.PaymentGateway = &pgName
-	o.Status = models.Pending
 
 	err = ou.Create(db, &o)
 	if err != nil {
@@ -225,6 +227,23 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
+	}
+
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   m.ID,
+		Action:    string(models.OrderPending),
+		Details:   "Order has been created",
+		CreatedAt: time.Now(),
+	}
+	if err := ou.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
 	}
 
 	if err := db.Commit().Error; err != nil {

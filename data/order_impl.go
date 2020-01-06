@@ -26,6 +26,13 @@ func (os *OrderRepositoryImpl) Create(db *gorm.DB, o *models.Order) error {
 	return nil
 }
 
+func (os *OrderRepositoryImpl) CreateLog(db *gorm.DB, ol *models.OrderLog) error {
+	if err := db.Table(ol.TableName()).Create(ol).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (os *OrderRepositoryImpl) UpdatePaymentInfo(db *gorm.DB, o *models.OrderDetailsView) error {
 	order := models.Order{}
 	if err := db.Table(order.TableName()).

@@ -5,7 +5,7 @@ import "time"
 type OrderDetailsViewExternal struct {
 	ID                     string                    `json:"id,omitempty"`
 	Hash                   string                    `json:"hash"`
-	TotalVat               int64                     `json:"total_vat"`
+	TotalAdditionalCharge  int64                     `json:"total_additional_charge"`
 	TotalTax               int64                     `json:"total_tax"`
 	ShippingCharge         int64                     `json:"shipping_charge"`
 	PaymentProcessingFee   int64                     `json:"payment_processing_fee"`
@@ -16,9 +16,7 @@ type OrderDetailsViewExternal struct {
 	GrandTotal             int64                     `json:"grand_total"`
 	IsPaid                 bool                      `json:"is_paid"`
 	Status                 OrderStatus               `json:"status"`
-	PaidAt                 *time.Time                `json:"paid_at,omitempty"`
-	ConfirmedAt            *time.Time                `json:"confirmed_at,omitempty"`
-	CompletedAt            *time.Time                `json:"completed_at,omitempty"`
+	PaymentStatus          PaymentStatus             `json:"payment_status"`
 	CreatedAt              *time.Time                `json:"created_at"`
 	UpdatedAt              *time.Time                `json:"updated_at"`
 	ShippingID             *string                   `json:"shipping_id,omitempty"`

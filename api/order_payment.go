@@ -8,6 +8,7 @@ import (
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/models"
 	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
+	"github.com/shopicano/shopicano-backend/utils"
 	"net/http"
 	"time"
 )
@@ -30,7 +31,7 @@ func payOrder(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if m.Status == models.PaymentCompleted {
+	if m.PaymentStatus == models.PaymentCompleted {
 		resp.Title = "Order already paid"
 		resp.Status = http.StatusConflict
 		resp.Code = errors.PaymentAlreadyProcessed
@@ -54,7 +55,7 @@ type resBrainTreeNonce struct {
 func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) error {
 	resp := core.Response{}
 
-	db := app.DB()
+	db := app.DB().Begin()
 	or := data.NewOrderRepository()
 
 	body := resBrainTreeNonce{}
@@ -77,14 +78,39 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 		return resp.ServerJSON(ctx)
 	}
 
-	now := time.Now().UTC()
 	o.TransactionID = &res.Result
-	o.Status = models.PaymentCompleted
-	o.PaidAt = &now
+	o.PaymentStatus = models.PaymentCompleted
 	o.IsPaid = true
 
 	if err := or.UpdatePaymentInfo(db, o); err != nil {
+		db.Rollback()
+
 		resp.Title = "Failed to update payment info"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   o.ID,
+		Action:    string(o.PaymentStatus),
+		Details:   "Payment has been updated using BrainTree",
+		CreatedAt: time.Now(),
+	}
+	if err := or.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
@@ -105,17 +131,41 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 	or := data.NewOrderRepository()
 
 	if ctx.QueryParam("status") == "success" {
-		o.Status = models.PaymentCompleted
-
-		now := time.Now().UTC()
-		o.PaidAt = &now
+		o.PaymentStatus = models.PaymentCompleted
 		o.IsPaid = true
 	} else {
-		o.Status = models.PaymentFailed
+		o.PaymentStatus = models.PaymentFailed
 	}
 
 	if err := or.UpdatePaymentInfo(db, o); err != nil {
+		db.Rollback()
+
 		resp.Title = "Failed to update payment info"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   o.ID,
+		Action:    string(o.PaymentStatus),
+		Details:   "Payment has been updated using Stripe",
+		CreatedAt: time.Now(),
+	}
+	if err := or.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
@@ -144,7 +194,7 @@ func generatePayNonce(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if m.Status == models.PaymentCompleted {
+	if m.PaymentStatus == models.PaymentCompleted {
 		resp.Title = "Order already paid"
 		resp.Status = http.StatusConflict
 		resp.Code = errors.PaymentAlreadyProcessed

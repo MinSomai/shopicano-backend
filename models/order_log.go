@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type OrderLog struct {
 	ID        string    `json:"id" gorm:"column:id;primary_key"`
@@ -12,4 +15,12 @@ type OrderLog struct {
 
 func (ol *OrderLog) TableName() string {
 	return "order_logs"
+}
+
+func (ol *OrderLog) ForeignKeys() []string {
+	o := Order{}
+
+	return []string{
+		fmt.Sprintf("order_id;%s(id);RESTRICT;RESTRICT", o.TableName()),
+	}
 }
