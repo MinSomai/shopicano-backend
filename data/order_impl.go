@@ -43,7 +43,7 @@ func (os *OrderRepositoryImpl) UpdatePaymentInfo(db *gorm.DB, o *models.OrderDet
 			"transaction_id": o.TransactionID,
 			"is_paid":        o.IsPaid,
 			"status":         o.Status,
-			"paid_at":        o.PaidAt,
+			"payment_status": o.PaymentStatus,
 		}).Error; err != nil {
 		return err
 	}
