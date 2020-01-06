@@ -22,7 +22,6 @@ type ReqProductCreate struct {
 	AdditionalImages       []string `json:"additional_images"`
 	AdditionalChargesToAdd []string `json:"additional_charges_to_add"`
 	CollectionsToAdd       []string `json:"collections_to_add"`
-	StoreID                string
 }
 
 func ValidateCreateProduct(ctx echo.Context) (*ReqProductCreate, error) {
@@ -64,7 +63,6 @@ type ReqProductUpdate struct {
 	CollectionsToRemove       []string `json:"collections_to_remove"`
 	AdditionalChargesToAdd    []string `json:"additional_charges_to_add"`
 	AdditionalChargesToRemove []string `json:"additional_charges_to_remove"`
-	StoreID                   string
 }
 
 func ValidateUpdateProduct(ctx echo.Context) (*ReqProductUpdate, error) {

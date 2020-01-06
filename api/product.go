@@ -49,7 +49,6 @@ func createProduct(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	req.StoreID = storeID
 	if req.CategoryID != nil && *req.CategoryID == "" {
 		req.CategoryID = nil
 	}
@@ -67,7 +66,7 @@ func createProduct(ctx echo.Context) error {
 
 	p := models.Product{
 		ID:                  utils.NewUUID(),
-		StoreID:             req.StoreID,
+		StoreID:             storeID,
 		Price:               req.Price,
 		Stock:               req.Stock,
 		Name:                req.Name,
@@ -128,7 +127,6 @@ func updateProduct(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	req.StoreID = storeID
 	if req.CategoryID != nil && *req.CategoryID == "" {
 		req.CategoryID = nil
 	}
@@ -148,7 +146,7 @@ func updateProduct(ctx echo.Context) error {
 		images += strings.TrimSpace(i)
 	}
 
-	p, err := pu.Get(db, productID)
+	p, err := pu.GetAsStoreStuff(db, storeID, productID)
 	if err != nil {
 		resp.Title = "Product not found"
 		resp.Status = http.StatusNotFound
@@ -158,7 +156,6 @@ func updateProduct(ctx echo.Context) error {
 	}
 
 	p.ID = productID
-	p.StoreID = req.StoreID
 	p.Price = req.Price
 	p.Stock = req.Stock
 	p.Name = req.Name
@@ -174,7 +171,7 @@ func updateProduct(ctx echo.Context) error {
 	p.Description = req.Description
 	p.UpdatedAt = time.Now().UTC()
 
-	err = pu.Update(db, productID, p)
+	err = pu.Update(db, p)
 	if err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {

@@ -28,9 +28,10 @@ func (pu *ProductRepositoryImpl) Create(db *gorm.DB, p *models.Product) error {
 	return nil
 }
 
-func (pu *ProductRepositoryImpl) Update(db *gorm.DB, productID string, p *models.Product) error {
+func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 	if err := db.Table(p.TableName()).
 		Select("name, description, is_published, category_id, sku, stock, unit, price, additional_images, image, is_shippable, is_digital, digital_download_link, updated_at").
+		Where("id = ? AND store_id = ?", p.ID, p.StoreID).
 		Updates(map[string]interface{}{
 			"name":                  p.Name,
 			"description":           p.Description,
@@ -128,6 +129,16 @@ func (pu *ProductRepositoryImpl) Get(db *gorm.DB, productID string) (*models.Pro
 	return &p, nil
 }
 
+func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.Product, error) {
+	p := models.Product{}
+	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
+		Where("products.id = ? AND products.store_id = ?", productID, storeID).
+		First(&p).Error; err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
 func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*models.ProductDetails, error) {
 	p := models.Product{}
 	ps := models.ProductDetails{}
@@ -180,7 +191,7 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 	return &ps, nil
 }
 
-func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.ProductDetailsInternal, error) {
+func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.ProductDetailsInternal, error) {
 	p := models.Product{}
 	ps := models.ProductDetailsInternal{}
 	cat := models.Category{}
