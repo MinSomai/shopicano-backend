@@ -5,16 +5,19 @@
 POST {{dev}}/orders
 ```
 
-2. Create ClientToken,
+2. Get ClientToken,
 ```text
-POST {{dev}}/payment-gateways/token
+GET {{dev}}/payments/configs
 ```
 
-3. Initiate Payment with callback from brainTree client with,
+3. Initiate Payment with callbackFunction using brainTree client and on callback function you will get payload with nonce. Send nonce to server.
 ```text
-callback_url: {{dev}}/orders/{{order_id}}/pay
+POST {{dev}}/orders/{{order_id}}/pay
+
+{
+    "nonce": "tokencc_bj_71nryc_6qbzqs_rqbks6_fj2s87_at3"
+}
 ```
 
-4. If payment successful, BrainTree will send the callback to server.
-Once server gets the callback from BrainTree with Nonce, Server will call BrainTree for payment settlement.
+4. If payment is successful, you will get success response from Server.
 Thus the payment flow completes.

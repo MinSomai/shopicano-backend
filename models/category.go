@@ -11,8 +11,8 @@ type Category struct {
 	StoreID     string    `json:"-" gorm:"column:store_id;primary_key"`
 	Description string    `json:"description" gorm:"column:description;not null"`
 	Image       string    `json:"image" gorm:"column:image;not null"`
-	IsPublished bool      `json:"is_published" gorm:"column:is_published;index"`
-	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at;index"`
+	IsPublished bool      `json:"is_published" gorm:"column:is_published;index;not null"`
+	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at;index;not null"`
 	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 

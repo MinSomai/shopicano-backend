@@ -22,27 +22,25 @@ type OrderStatus string
 type PaymentStatus string
 
 type Order struct {
-	ID                    string        `json:"id" gorm:"column:id;primary_key"`
-	Hash                  string        `json:"hash" gorm:"column:hash;unique_index;not null"`
-	UserID                string        `json:"user_id" gorm:"column:user_id;index;not null"`
-	StoreID               string        `json:"store_id" gorm:"column:store_id;index;not null"`
-	ShippingAddressID     *string       `json:"shipping_address_id;omitempty" gorm:"column:shipping_address_id"`
-	BillingAddressID      string        `json:"billing_address_id" gorm:"column:billing_address_id;not null"`
-	PaymentMethodID       string        `json:"payment_method_id" gorm:"column:payment_method_id;not null"`
-	ShippingMethodID      *string       `json:"shipping_method_id;omitempty" gorm:"column:shipping_method_id"`
-	TotalAdditionalCharge int           `json:"total_additional_charge" gomr:"column:total_additional_charge"`
-	ShippingCharge        int           `json:"shipping_charge" gomr:"column:shipping_charge"`
-	PaymentProcessingFee  int           `json:"payment_processing_fee" gorm:"column:payment_processing_fee"`
-	SubTotal              int           `json:"sub_total" gorm:"column:sub_total"`
-	PaymentGateway        *string       `json:"payment_gateway" gorm:"column:payment_gateway"`
-	Nonce                 *string       `json:"nonce" gomr:"column:nonce"`
-	TransactionID         *string       `json:"transaction_id" gorm:"column:transaction_id;unique_index"`
-	GrandTotal            int           `json:"grand_total" gorm:"column:grand_total"`
-	IsPaid                bool          `json:"is_paid" gorm:"column:is_paid"`
-	Status                OrderStatus   `json:"status" gorm:"column:status"`
-	PaymentStatus         PaymentStatus `json:"payment_status" gorm:"column:payment_status"`
-	CreatedAt             time.Time     `json:"created_at" gorm:"column:created_at;index;not null"`
-	UpdatedAt             time.Time     `json:"updated_at" gorm:"column:updated_at"`
+	ID                   string        `json:"id" gorm:"column:id;primary_key"`
+	Hash                 string        `json:"hash" gorm:"column:hash;unique_index;not null"`
+	UserID               string        `json:"user_id" gorm:"column:user_id;index;not null"`
+	StoreID              string        `json:"store_id" gorm:"column:store_id;index;not null"`
+	ShippingAddressID    *string       `json:"shipping_address_id;omitempty" gorm:"column:shipping_address_id"`
+	BillingAddressID     string        `json:"billing_address_id" gorm:"column:billing_address_id;not null"`
+	PaymentMethodID      string        `json:"payment_method_id" gorm:"column:payment_method_id;not null"`
+	ShippingMethodID     *string       `json:"shipping_method_id;omitempty" gorm:"column:shipping_method_id"`
+	ShippingCharge       int           `json:"shipping_charge" gomr:"column:shipping_charge"`
+	PaymentProcessingFee int           `json:"payment_processing_fee" gorm:"column:payment_processing_fee"`
+	SubTotal             int           `json:"sub_total" gorm:"column:sub_total"`
+	PaymentGateway       *string       `json:"payment_gateway" gorm:"column:payment_gateway"`
+	Nonce                *string       `json:"nonce" gomr:"column:nonce"`
+	TransactionID        *string       `json:"transaction_id" gorm:"column:transaction_id;unique_index"`
+	GrandTotal           int           `json:"grand_total" gorm:"column:grand_total"`
+	Status               OrderStatus   `json:"status" gorm:"column:status"`
+	PaymentStatus        PaymentStatus `json:"payment_status" gorm:"column:payment_status"`
+	CreatedAt            time.Time     `json:"created_at" gorm:"column:created_at;index;not null"`
+	UpdatedAt            time.Time     `json:"updated_at" gorm:"column:updated_at"`
 }
 
 func (o *Order) TableName() string {

@@ -37,7 +37,7 @@ func (os *OrderRepositoryImpl) UpdatePaymentInfo(db *gorm.DB, o *models.OrderDet
 	order := models.Order{}
 	if err := db.Table(order.TableName()).
 		Where("id = ?", o.ID).
-		Select("nonce, transaction_id, is_paid, status, paid_at").
+		Select("nonce, transaction_id, is_paid, status, payment_status").
 		Updates(map[string]interface{}{
 			"nonce":          o.Nonce,
 			"transaction_id": o.TransactionID,

@@ -9,8 +9,8 @@ import (
 
 var router = echo.New()
 
-// getRouter returns the api router
-func getRouter() http.Handler {
+// GetRouter returns the api router
+func GetRouter() http.Handler {
 	router.Use(middleware.Logger())
 	//router.Use(middleware.Recover())
 	router.Pre(middleware.AddTrailingSlash())
@@ -44,7 +44,6 @@ func registerV1Routes() {
 	paymentGroup := v1.Group("/payments")
 	customersGroup := v1.Group("/customers")
 	statsGroup := v1.Group("/stats")
-	additionalChargeGroup := v1.Group("/additional-charges")
 
 	fsGroup := v1.Group("/fs")
 
@@ -61,5 +60,4 @@ func registerV1Routes() {
 	api.RegisterPaymentRoutes(paymentGroup)
 	api.RegisterCustomerRoutes(customersGroup)
 	api.RegisterStatsRoutes(statsGroup)
-	api.RegisterAdditionalChargeRoutes(additionalChargeGroup)
 }

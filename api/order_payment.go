@@ -48,7 +48,7 @@ func payOrder(ctx echo.Context) error {
 	return serveInvalidPaymentRequest(ctx)
 }
 
-type resBrainTreeNonce struct {
+type reqBrainTreeNonce struct {
 	Nonce *string `json:"nonce"`
 }
 
@@ -58,7 +58,7 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 	db := app.DB().Begin()
 	or := data.NewOrderRepository()
 
-	body := resBrainTreeNonce{}
+	body := reqBrainTreeNonce{}
 	if err := ctx.Bind(&body); err != nil {
 		resp.Title = "Invalid data"
 		resp.Status = http.StatusUnprocessableEntity

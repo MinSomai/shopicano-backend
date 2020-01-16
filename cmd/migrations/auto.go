@@ -26,7 +26,6 @@ func auto(cmd *cobra.Command, args []string) {
 	tables = append(tables, &models.Category{}, &models.Collection{}, &models.Product{}, &models.CollectionOfProduct{})
 	tables = append(tables, &models.ProductAttribute{}, &models.OrderLog{})
 	tables = append(tables, &models.Order{}, &models.OrderedItem{})
-	tables = append(tables, &models.AdditionalCharge{}, &models.AdditionalChargeOfProduct{})
 
 	for _, t := range tables {
 		if err := tx.AutoMigrate(t).Error; err != nil {

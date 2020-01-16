@@ -173,21 +173,9 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 		Scan(&attributes).Error; err != nil {
 		return nil, err
 	}
-	ps.Attributes = attributes
-
-	acp := models.AdditionalChargeOfProduct{}
-	ac := models.AdditionalCharge{}
-	var additionalCharges []models.AdditionalCharge
-	if err := db.Table(fmt.Sprintf("%s AS acp", acp.TableName())).
-		Select("ac.id, ac.name, ac.charge_type, ac.amount, ac.amount_type, ac.amount_max, ac.amount_min").
-		Joins(fmt.Sprintf("JOIN %s AS ac ON acp.additional_charge_id = ac.id", ac.TableName())).
-		Where("acp.product_id = ?", productID).
-		Scan(&additionalCharges).Error; err != nil {
-		return nil, err
-	}
 
 	ps.Collections = collections
-	ps.AdditionalCharges = additionalCharges
+	ps.Attributes = attributes
 	return &ps, nil
 }
 
@@ -228,19 +216,7 @@ func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, pr
 	}
 	ps.Attributes = attributes
 
-	acp := models.AdditionalChargeOfProduct{}
-	ac := models.AdditionalCharge{}
-	var additionalCharges []models.AdditionalCharge
-	if err := db.Table(fmt.Sprintf("%s AS acp", acp.TableName())).
-		Select("ac.id, ac.name, ac.charge_type, ac.amount, ac.amount_type, ac.amount_max, ac.amount_min").
-		Joins(fmt.Sprintf("JOIN %s AS ac ON acp.additional_charge_id = ac.id", ac.TableName())).
-		Where("acp.product_id = ?", productID).
-		Scan(&additionalCharges).Error; err != nil {
-		return nil, err
-	}
-
 	ps.Collections = collections
-	ps.AdditionalCharges = additionalCharges
 	return &ps, nil
 }
 
@@ -255,7 +231,7 @@ func (pu *ProductRepositoryImpl) GetForOrder(db *gorm.DB, storeID, productID str
 
 	if err := db.Table(p.TableName()).
 		Where("id = ? AND store_id = ? AND stock - ? >= 0", productID, storeID, quantity).
-		Set("stock = stock - ?", quantity).Error; err != nil {
+		Update("stock", gorm.Expr("stock - ?", quantity)).Error; err != nil {
 		return nil, err
 	}
 

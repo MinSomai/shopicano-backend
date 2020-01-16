@@ -76,7 +76,6 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	o.BillingAddressID = pld.BillingAddressID
 	o.PaymentMethodID = pld.PaymentMethodID
 	o.ShippingMethodID = pld.ShippingMethodID
-	o.IsPaid = false
 	o.Status = models.OrderPending
 	o.PaymentStatus = models.PaymentPending
 
@@ -153,16 +152,12 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			ProductID: item.ID,
 			Quantity:  v.Quantity,
 			Price:     item.Price,
-			TotalVat:  0,
-			TotalTax:  0,
 		}
 		oi.SubTotal = v.Quantity * item.Price
 
 		availableItems = append(availableItems, oi)
 
 		o.SubTotal += oi.SubTotal
-		// TODO :
-		//o.TotalAdditionalCharge += oi.TotalTax
 	}
 
 	if o.ShippingMethodID != nil {
@@ -171,7 +166,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 
 	pgName := payment_gateways.GetActivePaymentGateway().GetName()
 
-	o.GrandTotal = o.SubTotal + o.TotalAdditionalCharge + o.ShippingCharge
+	o.GrandTotal = o.SubTotal + o.ShippingCharge
 	o.PaymentProcessingFee = pm.CalculateProcessingFee(o.GrandTotal)
 	o.PaymentGateway = &pgName
 
