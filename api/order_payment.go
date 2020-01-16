@@ -69,7 +69,16 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 
 	o.Nonce = body.Nonce
 
-	res, err := payment_gateways.GetActivePaymentGateway().Pay(o)
+	pg, err := payment_gateways.GetPaymentGatewayByName(o.PaymentGateway)
+	if err != nil {
+		resp.Title = "Invalid payment gateway"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.PaymentProcessingFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	res, err := pg.Pay(o)
 	if err != nil {
 		resp.Title = "Failed to process payment"
 		resp.Status = http.StatusInternalServerError
@@ -216,7 +225,16 @@ func generateStripePayNonce(ctx echo.Context, o *models.OrderDetailsView) error 
 	db := app.DB()
 	or := data.NewOrderRepository()
 
-	res, err := payment_gateways.GetActivePaymentGateway().Pay(o)
+	pg, err := payment_gateways.GetPaymentGatewayByName(o.PaymentGateway)
+	if err != nil {
+		resp.Title = "Invalid payment gateway"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.PaymentProcessingFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	res, err := pg.Pay(o)
 	if err != nil {
 		resp.Title = "Failed to process payment"
 		resp.Status = http.StatusInternalServerError
