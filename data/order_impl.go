@@ -41,7 +41,6 @@ func (os *OrderRepositoryImpl) UpdatePaymentInfo(db *gorm.DB, o *models.OrderDet
 		Updates(map[string]interface{}{
 			"nonce":          o.Nonce,
 			"transaction_id": o.TransactionID,
-			"is_paid":        o.IsPaid,
 			"status":         o.Status,
 			"payment_status": o.PaymentStatus,
 		}).Error; err != nil {

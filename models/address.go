@@ -9,7 +9,7 @@ type Address struct {
 	ID        string    `json:"id" gorm:"column:id;primary_key"`
 	UserID    string    `json:"-" gorm:"column:user_id;index;not null"`
 	Name      string    `json:"name" gorm:"column:name;not null"`
-	Street    string    `json:"street" gorm:"column:street;not null"`
+	Address   string    `json:"address" gorm:"column:address;not null"`
 	City      string    `json:"city" gorm:"column:city;not null"`
 	Country   string    `json:"country" gorm:"column:country;not null"`
 	Postcode  string    `json:"postcode" gorm:"column:postcode;not null"`

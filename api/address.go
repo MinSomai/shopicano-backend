@@ -42,7 +42,7 @@ func createAddress(ctx echo.Context) error {
 	add := &models.Address{
 		ID:        utils.NewUUID(),
 		Name:      req.Name,
-		Street:    req.Street,
+		Address:   req.Address,
 		City:      req.City,
 		Postcode:  req.Postcode,
 		Phone:     req.Phone,
@@ -86,7 +86,7 @@ func updateAddress(ctx echo.Context) error {
 	add := &models.Address{
 		ID:        addressID,
 		Name:      req.Name,
-		Street:    req.Street,
+		Address:   req.Address,
 		City:      req.City,
 		Postcode:  req.Postcode,
 		Phone:     req.Phone,

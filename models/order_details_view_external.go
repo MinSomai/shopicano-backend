@@ -5,8 +5,6 @@ import "time"
 type OrderDetailsViewExternal struct {
 	ID                     string                    `json:"id,omitempty"`
 	Hash                   string                    `json:"hash"`
-	TotalAdditionalCharge  int64                     `json:"total_additional_charge"`
-	TotalTax               int64                     `json:"total_tax"`
 	ShippingCharge         int64                     `json:"shipping_charge"`
 	PaymentProcessingFee   int64                     `json:"payment_processing_fee"`
 	SubTotal               int64                     `json:"sub_total"`
@@ -14,15 +12,13 @@ type OrderDetailsViewExternal struct {
 	Nonce                  *string                   `json:"nonce,omitempty"`
 	TransactionID          *string                   `json:"transaction_id,omitempty"`
 	GrandTotal             int64                     `json:"grand_total"`
-	IsPaid                 bool                      `json:"is_paid"`
 	Status                 OrderStatus               `json:"status"`
 	PaymentStatus          PaymentStatus             `json:"payment_status"`
 	CreatedAt              *time.Time                `json:"created_at"`
 	UpdatedAt              *time.Time                `json:"updated_at"`
 	ShippingID             *string                   `json:"shipping_id,omitempty"`
 	ShippingName           *string                   `json:"shipping_name,omitempty"`
-	ShippingHouse          *string                   `json:"shipping_house,omitempty"`
-	ShippingRoad           *string                   `json:"shipping_road,omitempty"`
+	ShippingAddress        *string                   `json:"shipping_address,omitempty"`
 	ShippingCity           *string                   `json:"shipping_city,omitempty"`
 	ShippingCountry        *string                   `json:"shipping_country,omitempty"`
 	ShippingPostcode       *string                   `json:"shipping_postcode,omitempty"`
@@ -30,8 +26,7 @@ type OrderDetailsViewExternal struct {
 	ShippingPhone          *string                   `json:"shipping_phone,omitempty"`
 	BillingID              string                    `json:"billing_id"`
 	BillingName            string                    `json:"billing_name"`
-	BillingHouse           string                    `json:"billing_house"`
-	BillingRoad            string                    `json:"billing_road"`
+	BillingAddress         string                    `json:"billing_address"`
 	BillingCity            string                    `json:"billing_city"`
 	BillingCountry         string                    `json:"billing_country"`
 	BillingPostcode        string                    `json:"billing_postcode"`
@@ -68,7 +63,5 @@ type OrderedItemDetailsInternal struct {
 	ProductName string `json:"product_name"`
 	Quantity    int    `json:"quantity"`
 	Price       int    `json:"price"`
-	Vat         int    `json:"vat"`
-	Tax         int    `json:"tax"`
-	Total       int    `json:"total"`
+	SubTotal    int    `json:"sub_total"`
 }

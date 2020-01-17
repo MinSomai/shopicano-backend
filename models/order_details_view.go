@@ -9,7 +9,6 @@ import (
 type OrderDetailsView struct {
 	ID                     string            `json:"id,omitempty"`
 	Hash                   string            `json:"hash"`
-	TotalAdditionalCharge  int               `json:"total_additional_charge"`
 	ShippingCharge         int               `json:"shipping_charge"`
 	PaymentProcessingFee   int               `json:"payment_processing_fee"`
 	SubTotal               int               `json:"sub_total"`
@@ -17,15 +16,13 @@ type OrderDetailsView struct {
 	Nonce                  *string           `json:"nonce,omitempty"`          // Private
 	TransactionID          *string           `json:"transaction_id,omitempty"` //Private
 	GrandTotal             int               `json:"grand_total"`
-	IsPaid                 bool              `json:"is_paid"`
 	Status                 OrderStatus       `json:"status"`
 	PaymentStatus          PaymentStatus     `json:"payment_status"`
 	CreatedAt              *time.Time        `json:"created_at"`
 	UpdatedAt              *time.Time        `json:"updated_at"`
 	ShippingID             *string           `json:"shipping_id,omitempty"`
 	ShippingName           *string           `json:"shipping_name,omitempty"`
-	ShippingHouse          *string           `json:"shipping_house,omitempty"`
-	ShippingRoad           *string           `json:"shipping_road,omitempty"`
+	ShippingAddress        *string           `json:"shipping_address,omitempty"`
 	ShippingCity           *string           `json:"shipping_city,omitempty"`
 	ShippingCountry        *string           `json:"shipping_country,omitempty"`
 	ShippingPostcode       *string           `json:"shipping_postcode,omitempty"`
@@ -33,8 +30,7 @@ type OrderDetailsView struct {
 	ShippingPhone          *string           `json:"shipping_phone,omitempty"`
 	BillingID              string            `json:"billing_id"`
 	BillingName            string            `json:"billing_name"`
-	BillingHouse           string            `json:"billing_house"`
-	BillingRoad            string            `json:"billing_road"`
+	BillingAddress         string            `json:"billing_address"`
 	BillingCity            string            `json:"billing_city"`
 	BillingCountry         string            `json:"billing_country"`
 	BillingPostcode        string            `json:"billing_postcode"`
@@ -65,15 +61,15 @@ func (odv *OrderDetailsView) TableName() string {
 }
 
 func (odv *OrderDetailsView) CreateView(tx *gorm.DB) error {
-	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT o.id AS id, o.hash AS hash, o.user_id AS user_id, o.total_additional_charge AS total_additional_charge,"+
+	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT o.id AS id, o.hash AS hash, o.user_id AS user_id,"+
 		" u.name AS user_name, u.email AS user_email, u.phone AS user_phone, u.profile_picture AS user_picture,"+
 		" o.shipping_charge AS shipping_charge, o.payment_processing_fee AS payment_processing_fee, o.sub_total AS sub_total,"+
-		" o.payment_gateway AS payment_gateway, o.nonce AS nonce, o.transaction_id AS transaction_id, o.grand_total AS grand_total, o.is_paid AS is_paid,"+
+		" o.payment_gateway AS payment_gateway, o.nonce AS nonce, o.transaction_id AS transaction_id, o.grand_total AS grand_total,"+
 		" o.status AS status, o.payment_status AS payment_status, o.created_at AS created_at,"+
-		" o.updated_at AS updated_at, sa.id AS shipping_id, sa.name AS shipping_name, sa.house AS shipping_house, sa.road AS shipping_road,"+
+		" o.updated_at AS updated_at, sa.id AS shipping_id, sa.name AS shipping_name, sa.address AS shipping_address,"+
 		" sa.city AS shipping_city, sa.country AS shipping_country, sa.postcode AS shipping_postcode,"+
-		" sa.email AS shipping_email, sa.phone AS shipping_phone, ba.id AS billing_id, ba.name AS billing_name, ba.house AS billing_house,"+
-		" ba.road AS billing_road, ba.city AS billing_city, ba.country AS billing_country, ba.postcode AS billing_postcode, ba.email AS billing_email,"+
+		" sa.email AS shipping_email, sa.phone AS shipping_phone, ba.id AS billing_id, ba.name AS billing_name, ba.address AS billing_address,"+
+		" ba.city AS billing_city, ba.country AS billing_country, ba.postcode AS billing_postcode, ba.email AS billing_email,"+
 		" ba.phone AS billing_phone, s.id AS store_id, s.name AS store_name, s.address AS store_address, s.city AS store_city,"+
 		" s.country AS store_country, s.postcode AS store_postcode, s.email AS store_email, s.phone AS store_phone, s.status AS store_status,"+
 		" pm.id AS payment_method_id, pm.name AS payment_method_name, pm.is_offline_payment AS payment_method_is_offline"+

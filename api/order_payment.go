@@ -89,7 +89,6 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 
 	o.TransactionID = &res.Result
 	o.PaymentStatus = models.PaymentCompleted
-	o.IsPaid = true
 
 	if err := or.UpdatePaymentInfo(db, o); err != nil {
 		db.Rollback()
@@ -141,7 +140,6 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 
 	if ctx.QueryParam("status") == "success" {
 		o.PaymentStatus = models.PaymentCompleted
-		o.IsPaid = true
 	} else {
 		o.PaymentStatus = models.PaymentFailed
 	}

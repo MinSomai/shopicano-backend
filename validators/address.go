@@ -8,7 +8,7 @@ import (
 
 type ReqAddressCreate struct {
 	Name     string `json:"name" valid:"required"`
-	Street   string `json:"street" valid:"required"`
+	Address  string `json:"address" valid:"required"`
 	City     string `json:"city" valid:"required"`
 	Country  string `json:"country" valid:"required"`
 	Postcode string `json:"postcode" valid:"required"`
