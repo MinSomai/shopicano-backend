@@ -10,10 +10,12 @@ import (
 	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
+	"github.com/shopicano/shopicano-backend/queue"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func RegisterOrderRoutes(g *echo.Group) {
@@ -74,7 +76,8 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	o.BillingAddressID = pld.BillingAddressID
 	o.PaymentMethodID = pld.PaymentMethodID
 	o.ShippingMethodID = pld.ShippingMethodID
-	o.IsPaid = false
+	o.Status = models.OrderPending
+	o.PaymentStatus = models.PaymentPending
 
 	pu := data.NewProductRepository()
 	ou := data.NewOrderRepository()
@@ -122,6 +125,11 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
+	hasDigitalProducts := false
+	hasNonDigitalProducts := false
+
+	isAllDigitalProduct := true
+
 	var availableItems []*models.OrderedItem
 
 	for _, v := range pld.Items {
@@ -144,21 +152,38 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			return resp.ServerJSON(ctx)
 		}
 
+		if !hasDigitalProducts {
+			hasDigitalProducts = item.IsDigital
+		}
+		if !hasNonDigitalProducts {
+			hasNonDigitalProducts = !item.IsDigital
+		}
+
+		if isAllDigitalProduct {
+			isAllDigitalProduct = item.IsDigital
+		}
+
 		oi := &models.OrderedItem{
 			OrderID:   o.ID,
 			ProductID: item.ID,
 			Quantity:  v.Quantity,
 			Price:     item.Price,
-			TotalVat:  0,
-			TotalTax:  0,
 		}
 		oi.SubTotal = v.Quantity * item.Price
 
 		availableItems = append(availableItems, oi)
 
 		o.SubTotal += oi.SubTotal
-		o.TotalTax += oi.TotalTax
-		o.TotalVat += oi.TotalVat
+	}
+
+	if hasDigitalProducts && hasNonDigitalProducts {
+		db.Rollback()
+
+		resp.Title = "Cart must have all digital or all non-digital products"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.CartMustHaveAllDigitalOrAllNonDigitalProducts
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
 	}
 
 	if o.ShippingMethodID != nil {
@@ -167,13 +192,14 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 
 	pgName := payment_gateways.GetActivePaymentGateway().GetName()
 
-	o.GrandTotal = o.SubTotal + o.TotalTax + o.TotalVat + o.ShippingCharge
+	o.GrandTotal = o.SubTotal + o.ShippingCharge
 	o.PaymentProcessingFee = pm.CalculateProcessingFee(o.GrandTotal)
 	o.PaymentGateway = &pgName
-	o.Status = models.Pending
 
 	err = ou.Create(db, &o)
 	if err != nil {
+		db.Rollback()
+
 		log.Log().Errorln(err)
 
 		if errors.IsPreparedError(err) {
@@ -203,6 +229,65 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   o.ID,
+		Action:    string(o.Status),
+		Details:   "Order has been created",
+		CreatedAt: time.Now(),
+	}
+	if err := ou.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if isAllDigitalProduct {
+		o.Status = models.OrderConfirmed
+
+		err = ou.UpdateStatus(db, &o)
+		if err != nil {
+			db.Rollback()
+
+			log.Log().Errorln(err)
+
+			if errors.IsPreparedError(err) {
+				resp.Title = "Invalid request"
+				resp.Status = http.StatusBadRequest
+				resp.Code = errors.InvalidRequest
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		ol := models.OrderLog{
+			ID:        utils.NewUUID(),
+			OrderID:   o.ID,
+			Action:    string(o.Status),
+			Details:   "Order has been confirmed",
+			CreatedAt: time.Now(),
+		}
+		if err := ou.CreateLog(db, &ol); err != nil {
+			db.Rollback()
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
 	m, err := ou.GetDetails(db, o.ID)
 	if err != nil {
 		db.Rollback()
@@ -212,6 +297,18 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		resp.Code = errors.OrderNotFound
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
+	}
+
+	if m.PaymentMethodIsOffline {
+		if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to queue send order details"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.FailedToEnqueueTask
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
 	}
 
 	if err := db.Commit().Error; err != nil {

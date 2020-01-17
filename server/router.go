@@ -9,8 +9,8 @@ import (
 
 var router = echo.New()
 
-// getRouter returns the api router
-func getRouter() http.Handler {
+// GetRouter returns the api router
+func GetRouter() http.Handler {
 	router.Use(middleware.Logger())
 	//router.Use(middleware.Recover())
 	router.Pre(middleware.AddTrailingSlash())

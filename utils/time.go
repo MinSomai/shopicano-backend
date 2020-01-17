@@ -2,4 +2,7 @@ package utils
 
 import "time"
 
-const DateFormat = time.RFC3339
+const (
+	DateTimeFormat = time.RFC3339
+	DateFormat     = "2006-01-02"
+)

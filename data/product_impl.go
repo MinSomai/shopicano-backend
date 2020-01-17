@@ -28,9 +28,10 @@ func (pu *ProductRepositoryImpl) Create(db *gorm.DB, p *models.Product) error {
 	return nil
 }
 
-func (pu *ProductRepositoryImpl) Update(db *gorm.DB, productID string, p *models.Product) error {
+func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 	if err := db.Table(p.TableName()).
 		Select("name, description, is_published, category_id, sku, stock, unit, price, additional_images, image, is_shippable, is_digital, digital_download_link, updated_at").
+		Where("id = ? AND store_id = ?", p.ID, p.StoreID).
 		Updates(map[string]interface{}{
 			"name":                  p.Name,
 			"description":           p.Description,
@@ -109,11 +110,6 @@ func (pu *ProductRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, storeID, query 
 }
 
 func (pu *ProductRepositoryImpl) Delete(db *gorm.DB, storeID, productID string) error {
-	poc := models.ProductOfCollection{}
-	if err := db.Table(poc.TableName()).Where("store_id = ? AND product_id = ?", storeID, productID).Delete(&poc).Error; err != nil {
-		return err
-	}
-
 	p := models.Product{}
 	if err := db.Table(p.TableName()).
 		Where("store_id = ? AND id = ?", storeID, productID).
@@ -127,6 +123,16 @@ func (pu *ProductRepositoryImpl) Get(db *gorm.DB, productID string) (*models.Pro
 	p := models.Product{}
 	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
 		Where("products.id = ? AND products.is_published = ?", productID, true).
+		First(&p).Error; err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.Product, error) {
+	p := models.Product{}
+	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
+		Where("products.id = ? AND products.store_id = ?", productID, storeID).
 		First(&p).Error; err != nil {
 		return nil, err
 	}
@@ -148,34 +154,32 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 		return nil, err
 	}
 
-	poc := models.ProductOfCollection{}
 	c := models.Collection{}
-	var collections []models.CollectionDetails
-	if err := db.Table(fmt.Sprintf("%s AS poc", poc.TableName())).
+	cop := models.CollectionOfProduct{}
+	var collections []models.Collection
+	if err := db.Table(fmt.Sprintf("%s AS cop", cop.TableName())).
 		Select("c.id, c.name, c.description").
-		Joins(fmt.Sprintf("JOIN %s AS c ON poc.collection_id = c.id", c.TableName())).
-		Where("poc.product_id = ?", productID).
+		Joins(fmt.Sprintf("JOIN %s AS c ON cop.collection_id = c.id", c.TableName())).
+		Where("cop.product_id = ?", productID).
 		Scan(&collections).Error; err != nil {
 		return nil, err
 	}
 
-	acp := models.AdditionalChargeOfProduct{}
-	ac := models.AdditionalCharge{}
-	var additionalCharges []models.AdditionalChargeDetails
-	if err := db.Table(fmt.Sprintf("%s AS acp", acp.TableName())).
-		Select("ac.id, ac.name, ac.charge_type, ac.amount, ac.amount_type, ac.amount_max, ac.amount_min").
-		Joins(fmt.Sprintf("JOIN %s AS ac ON acp.additional_charge_id = ac.id", ac.TableName())).
-		Where("acp.product_id = ?", productID).
-		Scan(&additionalCharges).Error; err != nil {
+	a := models.ProductAttribute{}
+	var attributes []models.ProductAttribute
+	if err := db.Table(fmt.Sprintf("%s AS pa", a.TableName())).
+		Select("pa.key AS key, pa.value AS value").
+		Where("pa.product_id = ?", productID).
+		Scan(&attributes).Error; err != nil {
 		return nil, err
 	}
 
 	ps.Collections = collections
-	ps.AdditionalCharges = additionalCharges
+	ps.Attributes = attributes
 	return &ps, nil
 }
 
-func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.ProductDetailsInternal, error) {
+func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.ProductDetailsInternal, error) {
 	p := models.Product{}
 	ps := models.ProductDetailsInternal{}
 	cat := models.Category{}
@@ -191,30 +195,28 @@ func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID
 		return nil, err
 	}
 
-	poc := models.ProductOfCollection{}
+	cop := models.CollectionOfProduct{}
 	c := models.Collection{}
-	var collections []models.CollectionDetails
-	if err := db.Table(fmt.Sprintf("%s AS poc", poc.TableName())).
+	var collections []models.Collection
+	if err := db.Table(fmt.Sprintf("%s AS cop", cop.TableName())).
 		Select("c.id, c.name, c.description").
-		Joins(fmt.Sprintf("JOIN %s AS c ON poc.collection_id = c.id", c.TableName())).
-		Where("poc.store_id = ? AND poc.product_id = ?", storeID, productID).
+		Joins(fmt.Sprintf("JOIN %s AS c ON cop.collection_id = c.id", c.TableName())).
+		Where("c.store_id = ? AND cop.product_id = ?", storeID, productID).
 		Scan(&collections).Error; err != nil {
 		return nil, err
 	}
 
-	acp := models.AdditionalChargeOfProduct{}
-	ac := models.AdditionalCharge{}
-	var additionalCharges []models.AdditionalChargeDetails
-	if err := db.Table(fmt.Sprintf("%s AS acp", acp.TableName())).
-		Select("ac.id, ac.name, ac.charge_type, ac.amount, ac.amount_type, ac.amount_max, ac.amount_min").
-		Joins(fmt.Sprintf("JOIN %s AS ac ON acp.additional_charge_id = ac.id", ac.TableName())).
-		Where("acp.product_id = ?", productID).
-		Scan(&additionalCharges).Error; err != nil {
+	a := models.ProductAttribute{}
+	var attributes []models.ProductAttribute
+	if err := db.Table(fmt.Sprintf("%s AS pa", a.TableName())).
+		Select("pa.key AS key, pa.value AS value").
+		Where("pa.product_id = ?", productID).
+		Scan(&attributes).Error; err != nil {
 		return nil, err
 	}
+	ps.Attributes = attributes
 
 	ps.Collections = collections
-	ps.AdditionalCharges = additionalCharges
 	return &ps, nil
 }
 
@@ -229,7 +231,7 @@ func (pu *ProductRepositoryImpl) GetForOrder(db *gorm.DB, storeID, productID str
 
 	if err := db.Table(p.TableName()).
 		Where("id = ? AND store_id = ? AND stock - ? >= 0", productID, storeID, quantity).
-		Set("stock = stock - ?", quantity).Error; err != nil {
+		Update("stock", gorm.Expr("stock - ?", quantity)).Error; err != nil {
 		return nil, err
 	}
 
@@ -282,4 +284,19 @@ func (pu *ProductRepositoryImpl) StatsAsStoreStuff(db *gorm.DB, storeID string, 
 	}
 
 	return stats, nil
+}
+
+func (pu *ProductRepositoryImpl) AddAttribute(db *gorm.DB, v *models.ProductAttribute) error {
+	if err := db.Table(v.TableName()).Create(v).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pu *ProductRepositoryImpl) RemoveAttribute(db *gorm.DB, productID, attributeKey string) error {
+	v := models.ProductAttribute{}
+	if err := db.Table(v.TableName()).Delete(&v, "product_id = ? AND key = ?", productID, attributeKey).Error; err != nil {
+		return err
+	}
+	return nil
 }

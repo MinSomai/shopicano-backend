@@ -16,11 +16,4 @@ type AdminRepository interface {
 	ListActivePaymentMethods(from, limit int) ([]models.PaymentMethod, error)
 	DeletePaymentMethod(ID string) error
 	GetPaymentMethod(ID string) (*models.PaymentMethod, error)
-
-	CreateAdditionalCharge(ac *models.AdditionalCharge) error
-	UpdateAdditionalCharge(ac *models.AdditionalCharge) error
-	ListAdditionalCharges(from, limit int) ([]models.AdditionalCharge, error)
-	ListActiveAdditionalCharges(from, limit int) ([]models.AdditionalCharge, error)
-	DeleteAdditionalCharge(ID string) error
-	GetAdditionalCharge(ID string) (*models.AdditionalCharge, error)
 }

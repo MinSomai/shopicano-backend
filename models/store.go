@@ -26,8 +26,9 @@ type Store struct {
 	Email                    string      `json:"email" sql:"email" gorm:"unique;not null"`
 	Phone                    string      `json:"phone" sql:"phone" gorm:"unique;not null"`
 	Status                   StoreStatus `json:"status" sql:"status" gorm:"index"`
-	IsProductCreationEnabled bool        `json:"-" sql:"is_product_creation_enabled" gorm:"not null"`
-	IsOrderCreationEnabled   bool        `json:"is_order_creation_enabled" sql:"is_order_creation_enabled" gorm:"not null"`
+	IsProductCreationEnabled bool        `json:"-" sql:"is_product_creation_enabled" gorm:"not null;index"`
+	IsOrderCreationEnabled   bool        `json:"is_order_creation_enabled" sql:"is_order_creation_enabled" gorm:"not null;index"`
+	IsAutoConfirmEnabled     bool        `json:"is_auto_confirm_enabled" sql:"is_auto_confirm_enabled" json:"not null;index"`
 	Description              string      `json:"description" sql:"description" gorm:"not null"`
 	CreatedAt                time.Time   `json:"created_at" sql:"created_at" gorm:"index;not null"`
 	UpdatedAt                time.Time   `json:"updated_at" sql:"updated_at" gorm:"not null"`
@@ -45,6 +46,7 @@ type Staff struct {
 	UserID       string `json:"user_id" sql:"user_id" gorm:"primary_key"`
 	StoreID      string `json:"store_id" sql:"store_id" gorm:"primary_key"`
 	PermissionID string `json:"permission_id" sql:"permission_id" gorm:"primary_key"`
+	IsCreator    bool   `json:"is_creator" sql:"is_creator" gorm:"index"`
 }
 
 func (sf *Staff) TableName() string {

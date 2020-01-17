@@ -19,7 +19,7 @@ func StartServer() {
 
 	hServer := http.Server{
 		Addr:    addr,
-		Handler: getRouter(),
+		Handler: GetRouter(),
 	}
 
 	go func() {

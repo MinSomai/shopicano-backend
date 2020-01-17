@@ -7,8 +7,6 @@ type OrderedItem struct {
 	ProductID string `json:"product_id"`
 	Quantity  int    `json:"quantity"`
 	Price     int    `json:"price" sql:"price"`
-	TotalVat  int    `json:"total_vat" sql:"total_vat"`
-	TotalTax  int    `json:"total_tax" sql:"total_tax"`
 	SubTotal  int    `json:"sub_total" sql:"sub_total"`
 }
 

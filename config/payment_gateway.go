@@ -21,6 +21,6 @@ func LoadPaymentGateway() {
 
 	paymentGateway = PaymentGatewayCfg{
 		Name:    viper.GetString("payment_gateway.name"),
-		Configs: viper.GetStringMap("payment_gateway.configs"),
+		Configs: viper.GetStringMap("payment_gateway"),
 	}
 }

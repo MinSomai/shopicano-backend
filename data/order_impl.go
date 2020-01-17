@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
+	"time"
 )
 
 type OrderRepositoryImpl struct {
@@ -25,17 +26,37 @@ func (os *OrderRepositoryImpl) Create(db *gorm.DB, o *models.Order) error {
 	return nil
 }
 
+func (os *OrderRepositoryImpl) CreateLog(db *gorm.DB, ol *models.OrderLog) error {
+	if err := db.Table(ol.TableName()).Create(ol).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (os *OrderRepositoryImpl) UpdatePaymentInfo(db *gorm.DB, o *models.OrderDetailsView) error {
 	order := models.Order{}
 	if err := db.Table(order.TableName()).
 		Where("id = ?", o.ID).
-		Select("nonce, transaction_id, is_paid, status, paid_at").
+		Select("nonce, transaction_id, is_paid, status, payment_status").
 		Updates(map[string]interface{}{
 			"nonce":          o.Nonce,
 			"transaction_id": o.TransactionID,
 			"is_paid":        o.IsPaid,
 			"status":         o.Status,
-			"paid_at":        o.PaidAt,
+			"payment_status": o.PaymentStatus,
+		}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (os *OrderRepositoryImpl) UpdateStatus(db *gorm.DB, o *models.Order) error {
+	order := models.Order{}
+	if err := db.Table(order.TableName()).
+		Where("id = ?", o.ID).
+		Select("status").
+		Updates(map[string]interface{}{
+			"status": o.Status,
 		}).Error; err != nil {
 		return err
 	}
@@ -228,4 +249,19 @@ func (os *OrderRepositoryImpl) GetDetailsAsUser(db *gorm.DB, userID, orderID str
 
 	order.Items = items
 	return &order, nil
+}
+
+func (os *OrderRepositoryImpl) CountByTimeAsStoreStuff(db *gorm.DB, storeID string, from, end time.Time) (int, error) {
+	order := models.OrderDetailsViewExternal{}
+
+	var count int
+
+	if err := db.Table(order.TableName()).
+		Where("store_id = ? AND (created_at >= ? AND created_at <= ?)", storeID, from, end).
+		Count(&count).Error; err != nil {
+		log.Log().Errorln(err)
+		return 0, err
+	}
+
+	return count, nil
 }

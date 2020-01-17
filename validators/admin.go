@@ -60,13 +60,11 @@ func ValidateCreateShippingMethod(ctx echo.Context) (*ReqShippingMethodCreate, e
 }
 
 type ReqAdditionalChargeCreate struct {
-	Name        string `json:"name" valid:"required"`
-	ChargeType  string `json:"charge_type" valid:"required"`
-	Amount      int    `json:"amount" valid:"required,range(1|1000000)"`
-	AmountType  string `json:"amount_type" valid:"required"`
-	AmountMax   int    `json:"amount_max" valid:"range(0|1000000)"`
-	AmountMin   int    `json:"amount_min" valid:"range(0|1000000)"`
-	IsPublished bool   `json:"is_published"`
+	Name         string `json:"name" valid:"required"`
+	Amount       int    `json:"amount" valid:"required,range(1|1000000)"`
+	AmountMax    int    `json:"amount_max" valid:"range(0|1000000)"`
+	AmountMin    int    `json:"amount_min" valid:"range(0|1000000)"`
+	IsFlatAmount bool   `json:"is_flat_amount" valid:"required"`
 }
 
 func ValidateCreateAdditionalCharge(ctx echo.Context) (*ReqAdditionalChargeCreate, error) {
@@ -87,4 +85,12 @@ func ValidateCreateAdditionalCharge(ctx echo.Context) (*ReqAdditionalChargeCreat
 	}
 
 	return nil, &ve
+}
+
+type ReqAdditionalChargeUpdate struct {
+	Name         *string `json:"name"`
+	Amount       *int    `json:"amount"`
+	AmountMax    *int    `json:"amount_max"`
+	AmountMin    *int    `json:"amount_min"`
+	IsFlatAmount *bool   `json:"is_flat_amount"`
 }

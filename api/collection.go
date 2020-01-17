@@ -28,6 +28,8 @@ func RegisterCollectionRoutes(g *echo.Group) {
 		g.DELETE("/:collection_id/", deleteCollection)
 		g.PATCH("/:collection_id/", updateCollection)
 		g.GET("/:collection_id/", getCollection)
+		g.PATCH("/:collection_id/products/", addCollectionProducts)
+		g.DELETE("/:collection_id/products/", removeCollectionProducts)
 	}(g)
 }
 
@@ -255,5 +257,136 @@ func getCollection(ctx echo.Context) error {
 
 	resp.Status = http.StatusOK
 	resp.Data = c
+	return resp.ServerJSON(ctx)
+}
+
+func addCollectionProducts(ctx echo.Context) error {
+	collectionID := ctx.Param("collection_id")
+	storeID := ctx.Get(utils.StoreID).(string)
+
+	resp := core.Response{}
+
+	pld := struct {
+		ProductIDs []string `json:"product_ids"`
+	}{}
+
+	if err := ctx.Bind(&pld); err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.ProductCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+	cu := data.NewCollectionRepository()
+
+	c, err := cu.Get(db, storeID, collectionID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Collection not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.CollectionNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	for _, p := range pld.ProductIDs {
+		if err := cu.AddProducts(db, &models.CollectionOfProduct{
+			CollectionID: c.ID,
+			ProductID:    p,
+		}); err != nil {
+			db.Rollback()
+
+			msg, ok := errors.IsDuplicateKeyError(err)
+			if ok {
+				resp.Title = msg
+				resp.Status = http.StatusConflict
+				resp.Code = errors.ProductAlreadyExists
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusCreated
+	return resp.ServerJSON(ctx)
+}
+
+func removeCollectionProducts(ctx echo.Context) error {
+	collectionID := ctx.Param("collection_id")
+	storeID := ctx.Get(utils.StoreID).(string)
+
+	resp := core.Response{}
+
+	pld := struct {
+		ProductIDs []string `json:"product_ids"`
+	}{}
+
+	if err := ctx.Bind(&pld); err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.ProductCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+	cu := data.NewCollectionRepository()
+
+	c, err := cu.Get(db, storeID, collectionID)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	for _, p := range pld.ProductIDs {
+		if err := cu.RemoveProducts(db, &models.CollectionOfProduct{
+			CollectionID: c.ID,
+			ProductID:    p,
+		}); err != nil {
+			db.Rollback()
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusNoContent
 	return resp.ServerJSON(ctx)
 }
