@@ -50,6 +50,19 @@ func (os *OrderRepositoryImpl) UpdatePaymentInfo(db *gorm.DB, o *models.OrderDet
 	return nil
 }
 
+func (os *OrderRepositoryImpl) UpdateStatus(db *gorm.DB, o *models.Order) error {
+	order := models.Order{}
+	if err := db.Table(order.TableName()).
+		Where("id = ?", o.ID).
+		Select("status").
+		Updates(map[string]interface{}{
+			"status": o.Status,
+		}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (os *OrderRepositoryImpl) AddOrderedItem(db *gorm.DB, oi *models.OrderedItem) error {
 	if err := db.Table(oi.TableName()).Create(oi).Error; err != nil {
 		return err

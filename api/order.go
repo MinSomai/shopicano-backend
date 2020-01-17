@@ -125,6 +125,11 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
+	hasDigitalProducts := false
+	hasNonDigitalProducts := false
+
+	isAllDigitalProduct := true
+
 	var availableItems []*models.OrderedItem
 
 	for _, v := range pld.Items {
@@ -147,6 +152,17 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			return resp.ServerJSON(ctx)
 		}
 
+		if !hasDigitalProducts {
+			hasDigitalProducts = item.IsDigital
+		}
+		if !hasNonDigitalProducts {
+			hasNonDigitalProducts = !item.IsDigital
+		}
+
+		if isAllDigitalProduct {
+			isAllDigitalProduct = item.IsDigital
+		}
+
 		oi := &models.OrderedItem{
 			OrderID:   o.ID,
 			ProductID: item.ID,
@@ -158,6 +174,16 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		availableItems = append(availableItems, oi)
 
 		o.SubTotal += oi.SubTotal
+	}
+
+	if hasDigitalProducts && hasNonDigitalProducts {
+		db.Rollback()
+
+		resp.Title = "Cart must have all digital or all non-digital products"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.CartMustHaveAllDigitalOrAllNonDigitalProducts
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
 	}
 
 	if o.ShippingMethodID != nil {
@@ -172,6 +198,8 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 
 	err = ou.Create(db, &o)
 	if err != nil {
+		db.Rollback()
+
 		log.Log().Errorln(err)
 
 		if errors.IsPreparedError(err) {
@@ -201,6 +229,73 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   o.ID,
+		Action:    string(o.Status),
+		Details:   "Order has been created",
+		CreatedAt: time.Now(),
+	}
+	if err := ou.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if isAllDigitalProduct {
+		o.Status = models.OrderConfirmed
+
+		err = ou.UpdateStatus(db, &o)
+		if err != nil {
+			db.Rollback()
+
+			log.Log().Errorln(err)
+
+			if errors.IsPreparedError(err) {
+				resp.Title = "Invalid request"
+				resp.Status = http.StatusBadRequest
+				resp.Code = errors.InvalidRequest
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		ol := models.OrderLog{
+			ID:        utils.NewUUID(),
+			OrderID:   o.ID,
+			Action:    string(o.Status),
+			Details:   "Order has been confirmed",
+			CreatedAt: time.Now(),
+		}
+		if err := ou.CreateLog(db, &ol); err != nil {
+			db.Rollback()
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	m, err := ou.GetDetails(db, o.ID)
 	if err != nil {
 		db.Rollback()
@@ -222,31 +317,6 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
-	}
-
-	ol := models.OrderLog{
-		ID:        utils.NewUUID(),
-		OrderID:   m.ID,
-		Action:    string(models.OrderPending),
-		Details:   "Order has been created",
-		CreatedAt: time.Now(),
-	}
-	if err := ou.CreateLog(db, &ol); err != nil {
-		db.Rollback()
-
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	if err := db.Commit().Error; err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
 	}
 
 	resp.Status = http.StatusCreated

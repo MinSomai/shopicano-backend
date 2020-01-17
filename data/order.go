@@ -14,6 +14,7 @@ type OrderRepository interface {
 	GetDetailsAsStoreStuff(db *gorm.DB, storeID, orderID string) (*models.OrderDetailsView, error)
 	GetDetails(db *gorm.DB, orderID string) (*models.OrderDetailsView, error)
 	UpdatePaymentInfo(db *gorm.DB, o *models.OrderDetailsView) error
+	UpdateStatus(db *gorm.DB, o *models.Order) error
 	List(db *gorm.DB, userID string, offset, limit int) ([]models.OrderDetailsViewExternal, error)
 	ListAsStoreStuff(db *gorm.DB, storeID string, offset, limit int) ([]models.OrderDetailsViewExternal, error)
 	Search(db *gorm.DB, query, userID string, offset, limit int) ([]models.OrderDetailsView, error)
