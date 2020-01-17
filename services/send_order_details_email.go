@@ -34,26 +34,6 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 		entries = append(entries, rows)
 	}
 
-	// Tax
-	var taxRows []hermes.Entry
-	taxRows = append(taxRows, hermes.Entry{
-		Key:   "Item",
-		Value: "",
-	})
-	taxRows = append(taxRows, hermes.Entry{
-		Key:   "Quantity",
-		Value: "",
-	})
-	taxRows = append(taxRows, hermes.Entry{
-		Key:   "Price",
-		Value: "Total Additional Charge",
-	})
-	taxRows = append(taxRows, hermes.Entry{
-		Key:   "Sub Total",
-		Value: fmt.Sprintf("%d", order.TotalAdditionalCharge),
-	})
-	entries = append(entries, taxRows)
-
 	// Grand Total
 	var rows []hermes.Entry
 	rows = append(rows, hermes.Entry{

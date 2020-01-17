@@ -104,12 +104,10 @@ func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*
 		Amount:             TotalAmount,
 		LineItems:          items,
 		BillingAddress: &braintree.Address{
-			StreetAddress: fmt.Sprintf("%s, %s",
-				orderDetails.BillingHouse,
-				orderDetails.BillingRoad),
-			Region:      orderDetails.BillingCity,
-			PostalCode:  orderDetails.BillingPostcode,
-			CountryName: orderDetails.BillingCountry,
+			StreetAddress: fmt.Sprintf("%s", orderDetails.BillingAddress),
+			Region:        orderDetails.BillingCity,
+			PostalCode:    orderDetails.BillingPostcode,
+			CountryName:   orderDetails.BillingCountry,
 		},
 		Options: &braintree.TransactionOptions{
 			SubmitForSettlement: true,
