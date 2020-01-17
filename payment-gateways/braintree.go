@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	BrainTreePaymentGatewayName = "brainTree"
+	BrainTreePaymentGatewayName = "brain_tree"
 )
 
 const (
