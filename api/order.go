@@ -288,14 +288,6 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
-	if err := db.Commit().Error; err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
 	m, err := ou.GetDetails(db, o.ID)
 	if err != nil {
 		db.Rollback()
@@ -317,6 +309,14 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
 	}
 
 	resp.Status = http.StatusCreated
