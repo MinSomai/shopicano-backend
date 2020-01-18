@@ -40,12 +40,6 @@ func RegisterProductRoutes(g *echo.Group) {
 
 	func(g *echo.Group) {
 		// Private endpoints only
-		g.Use(middlewares.MustBeUserOrStoreStaffWithStoreActivation)
-		g.GET("/:product_id/download", downloadProduct)
-	}(g)
-
-	func(g *echo.Group) {
-		// Private endpoints only
 		g.Use(middlewares.IsStoreStaffWithStoreActivation)
 		g.GET("/:product_id/download", downloadProduct)
 		g.POST("/:product_id/upload", saveDownloadableProduct)

@@ -69,6 +69,14 @@ func (os *OrderRepositoryImpl) AddOrderedItem(db *gorm.DB, oi *models.OrderedIte
 	return nil
 }
 
+func (os *OrderRepositoryImpl) GetOrderedItem(db *gorm.DB, orderID, productID string) (*models.OrderedItem, error) {
+	oi := models.OrderedItem{}
+	if err := db.Table(oi.TableName()).Find(&oi, "order_id = ? AND product_id = ?", orderID, productID).Error; err != nil {
+		return nil, err
+	}
+	return &oi, nil
+}
+
 func (os *OrderRepositoryImpl) List(db *gorm.DB, userID string, offset, limit int) ([]models.OrderDetailsViewExternal, error) {
 	order := models.OrderDetailsViewExternal{}
 	var orders []models.OrderDetailsViewExternal
