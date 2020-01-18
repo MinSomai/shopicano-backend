@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
@@ -11,8 +12,10 @@ import (
 	"github.com/shopicano/shopicano-backend/models"
 	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
 	"github.com/shopicano/shopicano-backend/queue"
+	"github.com/shopicano/shopicano-backend/services"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
+	"github.com/shopicano/shopicano-backend/values"
 	"net/http"
 	"strconv"
 	"time"
@@ -32,6 +35,7 @@ func RegisterOrderRoutes(g *echo.Group) {
 		g.Use(middlewares.AuthUser)
 		g.POST("/", createOrder)
 		g.POST("/:order_id/nonce/", generatePayNonce)
+		g.GET("/:order_id/products/:product_id/download/", downloadProductAsUser)
 	}(*g)
 
 	func(g echo.Group) {
@@ -460,4 +464,105 @@ func searchOrders(ctx echo.Context, query string, page, limit int64, isPublic bo
 		return ou.Search(db, query, ctx.Get(utils.UserID).(string), int(from), int(limit))
 	}
 	return ou.SearchAsStoreStuff(db, query, ctx.Get(utils.StoreID).(string), int(from), int(limit))
+}
+
+func downloadProductAsUser(ctx echo.Context) error {
+	orderID := ctx.Param("order_id")
+	productID := ctx.Param("product_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+
+	ou := data.NewOrderRepository()
+
+	o, err := ou.GetDetailsAsUser(db, utils.GetUserID(ctx), orderID)
+	if err != nil {
+		log.Log().Errorln(err)
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Order not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.OrderNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	_, err = ou.GetOrderedItem(db, o.ID, productID)
+	if err != nil {
+		log.Log().Errorln(err)
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Product not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.ProductNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	pu := data.NewProductRepository()
+	m, err := pu.Get(db, productID)
+	if err != nil {
+		log.Log().Errorln(err)
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Product not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.ProductNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if !(o.Status == models.OrderConfirmed && o.PaymentStatus == models.PaymentCompleted) {
+		resp.Title = "Unauthorized to download the product"
+		resp.Status = http.StatusForbidden
+		resp.Code = errors.UserScopeUnauthorized
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	f, err := services.ServeAsStreamFromMinio(fmt.Sprintf("%s/%s", values.ReservedBucketName, m.DigitalDownloadLink))
+	if err != nil {
+		log.Log().Errorln(err)
+
+		resp.Title = "Minio service failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.MinioServiceFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	err = pu.IncreaseDownloadCounter(db, m)
+	if err != nil {
+		log.Log().Errorln(err)
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	return resp.ServeStreamFromMinio(ctx, f)
 }

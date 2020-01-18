@@ -53,6 +53,15 @@ func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 	return nil
 }
 
+func (pu *ProductRepositoryImpl) IncreaseDownloadCounter(db *gorm.DB, p *models.Product) error {
+	if err := db.Table(p.TableName()).
+		Where("id = ? AND store_id = ?", p.ID, p.StoreID).
+		Update("download_counter", gorm.Expr("download_counter + ?", 1)).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (pu *ProductRepositoryImpl) List(db *gorm.DB, from, limit int) ([]models.ProductDetails, error) {
 	var ps []models.ProductDetails
 	p := models.Product{}

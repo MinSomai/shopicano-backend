@@ -5,3 +5,7 @@ const (
 	ManagerGroupID = "2"
 	UserGroupID    = "3"
 )
+
+const (
+	ReservedBucketName = "area51"
+)

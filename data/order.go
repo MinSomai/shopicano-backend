@@ -10,6 +10,7 @@ type OrderRepository interface {
 	Create(db *gorm.DB, o *models.Order) error
 	CreateLog(db *gorm.DB, ol *models.OrderLog) error
 	AddOrderedItem(db *gorm.DB, item *models.OrderedItem) error
+	GetOrderedItem(db *gorm.DB, orderID, productID string) (*models.OrderedItem, error)
 	GetDetailsAsUser(db *gorm.DB, userID, orderID string) (*models.OrderDetailsViewExternal, error)
 	GetDetailsAsStoreStuff(db *gorm.DB, storeID, orderID string) (*models.OrderDetailsView, error)
 	GetDetails(db *gorm.DB, orderID string) (*models.OrderDetailsView, error)
