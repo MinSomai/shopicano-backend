@@ -10,6 +10,7 @@ import (
 	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/services"
 	"github.com/shopicano/shopicano-backend/utils"
+	"github.com/shopicano/shopicano-backend/values"
 	"net/http"
 	"strings"
 )
@@ -23,11 +24,11 @@ func RegisterFSRoutes(g *echo.Group) {
 
 func serveAsStream(ctx echo.Context) error {
 	bucketName := ctx.Param("bucket_name")
-	FileName := ctx.Param("file_name")
+	fileName := ctx.Param("file_name")
 
 	resp := core.Response{}
 
-	f, err := services.ServeAsStreamFromMinio(fmt.Sprintf("%s/%s", bucketName, FileName))
+	f, err := services.ServeAsStreamFromMinio(fmt.Sprintf("%s/%s", bucketName, fileName))
 
 	if err != nil {
 		resp.Title = "Minio service failed"
@@ -37,13 +38,20 @@ func serveAsStream(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	return resp.ServerImageFromMinio(ctx, f)
+	return resp.ServerStreamFromMinio(ctx, f)
 }
 
 func upload(ctx echo.Context) error {
 	bucketName := ctx.Param("bucket_name")
 
 	resp := core.Response{}
+
+	if bucketName == values.ReservedBucketName {
+		resp.Title = "Unauthorized request"
+		resp.Status = http.StatusForbidden
+		resp.Code = errors.RestrictedBucket
+		return resp.ServerJSON(ctx)
+	}
 
 	if err := ctx.Request().ParseMultipartForm(32 << 20); err != nil {
 		resp.Title = "Couldn't parse multipart form"

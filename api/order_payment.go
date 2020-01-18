@@ -213,7 +213,6 @@ func generatePayNonce(ctx echo.Context) error {
 	case payment_gateways.StripePaymentGatewayName:
 		return generateStripePayNonce(ctx, m)
 	}
-
 	return serveInvalidPaymentRequest(ctx)
 }
 

@@ -6,23 +6,24 @@ import (
 )
 
 type Product struct {
-	ID                  string    `json:"id" sql:"id" gorm:"unique"`
-	Name                string    `json:"name" sql:"name" gorm:"primary_key"`
-	Description         string    `json:"description" sql:"description"`
-	IsPublished         bool      `json:"is_published" sql:"is_published" gorm:"index"`
-	StoreID             string    `json:"store_id" sql:"store_id" gorm:"primary_key"`
-	CategoryID          *string   `json:"category_id,omitempty" sql:"category_id" gorm:"index"`
-	SKU                 string    `json:"sku" sql:"sku" gorm:"unique"`
-	Stock               int       `json:"stock" sql:"stock" gorm:"index"`
-	Unit                string    `json:"unit" sql:"unit"`
-	Price               int       `json:"price" sql:"price" gorm:"index"`
-	AdditionalImages    string    `json:"additional_images" sql:"additional_images"`
-	Image               string    `json:"image,omitempty" sql:"image"`
-	IsShippable         bool      `json:"is_shippable" sql:"is_shippable" gorm:"index"`
-	IsDigital           bool      `json:"is_digital" sql:"is_digital" gorm:"index"`
-	DigitalDownloadLink string    `json:"-" sql:"digital_download_link"`
-	CreatedAt           time.Time `json:"created_at" sql:"created_at" gorm:"index"`
-	UpdatedAt           time.Time `json:"updated_at" sql:"updated_at" gorm:"index"`
+	ID                  string    `json:"id" gorm:"column:id;unique"`
+	Name                string    `json:"name" gorm:"column:name;primary_key"`
+	Description         string    `json:"description" gorm:"column:description"`
+	IsPublished         bool      `json:"is_published" gorm:"column:is_published;index"`
+	StoreID             string    `json:"store_id" gorm:"column:store_id;primary_key"`
+	CategoryID          *string   `json:"category_id,omitempty" gorm:"column:category_id;index"`
+	SKU                 string    `json:"sku" gorm:"column:sku;unique"`
+	Stock               int       `json:"stock" gorm:"column:stock;index"`
+	Unit                string    `json:"unit" gorm:"column:unit"`
+	Price               int       `json:"price" gorm:"column:price;index"`
+	AdditionalImages    string    `json:"additional_images" gorm:"column:additional_images"`
+	Image               string    `json:"image,omitempty" gorm:"column:image"`
+	IsShippable         bool      `json:"is_shippable" gorm:"column:is_shippable;index"`
+	IsDigital           bool      `json:"is_digital" gorm:"column:is_digital;index"`
+	DigitalDownloadLink string    `json:"-" gorm:"column:digital_download_link"`
+	DownloadCounter     int       `json:"download_counter" gorm:"column:download_counter;default:0"`
+	CreatedAt           time.Time `json:"created_at" gorm:"column:created_at;index"`
+	UpdatedAt           time.Time `json:"updated_at" gorm:"column:updated_at;index"`
 }
 
 func (p *Product) TableName() string {

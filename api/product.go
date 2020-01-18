@@ -1,6 +1,9 @@
 package api
 
 import (
+	"bytes"
+	"encoding/base64"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
@@ -8,8 +11,10 @@ import (
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
+	"github.com/shopicano/shopicano-backend/services"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
+	"github.com/shopicano/shopicano-backend/values"
 	"net/http"
 	"strconv"
 	"strings"
@@ -31,6 +36,19 @@ func RegisterProductRoutes(g *echo.Group) {
 		g.DELETE("/:product_id/", deleteProduct)
 		g.PUT("/:product_id/attributes/", addProductAttribute)
 		g.DELETE("/:product_id/attributes/:attribute_key/", deleteProductAttribute)
+	}(g)
+
+	func(g *echo.Group) {
+		// Private endpoints only
+		g.Use(middlewares.MustBeUserOrStoreStaffWithStoreActivation)
+		g.GET("/:product_id/download", downloadProduct)
+	}(g)
+
+	func(g *echo.Group) {
+		// Private endpoints only
+		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.GET("/:product_id/download", downloadProduct)
+		g.POST("/:product_id/upload", saveDownloadableProduct)
 	}(g)
 }
 
@@ -410,4 +428,135 @@ func deleteProductAttribute(ctx echo.Context) error {
 
 	resp.Status = http.StatusNoContent
 	return resp.ServerJSON(ctx)
+}
+
+func saveDownloadableProduct(ctx echo.Context) error {
+	productID := ctx.Param("product_id")
+
+	resp := core.Response{}
+
+	if err := ctx.Request().ParseMultipartForm(32 << 20); err != nil {
+		resp.Title = "Couldn't parse multipart form"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.InvalidMultiPartBody
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	r := ctx.Request()
+	r.Body = http.MaxBytesReader(ctx.Response(), r.Body, 32<<20) // 32 Mb
+
+	f, h, e := r.FormFile("file")
+	if e != nil {
+		resp.Title = "No multipart file"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.InvalidMultiPartBody
+		resp.Errors = e
+		return resp.ServerJSON(ctx)
+	}
+
+	body := make([]byte, h.Size)
+	_, errR := f.Read(body)
+	if errR != nil {
+		resp.Title = "Unable to read multipart data"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.UnableToReadMultiPartData
+		resp.Errors = errR
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB()
+	pr := data.NewProductRepository()
+	m, err := pr.Get(db, productID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Product not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.ProductNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	fileName := h.Filename
+	extSeparatorIndex := strings.LastIndex(fileName, ".")
+	fileName = base64.StdEncoding.EncodeToString([]byte(fileName[:extSeparatorIndex])) + "." + fileName[extSeparatorIndex+1:]
+
+	newFileName := fmt.Sprintf("%s-%s", utils.NewUUID(), fileName)
+	newFileNameWithBucket := fmt.Sprintf("%s/%s", values.ReservedBucketName, newFileName)
+	contentType := h.Header.Get("Content-Type")
+	errU := services.UploadToMinio(newFileNameWithBucket, contentType, bytes.NewReader(body), h.Size)
+	if errU != nil {
+		resp.Title = "Minio service failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.MinioServiceFailed
+		resp.Errors = errU
+		return resp.ServerJSON(ctx)
+	}
+
+	m.DigitalDownloadLink = newFileName
+	if err := pr.Update(db, m); err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Title = "Downloadable file has been added"
+	return resp.ServerJSON(ctx)
+}
+
+func downloadProduct(ctx echo.Context) error {
+	productID := ctx.Param("product_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+
+	pu := data.NewProductRepository()
+	m, err := pu.Get(db, productID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Product not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.ProductNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	f, err := services.ServeAsStreamFromMinio(fmt.Sprintf("%s/%s", values.ReservedBucketName, m.DigitalDownloadLink))
+
+	if err != nil {
+		resp.Title = "Minio service failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.MinioServiceFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	err = pu.IncreaseDownloadCounter(db, m)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	return resp.ServerStreamFromMinio(ctx, f)
 }

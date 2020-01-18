@@ -15,6 +15,7 @@ type ProductRepository interface {
 	SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.ProductDetailsInternal, error)
 	Delete(db *gorm.DB, storeID, productID string) error
 	Get(db *gorm.DB, productID string) (*models.Product, error)
+	IncreaseDownloadCounter(db *gorm.DB, m *models.Product) error
 	GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.Product, error)
 	GetDetails(db *gorm.DB, productID string) (*models.ProductDetails, error)
 	GetDetailsAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.ProductDetailsInternal, error)
