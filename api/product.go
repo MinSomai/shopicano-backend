@@ -543,14 +543,5 @@ func downloadProduct(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	err = pu.IncreaseDownloadCounter(db, m)
-	if err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
 	return resp.ServeStreamFromMinio(ctx, f)
 }

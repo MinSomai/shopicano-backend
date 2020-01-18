@@ -55,9 +55,8 @@ func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 
 func (pu *ProductRepositoryImpl) IncreaseDownloadCounter(db *gorm.DB, p *models.Product) error {
 	if err := db.Table(p.TableName()).
-		Select("download_counter").
 		Where("id = ? AND store_id = ?", p.ID, p.StoreID).
-		Set("download_counter", gorm.Expr("download_counter + ?", 1)).Error; err != nil {
+		Update("download_counter", gorm.Expr("download_counter + ?", 1)).Error; err != nil {
 		return err
 	}
 	return nil
