@@ -41,8 +41,8 @@ func RegisterProductRoutes(g *echo.Group) {
 	func(g *echo.Group) {
 		// Private endpoints only
 		g.Use(middlewares.IsStoreStaffWithStoreActivation)
-		g.GET("/:product_id/download", downloadProduct)
-		g.POST("/:product_id/upload", saveDownloadableProduct)
+		g.GET("/:product_id/download/", downloadProduct)
+		g.POST("/:product_id/upload/", saveDownloadableProduct)
 	}(g)
 }
 
@@ -552,5 +552,5 @@ func downloadProduct(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	return resp.ServerStreamFromMinio(ctx, f)
+	return resp.ServeStreamFromMinio(ctx, f)
 }

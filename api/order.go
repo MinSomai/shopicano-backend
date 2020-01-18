@@ -35,7 +35,7 @@ func RegisterOrderRoutes(g *echo.Group) {
 		g.Use(middlewares.AuthUser)
 		g.POST("/", createOrder)
 		g.POST("/:order_id/nonce/", generatePayNonce)
-		g.GET("/:order_id/products/:product_id/download", downloadProductAsUser)
+		g.GET("/:order_id/products/:product_id/download/", downloadProductAsUser)
 	}(*g)
 
 	func(g echo.Group) {
@@ -476,8 +476,10 @@ func downloadProductAsUser(ctx echo.Context) error {
 
 	ou := data.NewOrderRepository()
 
-	r, err := ou.GetDetailsAsUser(db, utils.GetUserID(ctx), orderID)
+	o, err := ou.GetDetailsAsUser(db, utils.GetUserID(ctx), orderID)
 	if err != nil {
+		log.Log().Errorln(err)
+
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Order not found"
 			resp.Status = http.StatusNotFound
@@ -493,8 +495,10 @@ func downloadProductAsUser(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	_, err = ou.GetOrderedItem(db, r.ID, productID)
+	_, err = ou.GetOrderedItem(db, o.ID, productID)
 	if err != nil {
+		log.Log().Errorln(err)
+
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Product not found"
 			resp.Status = http.StatusNotFound
@@ -513,6 +517,8 @@ func downloadProductAsUser(ctx echo.Context) error {
 	pu := data.NewProductRepository()
 	m, err := pu.Get(db, productID)
 	if err != nil {
+		log.Log().Errorln(err)
+
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Product not found"
 			resp.Status = http.StatusNotFound
@@ -528,9 +534,18 @@ func downloadProductAsUser(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	f, err := services.ServeAsStreamFromMinio(fmt.Sprintf("%s/%s", values.ReservedBucketName, m.DigitalDownloadLink))
+	if !(o.Status == models.OrderConfirmed && o.PaymentStatus == models.PaymentCompleted) {
+		resp.Title = "Unauthorized to download the product"
+		resp.Status = http.StatusForbidden
+		resp.Code = errors.UserScopeUnauthorized
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
 
+	f, err := services.ServeAsStreamFromMinio(fmt.Sprintf("%s/%s", values.ReservedBucketName, m.DigitalDownloadLink))
 	if err != nil {
+		log.Log().Errorln(err)
+
 		resp.Title = "Minio service failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.MinioServiceFailed
@@ -540,6 +555,8 @@ func downloadProductAsUser(ctx echo.Context) error {
 
 	err = pu.IncreaseDownloadCounter(db, m)
 	if err != nil {
+		log.Log().Errorln(err)
+
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -547,5 +564,5 @@ func downloadProductAsUser(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	return resp.ServerStreamFromMinio(ctx, f)
+	return resp.ServeStreamFromMinio(ctx, f)
 }

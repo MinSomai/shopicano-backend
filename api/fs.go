@@ -38,7 +38,7 @@ func serveAsStream(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	return resp.ServerStreamFromMinio(ctx, f)
+	return resp.ServeStreamFromMinio(ctx, f)
 }
 
 func upload(ctx echo.Context) error {

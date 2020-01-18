@@ -23,7 +23,7 @@ func (r *Response) ServerJSON(ctx echo.Context) error {
 	return nil
 }
 
-func (r *Response) ServerStreamFromMinio(ctx echo.Context, object *minio.Object) error {
+func (r *Response) ServeStreamFromMinio(ctx echo.Context, object *minio.Object) error {
 	s, _ := object.Stat()
 	fileName := fmt.Sprintf("%s", ctx.Param("file_name"))
 	ctx.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
