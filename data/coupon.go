@@ -13,4 +13,8 @@ type CouponRepository interface {
 	Delete(db *gorm.DB, storeID, couponID string) error
 	Get(db *gorm.DB, storeID, couponID string) (*models.Coupon, error)
 	GetByCode(db *gorm.DB, storeID, couponCode string) (*models.Coupon, error)
+	AddUser(db *gorm.DB, cf *models.CouponFor) error
+	RemoveUser(db *gorm.DB, cf *models.CouponFor) error
+	ListUsers(db *gorm.DB, storeID, couponID string) ([]string, error)
+	HasUser(db *gorm.DB, storeID, couponID, userID string) (bool, error)
 }

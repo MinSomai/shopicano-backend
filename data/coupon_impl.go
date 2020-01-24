@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/models"
 )
@@ -109,4 +110,35 @@ func (cr *CouponRepositoryImpl) RemoveUser(db *gorm.DB, cf *models.CouponFor) er
 		return err
 	}
 	return nil
+}
+
+func (cr *CouponRepositoryImpl) ListUsers(db *gorm.DB, storeID, couponID string) ([]string, error) {
+	var users []string
+
+	c := models.Coupon{}
+	cf := models.CouponFor{}
+	if err := db.Table(fmt.Sprintf("%s AS c", c.TableName())).
+		Select("cf.user_id AS users").
+		Joins(fmt.Sprintf("JOIN %s AS cf ON c.id = cf.coupon_id AND c.store_id = '%s' AND c.id = '%s'", cf.TableName(), storeID, couponID)).
+		Group("cf.user_id").
+		Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func (cr *CouponRepositoryImpl) HasUser(db *gorm.DB, storeID, couponID, userID string) (bool, error) {
+	var users []string
+
+	c := models.Coupon{}
+	cf := models.CouponFor{}
+	if err := db.Table(fmt.Sprintf("%s AS c", c.TableName())).
+		Select("cf.user_id").
+		Joins(fmt.Sprintf("JOIN %s AS cf ON c.id = cf.coupon_id AND c.store_id = '%s' AND c.id = '%s' AND cf.user_id = '%s'",
+			cf.TableName(), storeID, couponID, userID)).
+		Group("cf.user_id").
+		Scan(&users).Error; err != nil {
+		return false, err
+	}
+	return len(users) > 0, nil
 }
