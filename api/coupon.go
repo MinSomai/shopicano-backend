@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
@@ -11,7 +12,6 @@ import (
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -19,28 +19,24 @@ func RegisterCouponRoutes(g *echo.Group) {
 	func(g *echo.Group) {
 		// Private endpoints only
 		g.Use(middlewares.IsStoreStaffWithStoreActivation)
-		g.POST("/", createProduct)
-		g.PATCH("/:product_id/", updateProduct)
-		g.DELETE("/:product_id/", deleteProduct)
-		g.PUT("/:product_id/attributes/", addProductAttribute)
-		g.DELETE("/:product_id/attributes/:attribute_key/", deleteProductAttribute)
+		g.POST("/", createCoupon)
+		g.PATCH("/:coupon_id/", updateCoupon)
+		g.DELETE("/:coupon_id/", deleteCoupon)
+		g.GET("/:coupon_id/", getCoupon)
+		g.GET("/", listCoupons)
 	}(g)
 
 	func(g *echo.Group) {
 		// Private endpoints only
 		g.Use(middlewares.AuthUser)
-		g.POST("/", createProduct)
-		g.PATCH("/:product_id/check", updateProduct)
-		g.DELETE("/:product_id/", deleteProduct)
-		g.PUT("/:product_id/attributes/", addProductAttribute)
-		g.DELETE("/:product_id/attributes/:attribute_key/", deleteProductAttribute)
+		g.POST("/:coupon_id/", checkCouponAvailability)
 	}(g)
 }
 
 func createCoupon(ctx echo.Context) error {
 	storeID := ctx.Get(utils.StoreID).(string)
 
-	req, err := validators.ValidateCreateProduct(ctx)
+	req, err := validators.ValidateCreateCoupon(ctx)
 
 	resp := core.Response{}
 
@@ -52,50 +48,36 @@ func createCoupon(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if req.CategoryID != nil && *req.CategoryID == "" {
-		req.CategoryID = nil
-	}
-
-	images := ""
-	for _, i := range req.AdditionalImages {
-		if strings.TrimSpace(i) == "" {
-			continue
-		}
-		if images != "" {
-			images += ","
-		}
-		images += strings.TrimSpace(i)
-	}
-
-	p := models.Product{
-		ID:               utils.NewUUID(),
-		StoreID:          storeID,
-		Price:            req.Price,
-		Stock:            req.Stock,
-		Name:             req.Name,
-		IsShippable:      req.IsShippable,
-		CategoryID:       req.CategoryID,
-		IsPublished:      req.IsPublished,
-		IsDigital:        req.IsDigital,
-		AdditionalImages: images,
-		SKU:              req.SKU,
-		Unit:             req.Unit,
-		Image:            req.Image,
-		Description:      req.Description,
-		CreatedAt:        time.Now().UTC(),
-		UpdatedAt:        time.Now().UTC(),
-	}
-
 	db := app.DB()
+	cr := data.NewCouponRepository()
 
-	pu := data.NewProductRepository()
-	err = pu.Create(db, &p)
+	st, _ := utils.ParseDateTimeForInput(req.StartAt)
+	et, _ := utils.ParseDateTimeForInput(req.EndAt)
+
+	c := models.Coupon{
+		ID:             utils.NewUUID(),
+		StoreID:        storeID,
+		IsUserSpecific: req.IsUserSpecific,
+		DiscountType:   req.DiscountType,
+		Code:           req.Code,
+		DiscountAmount: req.DiscountAmount,
+		StartAt:        st,
+		EndAt:          et,
+		IsActive:       req.IsActive,
+		IsFlatDiscount: req.IsFlatDiscount,
+		MaxDiscount:    req.MaxDiscount,
+		MaxUsage:       req.MaxUsage,
+		CreatedAt:      time.Now().UTC(),
+		UpdatedAt:      time.Now().UTC(),
+	}
+
+	err = cr.Create(db, &c)
 	if err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
 			resp.Title = msg
 			resp.Status = http.StatusConflict
-			resp.Code = errors.ProductAlreadyExists
+			resp.Code = errors.CouponAlreadyExists
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
@@ -108,16 +90,16 @@ func createCoupon(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusCreated
-	resp.Title = "Product created"
-	resp.Data = p
+	resp.Title = "Coupon created"
+	resp.Data = c
 	return resp.ServerJSON(ctx)
 }
 
 func updateCoupon(ctx echo.Context) error {
 	storeID := ctx.Get(utils.StoreID).(string)
-	productID := ctx.Param("product_id")
+	couponID := ctx.Param("coupon_id")
 
-	req, err := validators.ValidateUpdateProduct(ctx)
+	req, err := validators.ValidateUpdateCoupon(ctx)
 
 	resp := core.Response{}
 
@@ -129,56 +111,68 @@ func updateCoupon(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if req.CategoryID != nil && *req.CategoryID == "" {
-		req.CategoryID = nil
-	}
-
 	db := app.DB()
+	cr := data.NewCouponRepository()
 
-	pu := data.NewProductRepository()
-
-	images := ""
-	for _, i := range req.AdditionalImages {
-		if strings.TrimSpace(i) == "" {
-			continue
-		}
-		if images != "" {
-			images += ","
-		}
-		images += strings.TrimSpace(i)
-	}
-
-	p, err := pu.GetAsStoreStuff(db, storeID, productID)
+	c, err := cr.Get(db, storeID, couponID)
 	if err != nil {
-		resp.Title = "Product not found"
-		resp.Status = http.StatusNotFound
-		resp.Code = errors.ProductNotFound
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Coupon not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.CouponNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
 
-	p.ID = productID
-	p.Price = req.Price
-	p.Stock = req.Stock
-	p.Name = req.Name
-	p.IsShippable = req.IsShippable
-	p.CategoryID = req.CategoryID
-	p.IsPublished = req.IsPublished
-	p.IsDigital = req.IsDigital
-	p.AdditionalImages = images
-	p.SKU = req.SKU
-	p.Unit = req.Unit
-	p.Image = req.Image
-	p.Description = req.Description
-	p.UpdatedAt = time.Now().UTC()
+	if req.Code != nil {
+		c.Code = *req.Code
+	}
+	if req.IsUserSpecific != nil {
+		c.IsUserSpecific = *req.IsUserSpecific
+	}
+	if req.DiscountType != nil {
+		c.DiscountType = *req.DiscountType
+	}
+	if req.DiscountAmount != nil {
+		c.DiscountAmount = *req.DiscountAmount
+	}
+	if req.IsActive != nil {
+		c.IsActive = *req.IsActive
+	}
+	if req.IsFlatDiscount != nil {
+		c.IsFlatDiscount = *req.IsFlatDiscount
+	}
+	if req.MaxDiscount != nil {
+		c.MaxDiscount = *req.MaxDiscount
+	}
+	if req.MaxUsage != nil {
+		c.MaxUsage = *req.MaxUsage
+	}
+	if req.StartAt != nil {
+		st, _ := utils.ParseDateTimeForInput(*req.StartAt)
+		c.StartAt = st
+	}
+	if req.EndAt != nil {
+		et, _ := utils.ParseDateTimeForInput(*req.EndAt)
+		c.EndAt = et
+	}
 
-	err = pu.Update(db, p)
+	c.UpdatedAt = time.Now().UTC()
+
+	err = cr.Update(db, c)
 	if err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
 			resp.Title = msg
 			resp.Status = http.StatusConflict
-			resp.Code = errors.ProductAlreadyExists
+			resp.Code = errors.CouponAlreadyExists
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
@@ -191,25 +185,25 @@ func updateCoupon(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusOK
-	resp.Title = "Product updated"
-	resp.Data = p
+	resp.Title = "Coupon updated"
+	resp.Data = c
 	return resp.ServerJSON(ctx)
 }
 
 func deleteCoupon(ctx echo.Context) error {
 	storeID := ctx.Get(utils.StoreID).(string)
-	productID := ctx.Param("product_id")
+	couponID := ctx.Param("coupon_id")
 
 	resp := core.Response{}
 
 	db := app.DB()
 
-	pu := data.NewProductRepository()
-	if err := pu.Delete(db, storeID, productID); err != nil {
+	cr := data.NewCouponRepository()
+	if err := cr.Delete(db, storeID, couponID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
-			resp.Title = "Product not found"
+			resp.Title = "Coupon not found"
 			resp.Status = http.StatusNotFound
-			resp.Code = errors.ProductNotFound
+			resp.Code = errors.CouponNotFound
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
@@ -226,28 +220,20 @@ func deleteCoupon(ctx echo.Context) error {
 }
 
 func getCoupon(ctx echo.Context) error {
-	productID := ctx.Param("product_id")
+	storeID := ctx.Get(utils.StoreID).(string)
+	couponID := ctx.Param("coupon_id")
 
 	resp := core.Response{}
 
 	db := app.DB()
 
-	pu := data.NewProductRepository()
-
-	var p interface{}
-	var err error
-
-	if utils.IsStoreStaff(ctx) {
-		p, err = pu.GetAsStoreStuff(db, ctx.Get(utils.StoreID).(string), productID)
-	} else {
-		p, err = pu.GetDetails(db, productID)
-	}
-
+	cr := data.NewCouponRepository()
+	v, err := cr.Get(db, storeID, couponID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
-			resp.Title = "Product not found"
+			resp.Title = "Coupon not found"
 			resp.Status = http.StatusNotFound
-			resp.Code = errors.ProductNotFound
+			resp.Code = errors.CouponNotFound
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
@@ -260,11 +246,11 @@ func getCoupon(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusOK
-	resp.Data = p
+	resp.Data = v
 	return resp.ServerJSON(ctx)
 }
 
-func listCoupon(ctx echo.Context) error {
+func listCoupons(ctx echo.Context) error {
 	pageQ := ctx.Request().URL.Query().Get("page")
 	limitQ := ctx.Request().URL.Query().Get("limit")
 	query := ctx.Request().URL.Query().Get("query")
@@ -283,9 +269,9 @@ func listCoupon(ctx echo.Context) error {
 	var r interface{}
 
 	if query == "" {
-		r, err = fetchProducts(ctx, page, limit, !utils.IsStoreStaff(ctx))
+		r, err = fetchCoupons(ctx, page, limit)
 	} else {
-		r, err = searchProducts(ctx, query, page, limit, !utils.IsStoreStaff(ctx))
+		r, err = searchCoupons(ctx, query, page, limit)
 	}
 
 	if err != nil {
@@ -299,6 +285,20 @@ func listCoupon(ctx echo.Context) error {
 	resp.Status = http.StatusOK
 	resp.Data = r
 	return resp.ServerJSON(ctx)
+}
+
+func fetchCoupons(ctx echo.Context, page int64, limit int64) (interface{}, error) {
+	from := (page - 1) * limit
+	cr := data.NewCouponRepository()
+	db := app.DB()
+	return cr.List(db, ctx.Get(utils.StoreID).(string), int(from), int(limit))
+}
+
+func searchCoupons(ctx echo.Context, query string, page int64, limit int64) (interface{}, error) {
+	from := (page - 1) * limit
+	cr := data.NewCouponRepository()
+	db := app.DB()
+	return cr.Search(db, ctx.Get(utils.StoreID).(string), query, int(from), int(limit))
 }
 
 func checkCouponAvailability(ctx echo.Context) error {

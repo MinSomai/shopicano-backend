@@ -41,6 +41,11 @@ func IsStoreStaff(ctx echo.Context) bool {
 	return ctx.Get(StoreID) != nil && perm != nil && (perm.(models.Permission) == models.ManagerPerm || perm.(models.Permission) == models.AdminPerm)
 }
 
+func IsPlatformAdmin(ctx echo.Context) bool {
+	perm := ctx.Get(UserPermission)
+	return perm != nil && (perm.(models.Permission) == models.ManagerPerm || perm.(models.Permission) == models.AdminPerm)
+}
+
 func GetStoreID(ctx echo.Context) string {
 	return ctx.Get(StoreID).(string)
 }
