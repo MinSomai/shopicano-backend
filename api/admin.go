@@ -15,19 +15,22 @@ import (
 )
 
 func RegisterAdminRoutes(g *echo.Group) {
-	g.GET("/shipping-methods/", listShippingMethods)
-	g.GET("/payment-methods/", listPaymentMethods)
+	func(g *echo.Group) {
+		g.Use(middlewares.AuthUser)
+		g.POST("/shipping-methods/", createShippingMethod)
+		g.PUT("/shipping-methods/:id/", updateShippingMethod)
+		g.DELETE("/shipping-methods/:id/", deleteShippingMethod)
 
-	g.Use(middlewares.IsPlatformAdmin)
-	g.POST("/shipping-methods/", createShippingMethod)
-	g.PUT("/shipping-methods/:id/", updateShippingMethod)
-	g.DELETE("/shipping-methods/:id/", deleteShippingMethod)
-	g.GET("/shipping-methods/with-admin/", listShippingMethodsWithAdmin)
+		g.POST("/payment-methods/", createPaymentMethod)
+		g.PUT("/payment-methods/:id/", updatePaymentMethod)
+		g.DELETE("/payment-methods/:id/", deletePaymentMethod)
+	}(g)
 
-	g.POST("/payment-methods/", createPaymentMethod)
-	g.PUT("/payment-methods/:id/", updatePaymentMethod)
-	g.DELETE("/payment-methods/:id/", deletePaymentMethod)
-	g.GET("/payment-methods/with-admin/", listPaymentMethodsWithAdmin)
+	func(g *echo.Group) {
+		g.Use(middlewares.MustBeUserOrStoreStaffWithStoreActivation)
+		g.GET("/shipping-methods/", listShippingMethods)
+		g.GET("/payment-methods/", listPaymentMethods)
+	}(g)
 }
 
 func createShippingMethod(ctx echo.Context) error {
@@ -173,7 +176,15 @@ func listShippingMethods(ctx echo.Context) error {
 
 	from := (page - 1) * limit
 	au := data.NewAdminRepository()
-	data, err := au.ListActiveShippingMethods(int(from), int(limit))
+
+	var v interface{}
+
+	if utils.IsPlatformAdmin(ctx) {
+		v, err = au.ListShippingMethods(int(from), int(limit))
+	} else {
+		v, err = au.ListActiveShippingMethods(int(from), int(limit))
+	}
+
 	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
@@ -183,38 +194,7 @@ func listShippingMethods(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusOK
-	resp.Data = data
-	return resp.ServerJSON(ctx)
-}
-
-func listShippingMethodsWithAdmin(ctx echo.Context) error {
-	pageQ := ctx.Request().URL.Query().Get("page")
-	limitQ := ctx.Request().URL.Query().Get("limit")
-
-	page, err := strconv.ParseInt(pageQ, 10, 64)
-	if err != nil {
-		page = 1
-	}
-	limit, err := strconv.ParseInt(limitQ, 10, 64)
-	if err != nil {
-		limit = 10
-	}
-
-	resp := core.Response{}
-
-	from := (page - 1) * limit
-	au := data.NewAdminRepository()
-	data, err := au.ListShippingMethods(int(from), int(limit))
-	if err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	resp.Status = http.StatusOK
-	resp.Data = data
+	resp.Data = v
 	return resp.ServerJSON(ctx)
 }
 
@@ -355,7 +335,15 @@ func listPaymentMethods(ctx echo.Context) error {
 
 	from := (page - 1) * limit
 	au := data.NewAdminRepository()
-	data, err := au.ListActivePaymentMethods(int(from), int(limit))
+
+	var v interface{}
+
+	if utils.IsPlatformAdmin(ctx) {
+		v, err = au.ListPaymentMethods(int(from), int(limit))
+	} else {
+		v, err = au.ListActivePaymentMethods(int(from), int(limit))
+	}
+
 	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
@@ -365,37 +353,6 @@ func listPaymentMethods(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusOK
-	resp.Data = data
-	return resp.ServerJSON(ctx)
-}
-
-func listPaymentMethodsWithAdmin(ctx echo.Context) error {
-	pageQ := ctx.Request().URL.Query().Get("page")
-	limitQ := ctx.Request().URL.Query().Get("limit")
-
-	page, err := strconv.ParseInt(pageQ, 10, 64)
-	if err != nil {
-		page = 1
-	}
-	limit, err := strconv.ParseInt(limitQ, 10, 64)
-	if err != nil {
-		limit = 10
-	}
-
-	resp := core.Response{}
-
-	from := (page - 1) * limit
-	au := data.NewAdminRepository()
-	data, err := au.ListPaymentMethods(int(from), int(limit))
-	if err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
-	resp.Status = http.StatusOK
-	resp.Data = data
+	resp.Data = v
 	return resp.ServerJSON(ctx)
 }

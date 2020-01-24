@@ -32,6 +32,7 @@ func (cr *CouponRepositoryImpl) Update(db *gorm.DB, c *models.Coupon) error {
 			"is_user_specific": c.IsUserSpecific,
 			"max_discount":     c.MaxDiscount,
 			"max_usage":        c.MaxUsage,
+			"min_order_value":  c.MinOrderValue,
 			"discount_type":    c.DiscountType,
 			"start_at":         c.StartAt,
 			"end_at":           c.EndAt,
