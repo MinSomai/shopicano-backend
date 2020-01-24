@@ -77,23 +77,22 @@ func createProduct(ctx echo.Context) error {
 	}
 
 	p := models.Product{
-		ID:                  utils.NewUUID(),
-		StoreID:             storeID,
-		Price:               req.Price,
-		Stock:               req.Stock,
-		Name:                req.Name,
-		IsShippable:         req.IsShippable,
-		CategoryID:          req.CategoryID,
-		IsPublished:         req.IsPublished,
-		IsDigital:           req.IsDigital,
-		AdditionalImages:    images,
-		SKU:                 req.SKU,
-		Unit:                req.Unit,
-		DigitalDownloadLink: req.DigitalDownloadLink,
-		Image:               req.Image,
-		Description:         req.Description,
-		CreatedAt:           time.Now().UTC(),
-		UpdatedAt:           time.Now().UTC(),
+		ID:               utils.NewUUID(),
+		StoreID:          storeID,
+		Price:            req.Price,
+		Stock:            req.Stock,
+		Name:             req.Name,
+		IsShippable:      req.IsShippable,
+		CategoryID:       req.CategoryID,
+		IsPublished:      req.IsPublished,
+		IsDigital:        req.IsDigital,
+		AdditionalImages: images,
+		SKU:              req.SKU,
+		Unit:             req.Unit,
+		Image:            req.Image,
+		Description:      req.Description,
+		CreatedAt:        time.Now().UTC(),
+		UpdatedAt:        time.Now().UTC(),
 	}
 
 	db := app.DB()
@@ -178,7 +177,6 @@ func updateProduct(ctx echo.Context) error {
 	p.AdditionalImages = images
 	p.SKU = req.SKU
 	p.Unit = req.Unit
-	p.DigitalDownloadLink = req.DigitalDownloadLink
 	p.Image = req.Image
 	p.Description = req.Description
 	p.UpdatedAt = time.Now().UTC()
