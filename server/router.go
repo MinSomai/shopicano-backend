@@ -12,7 +12,7 @@ var router = echo.New()
 // GetRouter returns the api router
 func GetRouter() http.Handler {
 	router.Use(middleware.Logger())
-	//router.Use(middleware.Recover())
+	router.Use(middleware.Recover())
 	router.Pre(middleware.AddTrailingSlash())
 	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
@@ -39,6 +39,8 @@ func registerV1Routes() {
 	categoryGroup := v1.Group("/categories")
 	collectionGroup := v1.Group("/collections")
 	productGroup := v1.Group("/products")
+	couponGroup := v1.Group("/coupons")
+	saleGroup := v1.Group("/sales")
 	addressesGroup := v1.Group("/addresses")
 	ordersGroup := v1.Group("/orders")
 	paymentGroup := v1.Group("/payments")
@@ -60,4 +62,6 @@ func registerV1Routes() {
 	api.RegisterPaymentRoutes(paymentGroup)
 	api.RegisterCustomerRoutes(customersGroup)
 	api.RegisterStatsRoutes(statsGroup)
+	api.RegisterCouponRoutes(couponGroup)
+	api.RegisterSaleRoutes(saleGroup)
 }

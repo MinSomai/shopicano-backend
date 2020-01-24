@@ -131,7 +131,7 @@ func (pu *ProductRepositoryImpl) Delete(db *gorm.DB, storeID, productID string) 
 func (pu *ProductRepositoryImpl) Get(db *gorm.DB, productID string) (*models.Product, error) {
 	p := models.Product{}
 	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
-		Where("products.id = ? AND products.is_published = ?", productID, true).
+		Where("products.id = ?", productID).
 		First(&p).Error; err != nil {
 		return nil, err
 	}
