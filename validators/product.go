@@ -7,21 +7,18 @@ import (
 )
 
 type ReqProductCreate struct {
-	Name                   string   `json:"name" valid:"required,stringlength(3|100)"`
-	Description            string   `json:"description" valid:"required,stringlength(3|100000)"`
-	IsPublished            bool     `json:"is_published"`
-	CategoryID             *string  `json:"category_id"`
-	Image                  string   `json:"image"`
-	IsShippable            bool     `json:"is_shippable"`
-	IsDigital              bool     `json:"is_digital"`
-	SKU                    string   `json:"sku" valid:"required,stringlength(3|100)"`
-	Stock                  int      `json:"stock" valid:"required,range(0|100000)"`
-	Unit                   string   `json:"unit" valid:"required,stringlength(1|20)"`
-	Price                  int      `json:"price" valid:"required,range(0|10000000)"`
-	DigitalDownloadLink    string   `json:"digital_download_link"`
-	AdditionalImages       []string `json:"additional_images"`
-	AdditionalChargesToAdd []string `json:"additional_charges_to_add"`
-	CollectionsToAdd       []string `json:"collections_to_add"`
+	Name             string   `json:"name" valid:"required,stringlength(3|100)"`
+	Description      string   `json:"description" valid:"required,stringlength(3|100000)"`
+	IsPublished      bool     `json:"is_published"`
+	CategoryID       *string  `json:"category_id"`
+	Image            string   `json:"image"`
+	IsShippable      bool     `json:"is_shippable"`
+	IsDigital        bool     `json:"is_digital"`
+	SKU              string   `json:"sku" valid:"required,stringlength(3|100)"`
+	Stock            int      `json:"stock" valid:"required,range(0|100000)"`
+	Unit             string   `json:"unit" valid:"required,stringlength(1|20)"`
+	Price            int      `json:"price" valid:"required,range(0|10000000)"`
+	AdditionalImages []string `json:"additional_images"`
 }
 
 func ValidateCreateProduct(ctx echo.Context) (*ReqProductCreate, error) {
@@ -46,23 +43,18 @@ func ValidateCreateProduct(ctx echo.Context) (*ReqProductCreate, error) {
 }
 
 type ReqProductUpdate struct {
-	Name                      string   `json:"name" valid:"required,stringlength(3|100)"`
-	Description               string   `json:"description" valid:"required,stringlength(3|100000)"`
-	IsPublished               bool     `json:"is_published"`
-	CategoryID                *string  `json:"category_id"`
-	Image                     string   `json:"image"`
-	IsShippable               bool     `json:"is_shippable"`
-	IsDigital                 bool     `json:"is_digital"`
-	SKU                       string   `json:"sku" valid:"required,stringlength(3|100)"`
-	Stock                     int      `json:"stock" valid:"required,range(0|100000)"`
-	Unit                      string   `json:"unit" valid:"required,stringlength(1|20)"`
-	Price                     int      `json:"price" valid:"required,range(0|10000000)"`
-	DigitalDownloadLink       string   `json:"digital_download_link"`
-	AdditionalImages          []string `json:"additional_images"`
-	CollectionsToAdd          []string `json:"collections_to_add"`
-	CollectionsToRemove       []string `json:"collections_to_remove"`
-	AdditionalChargesToAdd    []string `json:"additional_charges_to_add"`
-	AdditionalChargesToRemove []string `json:"additional_charges_to_remove"`
+	Name             string   `json:"name" valid:"required,stringlength(3|100)"`
+	Description      string   `json:"description" valid:"required,stringlength(3|100000)"`
+	IsPublished      bool     `json:"is_published"`
+	CategoryID       *string  `json:"category_id"`
+	Image            string   `json:"image"`
+	IsShippable      bool     `json:"is_shippable"`
+	IsDigital        bool     `json:"is_digital"`
+	SKU              string   `json:"sku" valid:"required,stringlength(3|100)"`
+	Stock            int      `json:"stock" valid:"required,range(0|100000)"`
+	Unit             string   `json:"unit" valid:"required,stringlength(1|20)"`
+	Price            int      `json:"price" valid:"required,range(0|10000000)"`
+	AdditionalImages []string `json:"additional_images"`
 }
 
 func ValidateUpdateProduct(ctx echo.Context) (*ReqProductUpdate, error) {
