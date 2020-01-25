@@ -37,6 +37,7 @@ type Order struct {
 	Nonce                *string       `json:"nonce" gomr:"column:nonce"`
 	TransactionID        *string       `json:"transaction_id" gorm:"column:transaction_id;unique_index"`
 	GrandTotal           int           `json:"grand_total" gorm:"column:grand_total"`
+	DiscountedAmount     int           `json:"discounted_amount" gorm:"column:discounted_amount"`
 	Status               OrderStatus   `json:"status" gorm:"column:status"`
 	PaymentStatus        PaymentStatus `json:"payment_status" gorm:"column:payment_status"`
 	CreatedAt            time.Time     `json:"created_at" gorm:"column:created_at;index;not null"`

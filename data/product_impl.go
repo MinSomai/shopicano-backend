@@ -233,9 +233,13 @@ func (pu *ProductRepositoryImpl) GetForOrder(db *gorm.DB, productID string, quan
 	p := models.Product{}
 
 	if err := db.Table(p.TableName()).
-		Where("id = ? AND stock - ? >= 0", productID, quantity).
+		Where("id = ? AND (stock - ? >= 0 OR is_digital)", productID, quantity).
 		First(&p).Error; err != nil {
 		return nil, err
+	}
+
+	if p.IsDigital {
+		return &p, nil
 	}
 
 	if err := db.Table(p.TableName()).
