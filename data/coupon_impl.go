@@ -117,13 +117,26 @@ func (cr *CouponRepositoryImpl) ListUsers(db *gorm.DB, storeID, couponID string)
 
 	c := models.Coupon{}
 	cf := models.CouponFor{}
-	if err := db.Table(fmt.Sprintf("%s AS c", c.TableName())).
+	rows, err := db.Table(fmt.Sprintf("%s AS c", c.TableName())).
 		Select("cf.user_id AS users").
-		Joins(fmt.Sprintf("JOIN %s AS cf ON c.id = cf.coupon_id AND c.store_id = '%s' AND c.id = '%s'", cf.TableName(), storeID, couponID)).
+		Where("c.store_id = ? AND c.id = ?", storeID, couponID).
+		Joins(fmt.Sprintf("JOIN %s AS cf ON c.id = cf.coupon_id", cf.TableName())).
 		Group("cf.user_id").
-		Find(&users).Error; err != nil {
+		Rows()
+	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var value string
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		users = append(users, value)
+	}
+
 	return users, nil
 }
 

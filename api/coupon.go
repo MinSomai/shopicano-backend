@@ -247,7 +247,7 @@ func getCoupon(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	users, err := cr.ListUsers(db, storeID, couponID)
+	users, err := cr.ListUsers(db, storeID, v.ID)
 	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
