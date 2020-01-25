@@ -1,7 +1,9 @@
 package data
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/models"
 )
 
@@ -89,7 +91,7 @@ func (cr *CouponRepositoryImpl) GetByCode(db *gorm.DB, storeID, couponCode strin
 	c := models.Coupon{}
 	if err := db.Table(c.TableName()).
 		Where("store_id = ? AND code = ?", storeID, couponCode).
-		Delete(&c).Error; err != nil {
+		Find(&c).Error; err != nil {
 		return nil, err
 	}
 	return &c, nil
@@ -109,4 +111,66 @@ func (cr *CouponRepositoryImpl) RemoveUser(db *gorm.DB, cf *models.CouponFor) er
 		return err
 	}
 	return nil
+}
+
+func (cr *CouponRepositoryImpl) ListUsers(db *gorm.DB, storeID, couponID string) ([]string, error) {
+	var users []string
+
+	c := models.Coupon{}
+	cf := models.CouponFor{}
+	rows, err := db.Table(fmt.Sprintf("%s AS c", c.TableName())).
+		Select("cf.user_id AS users").
+		Where("c.store_id = ? AND c.id = ?", storeID, couponID).
+		Joins(fmt.Sprintf("JOIN %s AS cf ON c.id = cf.coupon_id", cf.TableName())).
+		Group("cf.user_id").
+		Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var value string
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		users = append(users, value)
+	}
+
+	return users, nil
+}
+
+func (cr *CouponRepositoryImpl) HasUser(db *gorm.DB, storeID, couponID, userID string) (bool, error) {
+	var users []string
+
+	c := models.Coupon{}
+	cf := models.CouponFor{}
+	if err := db.Table(fmt.Sprintf("%s AS c", c.TableName())).
+		Select("cf.user_id").
+		Joins(fmt.Sprintf("JOIN %s AS cf ON c.id = cf.coupon_id AND c.store_id = '%s' AND c.id = '%s' AND cf.user_id = '%s'",
+			cf.TableName(), storeID, couponID, userID)).
+		Group("cf.user_id").
+		Scan(&users).Error; err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return len(users) > 0, nil
+}
+
+func (cr *CouponRepositoryImpl) AddUsage(db *gorm.DB, cu *models.CouponUsage) error {
+	return db.Table(cu.TableName()).Create(cu).Error
+}
+
+func (cr *CouponRepositoryImpl) GetUsage(db *gorm.DB, couponID, userID string) (int, error) {
+	cu := models.CouponUsage{}
+	var count int
+	if err := db.Table(cu.TableName()).
+		Where("coupon_id = ? AND user_id = ?", couponID, userID).
+		Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }

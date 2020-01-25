@@ -40,7 +40,6 @@ func registerV1Routes() {
 	collectionGroup := v1.Group("/collections")
 	productGroup := v1.Group("/products")
 	couponGroup := v1.Group("/coupons")
-	saleGroup := v1.Group("/sales")
 	addressesGroup := v1.Group("/addresses")
 	ordersGroup := v1.Group("/orders")
 	paymentGroup := v1.Group("/payments")
@@ -63,5 +62,4 @@ func registerV1Routes() {
 	api.RegisterCustomerRoutes(customersGroup)
 	api.RegisterStatsRoutes(statsGroup)
 	api.RegisterCouponRoutes(couponGroup)
-	api.RegisterSaleRoutes(saleGroup)
 }

@@ -8,6 +8,8 @@ const (
 	BearerTokenNotFound                           ErrorCode = "400003"
 	InvalidRequest                                ErrorCode = "400005"
 	CartMustHaveAllDigitalOrAllNonDigitalProducts ErrorCode = "400006"
+	AllProductsMustBeFromSameStore                ErrorCode = "400007"
+	InvalidCoupon                                 ErrorCode = "400008"
 	StoreCreationDataInvalid                      ErrorCode = "422001"
 	UserLoginDataInvalid                          ErrorCode = "422002"
 	UserSignUpDataInvalid                         ErrorCode = "422003"

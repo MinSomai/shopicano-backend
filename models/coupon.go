@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"github.com/shopicano/shopicano-backend/log"
 	"time"
 )
 
@@ -41,4 +42,34 @@ func (c *Coupon) ForeignKeys() []string {
 	return []string{
 		fmt.Sprintf("store_id;%s(id);RESTRICT;RESTRICT", s.TableName()),
 	}
+}
+
+func (c *Coupon) IsValid() bool {
+	now := time.Now().UTC()
+	log.Log().Infoln(now)
+	log.Log().Infoln(c.StartAt)
+	log.Log().Infoln(c.EndAt)
+	return c.IsActive && (now.After(c.StartAt) && now.Before(c.EndAt))
+}
+
+func (c *Coupon) CalculateDiscount(value int) int {
+	if value == 0 {
+		return 0
+	}
+	if c.MinOrderValue != 0 && value < c.MinOrderValue {
+		return 0
+	}
+
+	if c.IsFlatDiscount {
+		if c.MaxDiscount != 0 && c.DiscountAmount > c.MaxDiscount {
+			return c.MaxDiscount
+		}
+		return c.DiscountAmount
+	}
+
+	discount := (value * c.DiscountAmount) / 100
+	if c.MaxDiscount != 0 && discount > c.MaxDiscount {
+		return c.MaxDiscount
+	}
+	return discount
 }

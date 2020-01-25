@@ -75,7 +75,6 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	o.ID = utils.NewUUID()
 	o.Hash = utils.NewShortUUID()
 	o.UserID = pld.UserID
-	o.StoreID = pld.StoreID
 	o.ShippingAddressID = pld.ShippingAddressID
 	o.BillingAddressID = pld.BillingAddressID
 	o.PaymentMethodID = pld.PaymentMethodID
@@ -86,6 +85,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	pu := data.NewProductRepository()
 	ou := data.NewOrderRepository()
 	au := data.NewAdminRepository()
+	cu := data.NewCouponRepository()
 
 	pm, err := au.GetPaymentMethod(o.PaymentMethodID)
 	if err != nil {
@@ -136,8 +136,10 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 
 	var availableItems []*models.OrderedItem
 
+	var storeID *string
+
 	for _, v := range pld.Items {
-		item, err := pu.GetForOrder(db, o.StoreID, v.ID, v.Quantity)
+		item, err := pu.GetForOrder(db, v.ID, v.Quantity)
 		if err != nil {
 			db.Rollback()
 
@@ -154,6 +156,20 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			resp.Code = errors.DatabaseQueryFailed
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
+		}
+
+		if storeID == nil {
+			storeID = &item.StoreID
+			o.StoreID = *storeID
+		} else {
+			if *storeID != item.StoreID {
+				db.Rollback()
+
+				resp.Title = "All products must be from same store"
+				resp.Status = http.StatusBadRequest
+				resp.Code = errors.AllProductsMustBeFromSameStore
+				return resp.ServerJSON(ctx)
+			}
 		}
 
 		if !hasDigitalProducts {
@@ -194,9 +210,101 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		o.ShippingCharge = sm.CalculateDeliveryCharge(0)
 	}
 
-	pgName := payment_gateways.GetActivePaymentGateway().GetName()
-
 	o.GrandTotal = o.SubTotal + o.ShippingCharge
+
+	var couponID *string
+
+	if pld.CouponCode != nil {
+		coupon, err := cu.GetByCode(db, *storeID, *pld.CouponCode)
+		if err != nil {
+			db.Rollback()
+
+			if errors.IsRecordNotFoundError(err) {
+				resp.Title = "coupon not found"
+				resp.Status = http.StatusNotFound
+				resp.Code = errors.CouponNotFound
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		if !coupon.IsValid() {
+			db.Rollback()
+
+			resp.Title = "Coupon is invalid"
+			resp.Status = http.StatusBadRequest
+			resp.Code = errors.InvalidCoupon
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		if coupon.IsUserSpecific {
+			ok, err := cu.HasUser(db, *storeID, coupon.ID, pld.UserID)
+			if err != nil {
+				db.Rollback()
+
+				resp.Title = "Database query failed"
+				resp.Status = http.StatusInternalServerError
+				resp.Code = errors.DatabaseQueryFailed
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+
+			if !ok {
+				db.Rollback()
+
+				resp.Title = "Coupon not applicable for the user"
+				resp.Status = http.StatusNotFound
+				resp.Code = errors.CouponNotFound
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+		}
+
+		previousUsage, err := cu.GetUsage(db, coupon.ID, o.UserID)
+		if err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to get coupon usage"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		if coupon.MaxUsage != 0 && previousUsage >= coupon.MaxUsage {
+			db.Rollback()
+
+			resp.Title = "Coupon usage exceed"
+			resp.Status = http.StatusBadRequest
+			resp.Code = errors.InvalidCoupon
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		discount := 0
+		switch coupon.DiscountType {
+		case models.ProductDiscount:
+			discount = coupon.CalculateDiscount(o.SubTotal)
+		case models.ShippingDiscount:
+			discount = coupon.CalculateDiscount(o.ShippingCharge)
+		case models.TotalDiscount:
+			discount = coupon.CalculateDiscount(o.GrandTotal)
+		default:
+			discount = 0
+		}
+
+		o.GrandTotal = o.GrandTotal - discount
+		couponID = &coupon.ID
+	}
+
+	pgName := payment_gateways.GetActivePaymentGateway().GetName()
 	o.PaymentProcessingFee = pm.CalculateProcessingFee(o.GrandTotal)
 	o.PaymentGateway = &pgName
 
@@ -219,6 +327,23 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
+	}
+
+	if couponID != nil {
+		couponUsage := models.CouponUsage{
+			CouponID: *couponID,
+			UserID:   o.UserID,
+			OrderID:  o.ID,
+		}
+		if err := cu.AddUsage(db, &couponUsage); err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to add coupon usage"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
 	}
 
 	for _, v := range availableItems {
@@ -279,6 +404,48 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			OrderID:   o.ID,
 			Action:    string(o.Status),
 			Details:   "Order has been confirmed",
+			CreatedAt: time.Now(),
+		}
+		if err := ou.CreateLog(db, &ol); err != nil {
+			db.Rollback()
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
+	if o.GrandTotal == 0 {
+		o.PaymentStatus = models.PaymentCompleted
+
+		err = ou.UpdatePaymentStatus(db, &o)
+		if err != nil {
+			db.Rollback()
+
+			log.Log().Errorln(err)
+
+			if errors.IsPreparedError(err) {
+				resp.Title = "Invalid request"
+				resp.Status = http.StatusBadRequest
+				resp.Code = errors.InvalidRequest
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		ol := models.OrderLog{
+			ID:        utils.NewUUID(),
+			OrderID:   o.ID,
+			Action:    string(o.PaymentStatus),
+			Details:   "Payment has been completed",
 			CreatedAt: time.Now(),
 		}
 		if err := ou.CreateLog(db, &ol); err != nil {

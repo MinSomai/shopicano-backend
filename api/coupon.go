@@ -24,6 +24,8 @@ func RegisterCouponRoutes(g *echo.Group) {
 		g.DELETE("/:coupon_id/", deleteCoupon)
 		g.GET("/:coupon_id/", getCoupon)
 		g.GET("/", listCoupons)
+		g.PATCH("/:coupon_id/users/", addCouponUsers)
+		g.DELETE("/:coupon_id/users/", removeCouponUsers)
 	}(g)
 
 	func(g *echo.Group) {
@@ -61,8 +63,8 @@ func createCoupon(ctx echo.Context) error {
 		DiscountType:   req.DiscountType,
 		Code:           req.Code,
 		DiscountAmount: req.DiscountAmount,
-		StartAt:        st,
-		EndAt:          et,
+		StartAt:        st.UTC(),
+		EndAt:          et.UTC(),
 		IsActive:       req.IsActive,
 		IsFlatDiscount: req.IsFlatDiscount,
 		MaxDiscount:    req.MaxDiscount,
@@ -157,11 +159,11 @@ func updateCoupon(ctx echo.Context) error {
 	}
 	if req.StartAt != nil {
 		st, _ := utils.ParseDateTimeForInput(*req.StartAt)
-		c.StartAt = st
+		c.StartAt = st.UTC()
 	}
 	if req.EndAt != nil {
 		et, _ := utils.ParseDateTimeForInput(*req.EndAt)
-		c.EndAt = et
+		c.EndAt = et.UTC()
 	}
 
 	c.UpdatedAt = time.Now().UTC()
@@ -245,8 +247,20 @@ func getCoupon(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	users, err := cr.ListUsers(db, storeID, v.ID)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	resp.Status = http.StatusOK
-	resp.Data = v
+	resp.Data = map[string]interface{}{
+		"coupon": v,
+		"users":  users,
+	}
 	return resp.ServerJSON(ctx)
 }
 
@@ -337,5 +351,146 @@ func checkCouponAvailability(ctx echo.Context) error {
 
 	resp.Status = http.StatusOK
 	resp.Data = p
+	return resp.ServerJSON(ctx)
+}
+
+func addCouponUsers(ctx echo.Context) error {
+	storeID := ctx.Get(utils.StoreID).(string)
+	couponID := ctx.Param("coupon_id")
+
+	resp := core.Response{}
+
+	body := struct {
+		Users []string
+	}{}
+
+	if err := ctx.Bind(&body); err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.ProductCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+
+	cr := data.NewCouponRepository()
+	v, err := cr.Get(db, storeID, couponID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Coupon not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.CouponNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	for _, u := range body.Users {
+		cf := models.CouponFor{
+			UserID:   u,
+			CouponID: v.ID,
+		}
+		if err := cr.AddUser(db, &cf); err != nil {
+			db.Rollback()
+
+			msg, ok := errors.IsDuplicateKeyError(err)
+			if ok {
+				resp.Title = msg
+				resp.Status = http.StatusConflict
+				resp.Code = errors.CouponNotFound
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	return resp.ServerJSON(ctx)
+}
+
+func removeCouponUsers(ctx echo.Context) error {
+	storeID := ctx.Get(utils.StoreID).(string)
+	couponID := ctx.Param("coupon_id")
+
+	resp := core.Response{}
+
+	body := struct {
+		Users []string
+	}{}
+
+	if err := ctx.Bind(&body); err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.ProductCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+
+	cr := data.NewCouponRepository()
+	v, err := cr.Get(db, storeID, couponID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Coupon not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.CouponNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	for _, u := range body.Users {
+		cf := models.CouponFor{
+			UserID:   u,
+			CouponID: v.ID,
+		}
+		if err := cr.RemoveUser(db, &cf); err != nil {
+			db.Rollback()
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusNotFound
 	return resp.ServerJSON(ctx)
 }
