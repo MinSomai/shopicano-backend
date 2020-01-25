@@ -13,7 +13,8 @@ type OrderDetails struct {
 	Nonce                  string        `json:"nonce"`
 	TransactionID          string        `json:"transaction_id"`
 	GrandTotal             int64         `json:"grand_total"`
-	IsPaid                 bool          `json:"is_paid"`
+	DiscountedAmount       int           `json:"discounted_amount"`
+	CouponCode             string        `json:"coupon_code"`
 	Status                 OrderStatus   `json:"status"`
 	PaymentStatus          PaymentStatus `json:"payment_status"`
 	CreatedAt              *time.Time    `json:"created_at"`
@@ -60,7 +61,5 @@ type OrderedItemDetails struct {
 	ProductName string `json:"product_name"`
 	Quantity    int    `json:"quantity"`
 	Price       int    `json:"price"`
-	Vat         int    `json:"vat"`
-	Tax         int    `json:"tax"`
 	Total       int    `json:"total"`
 }

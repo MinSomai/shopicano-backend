@@ -158,6 +158,10 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			return resp.ServerJSON(ctx)
 		}
 
+		if item.IsDigital {
+			v.Quantity = 1
+		}
+
 		if storeID == nil {
 			storeID = &item.StoreID
 			o.StoreID = *storeID
@@ -300,7 +304,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			discount = 0
 		}
 
-		o.GrandTotal = o.GrandTotal - discount
+		o.DiscountedAmount = discount
 		couponID = &coupon.ID
 	}
 
@@ -417,7 +421,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
-	if o.GrandTotal == 0 {
+	if o.GrandTotal-o.DiscountedAmount == 0 {
 		o.PaymentStatus = models.PaymentCompleted
 
 		err = ou.UpdatePaymentStatus(db, &o)

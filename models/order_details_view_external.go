@@ -12,6 +12,8 @@ type OrderDetailsViewExternal struct {
 	Nonce                  *string                   `json:"nonce,omitempty"`
 	TransactionID          *string                   `json:"transaction_id,omitempty"`
 	GrandTotal             int64                     `json:"grand_total"`
+	DiscountedAmount       int                       `json:"discounted_amount"`
+	CouponCode             string                    `json:"coupon_code"`
 	Status                 OrderStatus               `json:"status"`
 	PaymentStatus          PaymentStatus             `json:"payment_status"`
 	CreatedAt              *time.Time                `json:"created_at"`
