@@ -63,8 +63,8 @@ func createCoupon(ctx echo.Context) error {
 		DiscountType:   req.DiscountType,
 		Code:           req.Code,
 		DiscountAmount: req.DiscountAmount,
-		StartAt:        st,
-		EndAt:          et,
+		StartAt:        st.UTC(),
+		EndAt:          et.UTC(),
 		IsActive:       req.IsActive,
 		IsFlatDiscount: req.IsFlatDiscount,
 		MaxDiscount:    req.MaxDiscount,
@@ -159,11 +159,11 @@ func updateCoupon(ctx echo.Context) error {
 	}
 	if req.StartAt != nil {
 		st, _ := utils.ParseDateTimeForInput(*req.StartAt)
-		c.StartAt = st
+		c.StartAt = st.UTC()
 	}
 	if req.EndAt != nil {
 		et, _ := utils.ParseDateTimeForInput(*req.EndAt)
-		c.EndAt = et
+		c.EndAt = et.UTC()
 	}
 
 	c.UpdatedAt = time.Now().UTC()

@@ -49,8 +49,17 @@ func (o *Order) TableName() string {
 
 func (o *Order) ForeignKeys() []string {
 	s := Store{}
+	u := User{}
+	a := Address{}
+	sm := ShippingMethod{}
+	pm := PaymentMethod{}
 
 	return []string{
 		fmt.Sprintf("store_id;%s(id);RESTRICT;RESTRICT", s.TableName()),
+		fmt.Sprintf("user_id;%s(id);RESTRICT;RESTRICT", u.TableName()),
+		fmt.Sprintf("shipping_address_id;%s(id);RESTRICT;RESTRICT", a.TableName()),
+		fmt.Sprintf("billing_address_id;%s(id);RESTRICT;RESTRICT", a.TableName()),
+		fmt.Sprintf("payment_method_id;%s(id);RESTRICT;RESTRICT", pm.TableName()),
+		fmt.Sprintf("shipping_method_id;%s(id);RESTRICT;RESTRICT", sm.TableName()),
 	}
 }

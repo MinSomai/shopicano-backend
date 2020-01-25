@@ -8,7 +8,7 @@ import (
 
 type ReqOrderItem struct {
 	ID       string `json:"id" valid:"required"`
-	Quantity int    `json:"quantity" valid:"range(1|100)"`
+	Quantity int    `json:"quantity" valid:"range(1|10000000)"`
 }
 
 type ReqOrderCreate struct {
@@ -17,8 +17,8 @@ type ReqOrderCreate struct {
 	BillingAddressID  string         `json:"billing_address_id" valid:"required"`
 	PaymentMethodID   string         `json:"payment_method_id" valid:"required"`
 	ShippingMethodID  *string        `json:"shipping_method_id"`
-	StoreID           string         `json:"store_id" valid:"required"`
 	UserID            string         `json:"user_id"`
+	CouponCode        *string        `json:"coupon_code"`
 }
 
 func ValidateCreateOrder(ctx echo.Context) (*ReqOrderCreate, error) {

@@ -229,17 +229,17 @@ func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, pr
 	return &ps, nil
 }
 
-func (pu *ProductRepositoryImpl) GetForOrder(db *gorm.DB, storeID, productID string, quantity int) (*models.Product, error) {
+func (pu *ProductRepositoryImpl) GetForOrder(db *gorm.DB, productID string, quantity int) (*models.Product, error) {
 	p := models.Product{}
 
 	if err := db.Table(p.TableName()).
-		Where("id = ? AND store_id = ? AND stock - ? >= 0", productID, storeID, quantity).
+		Where("id = ? AND stock - ? >= 0", productID, quantity).
 		First(&p).Error; err != nil {
 		return nil, err
 	}
 
 	if err := db.Table(p.TableName()).
-		Where("id = ? AND store_id = ? AND stock - ? >= 0", productID, storeID, quantity).
+		Where("id = ? AND stock - ? >= 0", productID, quantity).
 		Update("stock", gorm.Expr("stock - ?", quantity)).Error; err != nil {
 		return nil, err
 	}

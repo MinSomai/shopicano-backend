@@ -17,4 +17,6 @@ type CouponRepository interface {
 	RemoveUser(db *gorm.DB, cf *models.CouponFor) error
 	ListUsers(db *gorm.DB, storeID, couponID string) ([]string, error)
 	HasUser(db *gorm.DB, storeID, couponID, userID string) (bool, error)
+	AddUsage(db *gorm.DB, cu *models.CouponUsage) error
+	GetUsage(db *gorm.DB, couponID, userID string) (int, error)
 }

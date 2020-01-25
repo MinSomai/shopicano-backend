@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"github.com/shopicano/shopicano-backend/log"
 	"time"
 )
 
@@ -45,6 +46,9 @@ func (c *Coupon) ForeignKeys() []string {
 
 func (c *Coupon) IsValid() bool {
 	now := time.Now().UTC()
+	log.Log().Infoln(now)
+	log.Log().Infoln(c.StartAt)
+	log.Log().Infoln(c.EndAt)
 	return c.IsActive && (now.After(c.StartAt) && now.Before(c.EndAt))
 }
 
@@ -63,7 +67,7 @@ func (c *Coupon) CalculateDiscount(value int) int {
 		return c.DiscountAmount
 	}
 
-	discount := (value / c.DiscountAmount) * 100
+	discount := (value * c.DiscountAmount) / 100
 	if c.MaxDiscount != 0 && discount > c.MaxDiscount {
 		return c.MaxDiscount
 	}
