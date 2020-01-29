@@ -80,17 +80,19 @@ func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*
 		})
 	}
 
-	paymentProcessingFee, err := utils.IntToDecimal(orderDetails.PaymentProcessingFee, 1)
-	if err != nil {
-		return nil, err
+	if orderDetails.PaymentProcessingFee != 0 {
+		paymentProcessingFee, err := utils.IntToDecimal(orderDetails.PaymentProcessingFee, 1)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, &braintree.TransactionLineItemRequest{
+			Name:        "Payment Processing Fee",
+			UnitAmount:  paymentProcessingFee,
+			Quantity:    braintree.NewDecimal(int64(1), 0),
+			TotalAmount: paymentProcessingFee,
+			Kind:        braintree.TransactionLineItemKindDebit,
+		})
 	}
-	items = append(items, &braintree.TransactionLineItemRequest{
-		Name:        "Payment Processing Fee",
-		UnitAmount:  paymentProcessingFee,
-		Quantity:    braintree.NewDecimal(int64(1), 0),
-		TotalAmount: paymentProcessingFee,
-		Kind:        braintree.TransactionLineItemKindDebit,
-	})
 
 	log.Log().Infoln(orderDetails.GrandTotal + orderDetails.PaymentProcessingFee)
 

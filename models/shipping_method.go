@@ -8,6 +8,7 @@ type ShippingMethod struct {
 	ApproximateDeliveryTime int       `json:"approximate_delivery_time" gorm:"approximate_delivery_time" gorm:"index"`
 	DeliveryCharge          int       `json:"delivery_charge" sql:"delivery_charge" gorm:"index"`
 	WeightUnit              string    `json:"weight_unit" sql:"weight_unit"`
+	IsFlat                  bool      `json:"is_flat" gorm:"column:is_flat"`
 	IsPublished             bool      `json:"is_published" sql:"is_published" gorm:"index"`
 	CreatedAt               time.Time `json:"created_at" sql:"created_at" gorm:"not null;index"`
 	UpdatedAt               time.Time `json:"updated_at" sql:"updated_at" gorm:"not null"`

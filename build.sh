@@ -11,6 +11,10 @@ cmd=$1
 
 binary="shopicano"
 
+########## Dep Hack
+go get github.com/ugorji/go@v1.1.2-0.20180831062425-e253f1f20942
+##########
+
 if [ "$cmd" = "build" ]; then
   echo "Executing build command"
   go get .

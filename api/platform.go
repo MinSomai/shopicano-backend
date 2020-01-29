@@ -14,16 +14,18 @@ import (
 	"time"
 )
 
-func RegisterAdminRoutes(g *echo.Group) {
+func RegisterPlatformRoutes(g *echo.Group) {
 	func(g *echo.Group) {
 		g.Use(middlewares.AuthUser)
 		g.POST("/shipping-methods/", createShippingMethod)
 		g.PUT("/shipping-methods/:id/", updateShippingMethod)
 		g.DELETE("/shipping-methods/:id/", deleteShippingMethod)
+		g.GET("/shipping-methods/:id/", getShippingMethod)
 
 		g.POST("/payment-methods/", createPaymentMethod)
 		g.PUT("/payment-methods/:id/", updatePaymentMethod)
 		g.DELETE("/payment-methods/:id/", deletePaymentMethod)
+		g.GET("/payment-methods/:id/", getPaymentMethod)
 	}(g)
 
 	func(g *echo.Group) {
@@ -53,6 +55,7 @@ func createShippingMethod(ctx echo.Context) error {
 		ApproximateDeliveryTime: req.ApproximateDeliveryTime,
 		DeliveryCharge:          req.DeliveryCharge,
 		WeightUnit:              req.WeightUnit,
+		IsFlat:                  req.IsFlat,
 		CreatedAt:               time.Now().UTC(),
 		UpdatedAt:               time.Now().UTC(),
 	}
@@ -116,9 +119,10 @@ func updateShippingMethod(ctx echo.Context) error {
 	m.Name = req.Name
 	m.IsPublished = req.IsPublished
 	m.ApproximateDeliveryTime = req.ApproximateDeliveryTime
+	m.IsFlat = req.IsFlat
 	m.DeliveryCharge = req.DeliveryCharge
 	m.WeightUnit = req.WeightUnit
-	m.UpdatedAt = time.Now()
+	m.UpdatedAt = time.Now().UTC()
 
 	if err := au.UpdateShippingMethod(m); err != nil {
 		resp.Title = "Database query failed"
@@ -156,6 +160,34 @@ func deleteShippingMethod(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusNoContent
+	return resp.ServerJSON(ctx)
+}
+
+func getShippingMethod(ctx echo.Context) error {
+	ID := ctx.Param("id")
+
+	resp := core.Response{}
+
+	au := data.NewAdminRepository()
+	sm, err := au.GetShippingMethod(ID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Shipping method not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.ShippingMethodNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = sm
 	return resp.ServerJSON(ctx)
 }
 
@@ -212,11 +244,16 @@ func createPaymentMethod(ctx echo.Context) error {
 	}
 
 	m := &models.PaymentMethod{
-		ID:          utils.NewUUID(),
-		Name:        req.Name,
-		IsPublished: req.IsPublished,
-		CreatedAt:   time.Now().UTC(),
-		UpdatedAt:   time.Now().UTC(),
+		ID:               utils.NewUUID(),
+		Name:             req.Name,
+		IsFlat:           req.IsFlat,
+		IsOfflinePayment: req.IsOfflinePayment,
+		MaxProcessingFee: req.MaxProcessingFee,
+		MinProcessingFee: req.MinProcessingFee,
+		ProcessingFee:    req.ProcessingFee,
+		IsPublished:      req.IsPublished,
+		CreatedAt:        time.Now().UTC(),
+		UpdatedAt:        time.Now().UTC(),
 	}
 
 	au := data.NewAdminRepository()
@@ -277,7 +314,12 @@ func updatePaymentMethod(ctx echo.Context) error {
 
 	m.Name = req.Name
 	m.IsPublished = req.IsPublished
-	m.UpdatedAt = time.Now()
+	m.IsFlat = req.IsFlat
+	m.MaxProcessingFee = req.MaxProcessingFee
+	m.MinProcessingFee = req.MinProcessingFee
+	m.ProcessingFee = req.ProcessingFee
+	m.IsOfflinePayment = req.IsOfflinePayment
+	m.UpdatedAt = time.Now().UTC()
 
 	if err := au.UpdatePaymentMethod(m); err != nil {
 		resp.Title = "Database query failed"
@@ -315,6 +357,34 @@ func deletePaymentMethod(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusNoContent
+	return resp.ServerJSON(ctx)
+}
+
+func getPaymentMethod(ctx echo.Context) error {
+	ID := ctx.Param("id")
+
+	resp := core.Response{}
+
+	au := data.NewAdminRepository()
+	pm, err := au.GetPaymentMethod(ID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Payment method not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.PaymentMethodNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = pm
 	return resp.ServerJSON(ctx)
 }
 

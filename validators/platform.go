@@ -7,8 +7,13 @@ import (
 )
 
 type ReqPaymentMethodCreate struct {
-	Name        string `json:"name" valid:"required"`
-	IsPublished bool   `json:"is_published"`
+	Name             string `json:"name" valid:"required"`
+	IsPublished      bool   `json:"is_published"`
+	IsFlat           bool   `json:"is_flat"`
+	ProcessingFee    int    `json:"processing_fee"`
+	MinProcessingFee int    `json:"min_processing_fee"`
+	MaxProcessingFee int    `json:"max_processing_fee"`
+	IsOfflinePayment bool   `json:"is_offline_payment"`
 }
 
 func ValidateCreatePaymentMethod(ctx echo.Context) (*ReqPaymentMethodCreate, error) {
@@ -36,6 +41,7 @@ type ReqShippingMethodCreate struct {
 	ApproximateDeliveryTime int    `json:"approximate_delivery_time" valid:"required"`
 	DeliveryCharge          int    `json:"delivery_charge" valid:"required"`
 	IsPublished             bool   `json:"is_published"`
+	IsFlat                  bool   `json:"is_flat"`
 	WeightUnit              string `json:"weight_unit" valid:"required"`
 }
 
@@ -57,40 +63,4 @@ func ValidateCreateShippingMethod(ctx echo.Context) (*ReqShippingMethodCreate, e
 	}
 
 	return nil, &ve
-}
-
-type ReqAdditionalChargeCreate struct {
-	Name         string `json:"name" valid:"required"`
-	Amount       int    `json:"amount" valid:"required,range(1|1000000)"`
-	AmountMax    int    `json:"amount_max" valid:"range(0|1000000)"`
-	AmountMin    int    `json:"amount_min" valid:"range(0|1000000)"`
-	IsFlatAmount bool   `json:"is_flat_amount" valid:"required"`
-}
-
-func ValidateCreateAdditionalCharge(ctx echo.Context) (*ReqAdditionalChargeCreate, error) {
-	pld := ReqAdditionalChargeCreate{}
-	if err := ctx.Bind(&pld); err != nil {
-		return nil, err
-	}
-
-	ok, err := govalidator.ValidateStruct(&pld)
-	if ok {
-		return &pld, nil
-	}
-
-	ve := errors.ValidationError{}
-
-	for k, v := range govalidator.ErrorsByField(err) {
-		ve.Add(k, v)
-	}
-
-	return nil, &ve
-}
-
-type ReqAdditionalChargeUpdate struct {
-	Name         *string `json:"name"`
-	Amount       *int    `json:"amount"`
-	AmountMax    *int    `json:"amount_max"`
-	AmountMin    *int    `json:"amount_min"`
-	IsFlatAmount *bool   `json:"is_flat_amount"`
 }

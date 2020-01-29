@@ -31,7 +31,7 @@ func RegisterCouponRoutes(g *echo.Group) {
 	func(g *echo.Group) {
 		// Private endpoints only
 		g.Use(middlewares.AuthUser)
-		g.POST("/:coupon_id/", checkCouponAvailability)
+		g.GET("/:coupon_code/check/", checkCouponAvailability)
 	}(g)
 }
 
@@ -316,28 +316,33 @@ func searchCoupons(ctx echo.Context, query string, page int64, limit int64) (int
 }
 
 func checkCouponAvailability(ctx echo.Context) error {
-	productID := ctx.Param("product_id")
+	couponCode := ctx.Param("coupon_code")
+	storeID := ctx.QueryParam("store_id")
+	orderAmountQ := ctx.QueryParam("order_amount")
+	shippingCostQ := ctx.QueryParam("shipping_cost")
+
+	orderAmount, err := strconv.ParseInt(orderAmountQ, 10, 64)
+	if err != nil {
+		orderAmount = 0
+	}
+
+	shippingCost, err := strconv.ParseInt(shippingCostQ, 10, 64)
+	if err != nil {
+		shippingCost = 0
+	}
 
 	resp := core.Response{}
 
 	db := app.DB()
 
-	pu := data.NewProductRepository()
+	cu := data.NewCouponRepository()
 
-	var p interface{}
-	var err error
-
-	if utils.IsStoreStaff(ctx) {
-		p, err = pu.GetAsStoreStuff(db, ctx.Get(utils.StoreID).(string), productID)
-	} else {
-		p, err = pu.GetDetails(db, productID)
-	}
-
+	coupon, err := cu.GetByCode(db, storeID, couponCode)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
-			resp.Title = "Product not found"
+			resp.Title = "Coupon not found"
 			resp.Status = http.StatusNotFound
-			resp.Code = errors.ProductNotFound
+			resp.Code = errors.CouponNotFound
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
@@ -349,8 +354,66 @@ func checkCouponAvailability(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	if !coupon.IsValid() {
+		resp.Title = "Coupon is invalid"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.InvalidCoupon
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if coupon.IsUserSpecific {
+		ok, err := cu.HasUser(db, storeID, coupon.ID, utils.GetUserID(ctx))
+		if err != nil {
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		if !ok {
+			resp.Title = "Coupon not applicable for the user"
+			resp.Status = http.StatusForbidden
+			resp.Code = errors.CouponNotApplicable
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
+	usage, err := cu.GetUsage(db, coupon.ID, utils.GetUserID(ctx))
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if coupon.MaxUsage != 0 && usage > coupon.MaxUsage {
+		resp.Title = "Coupon usage limit exceed"
+		resp.Status = http.StatusForbidden
+		resp.Code = errors.CouponNotApplicable
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	result := map[string]interface{}{}
+	result["discount_type"] = coupon.DiscountType
+
+	switch coupon.DiscountType {
+	case models.TotalDiscount:
+		result["discount_amount"] = coupon.CalculateDiscount(int(orderAmount) + int(shippingCost))
+	case models.ShippingDiscount:
+		result["discount_amount"] = coupon.CalculateDiscount(int(shippingCost))
+	case models.ProductDiscount:
+		result["discount_amount"] = coupon.CalculateDiscount(int(orderAmount))
+	default:
+		result["discount_amount"] = 0
+	}
+
 	resp.Status = http.StatusOK
-	resp.Data = p
+	resp.Data = result
 	return resp.ServerJSON(ctx)
 }
 
