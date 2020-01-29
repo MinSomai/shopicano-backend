@@ -32,7 +32,7 @@ func GetRouter() http.Handler {
 func registerV1Routes() {
 	v1 := router.Group("/v1")
 
-	adminGroup := v1.Group("/admin")
+	platformGroup := v1.Group("/platform")
 	userGroup := v1.Group("/users")
 
 	storeGroup := v1.Group("/stores")
@@ -49,7 +49,7 @@ func registerV1Routes() {
 	fsGroup := v1.Group("/fs")
 
 	api.RegisterLegacyRoutes(v1)
-	api.RegisterAdminRoutes(adminGroup)
+	api.RegisterPlatformRoutes(platformGroup)
 	api.RegisterUserRoutes(userGroup)
 	api.RegisterStoreRoutes(storeGroup)
 	api.RegisterProductRoutes(productGroup)

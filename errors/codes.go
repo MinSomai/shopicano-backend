@@ -58,6 +58,7 @@ const (
 	AuthorizationTokenExpired                     ErrorCode = "403007"
 	UserScopeUnauthorized                         ErrorCode = "403008"
 	RestrictedBucket                              ErrorCode = "403009"
+	CouponNotApplicable                           ErrorCode = "403010"
 	StoreNotFound                                 ErrorCode = "404001"
 	SettingsNotFound                              ErrorCode = "404002"
 	UserNotFound                                  ErrorCode = "404003"

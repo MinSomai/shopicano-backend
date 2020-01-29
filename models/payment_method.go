@@ -13,6 +13,7 @@ type PaymentMethod struct {
 	MaxProcessingFee int       `json:"max_processing_fee" sql:"max_processing_fee"`
 	IsPublished      bool      `json:"is_published" sql:"is_published" gorm:"index"`
 	IsOfflinePayment bool      `json:"is_offline_payment" sql:"is_offline_payment" gorm:"is_offline_payment"`
+	IsFlat           bool      `json:"is_flat" gorm:"column:is_flat"`
 	CreatedAt        time.Time `json:"created_at" sql:"created_at" gorm:"not null;index"`
 	UpdatedAt        time.Time `json:"updated_at" sql:"updated_at" gorm:"not null"`
 }
@@ -28,6 +29,10 @@ func (pm *PaymentMethod) CalculateProcessingFee(bill int) int {
 
 	log.Log().Info("Bill : ", bill)
 	log.Log().Info("Pf : ", pm.ProcessingFee)
+
+	if pm.IsFlat {
+
+	}
 
 	fee := (bill * pm.ProcessingFee) / 100
 
