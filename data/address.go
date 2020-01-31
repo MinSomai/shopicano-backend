@@ -1,10 +1,14 @@
 package data
 
-import "github.com/shopicano/shopicano-backend/models"
+import (
+	"github.com/jinzhu/gorm"
+	"github.com/shopicano/shopicano-backend/models"
+)
 
 type AddressRepository interface {
-	CreateAddress(a *models.Address) error
-	UpdateAddress(a *models.Address) error
-	ListAddresses(userID, string, from, limit int) ([]models.Address, error)
-	DeleteAddress(userID, addressID string) error
+	CreateAddress(db *gorm.DB, a *models.Address) error
+	UpdateAddress(db *gorm.DB, a *models.Address) error
+	GetAddress(db *gorm.DB, userID, addressID string) (*models.Address, error)
+	ListAddresses(db *gorm.DB, userID string, from, limit int) ([]models.Address, error)
+	DeleteAddress(db *gorm.DB, userID, addressID string) error
 }

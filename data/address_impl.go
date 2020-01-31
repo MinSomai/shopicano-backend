@@ -1,7 +1,7 @@
 package data
 
 import (
-	"github.com/shopicano/shopicano-backend/app"
+	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/models"
 )
 
@@ -17,16 +17,14 @@ func NewAddressRepository() *AddressRepositoryImpl {
 	return addressRepository
 }
 
-func (au *AddressRepositoryImpl) CreateAddress(a *models.Address) error {
-	db := app.DB()
+func (au *AddressRepositoryImpl) CreateAddress(db *gorm.DB, a *models.Address) error {
 	if err := db.Table(a.TableName()).Create(a).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (au *AddressRepositoryImpl) UpdateAddress(a *models.Address) error {
-	db := app.DB()
+func (au *AddressRepositoryImpl) UpdateAddress(db *gorm.DB, a *models.Address) error {
 	if err := db.Table(a.TableName()).
 		Where("id = ? AND user_id = ?", a.ID, a.UserID).Updates(a).Error; err != nil {
 		return err
@@ -34,8 +32,16 @@ func (au *AddressRepositoryImpl) UpdateAddress(a *models.Address) error {
 	return nil
 }
 
-func (au *AddressRepositoryImpl) ListAddresses(userId string, from, limit int) ([]models.Address, error) {
-	db := app.DB()
+func (au *AddressRepositoryImpl) GetAddress(db *gorm.DB, userID, addressID string) (*models.Address, error) {
+	a := models.Address{}
+	if err := db.Table(a.TableName()).
+		Where("id = ? AND user_id = ?", addressID, userID).Find(&a).Error; err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+func (au *AddressRepositoryImpl) ListAddresses(db *gorm.DB, userId string, from, limit int) ([]models.Address, error) {
 	var addresses []models.Address
 	address := models.Address{}
 	if err := db.Table(address.TableName()).
@@ -47,8 +53,7 @@ func (au *AddressRepositoryImpl) ListAddresses(userId string, from, limit int) (
 	return addresses, nil
 }
 
-func (au *AddressRepositoryImpl) DeleteAddress(userID, addressID string) error {
-	db := app.DB()
+func (au *AddressRepositoryImpl) DeleteAddress(db *gorm.DB, userID, addressID string) error {
 	address := models.Address{}
 	if err := db.Table(address.TableName()).
 		Where("user_id = ? AND id = ?", userID, addressID).
