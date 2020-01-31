@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
@@ -19,8 +20,9 @@ func RegisterAddressRoutes(g *echo.Group) {
 		g.Use(middlewares.AuthUser)
 		g.POST("/", createAddress)
 		g.GET("/", listAddresses)
-		g.DELETE("/:id/", deleteAddress)
-		g.PUT("/:id/", updateAddress)
+		g.GET("/:address_id/", getAddress)
+		g.DELETE("/:address_id/", deleteAddress)
+		g.PUT("/:address_id/", updateAddress)
 	}(*g)
 }
 
@@ -53,8 +55,10 @@ func createAddress(ctx echo.Context) error {
 		UpdatedAt: time.Now().UTC(),
 	}
 
+	db := app.DB()
+
 	au := data.NewAddressRepository()
-	if err := au.CreateAddress(add); err != nil {
+	if err := au.CreateAddress(db, add); err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -69,7 +73,7 @@ func createAddress(ctx echo.Context) error {
 
 func updateAddress(ctx echo.Context) error {
 	userID := ctx.Get(utils.UserID).(string)
-	addressID := ctx.Param("id")
+	addressID := ctx.Param("address_id")
 
 	req, err := validators.ValidateCreateAddress(ctx)
 
@@ -97,8 +101,10 @@ func updateAddress(ctx echo.Context) error {
 		UpdatedAt: time.Now().UTC(),
 	}
 
+	db := app.DB()
+
 	au := data.NewAddressRepository()
-	if err := au.UpdateAddress(add); err != nil {
+	if err := au.UpdateAddress(db, add); err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -111,14 +117,47 @@ func updateAddress(ctx echo.Context) error {
 	return resp.ServerJSON(ctx)
 }
 
-func deleteAddress(ctx echo.Context) error {
+func getAddress(ctx echo.Context) error {
 	userID := ctx.Get(utils.UserID).(string)
-	addressID := ctx.Param("id")
+	addressID := ctx.Param("address_id")
 
 	resp := core.Response{}
 
+	db := app.DB()
+
 	au := data.NewAddressRepository()
-	if err := au.DeleteAddress(userID, addressID); err != nil {
+	a, err := au.GetAddress(db, userID, addressID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Address not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.AddressNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = a
+	return resp.ServerJSON(ctx)
+}
+
+func deleteAddress(ctx echo.Context) error {
+	userID := ctx.Get(utils.UserID).(string)
+	addressID := ctx.Param("address_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+
+	au := data.NewAddressRepository()
+	if err := au.DeleteAddress(db, userID, addressID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Address not found"
 			resp.Status = http.StatusNotFound
@@ -154,9 +193,11 @@ func listAddresses(ctx echo.Context) error {
 
 	resp := core.Response{}
 
+	db := app.DB()
+
 	from := (page - 1) * limit
 	au := data.NewAddressRepository()
-	addresses, err := au.ListAddresses(userID, int(from), int(limit))
+	addresses, err := au.ListAddresses(db, userID, int(from), int(limit))
 	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
