@@ -64,7 +64,7 @@ func (odv *OrderDetailsView) TableName() string {
 }
 
 func (odv *OrderDetailsView) CreateView(tx *gorm.DB) error {
-	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT o.id AS id, o.hash AS hash, o.user_id AS user_id, o.is_all_digital_products AS is_all_digital_products"+
+	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT o.id AS id, o.hash AS hash, o.user_id AS user_id, o.is_all_digital_products AS is_all_digital_products,"+
 		" u.name AS user_name, u.email AS user_email, u.phone AS user_phone, u.profile_picture AS user_picture,"+
 		" o.shipping_charge AS shipping_charge, o.payment_processing_fee AS payment_processing_fee, o.sub_total AS sub_total,"+
 		" o.payment_gateway AS payment_gateway, o.nonce AS nonce, o.transaction_id AS transaction_id, o.grand_total AS grand_total,"+
