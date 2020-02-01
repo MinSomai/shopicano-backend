@@ -135,7 +135,7 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) error {
 	resp := core.Response{}
 
-	db := app.DB()
+	db := app.DB().Begin()
 	or := data.NewOrderRepository()
 
 	if ctx.QueryParam("status") == "success" {
