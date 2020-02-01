@@ -210,6 +210,8 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	o.IsAllDigitalProducts = isAllDigitalProduct
+
 	if o.ShippingMethodID != nil {
 		o.ShippingCharge = sm.CalculateDeliveryCharge(0)
 	}

@@ -16,6 +16,7 @@ type OrderDetailsViewExternal struct {
 	CouponCode             string                    `json:"coupon_code"`
 	Status                 OrderStatus               `json:"status"`
 	PaymentStatus          PaymentStatus             `json:"payment_status"`
+	IsAllDigitalProducts   bool                      `json:"is_all_digital_products"`
 	CreatedAt              *time.Time                `json:"created_at"`
 	UpdatedAt              *time.Time                `json:"updated_at"`
 	ShippingID             *string                   `json:"shipping_id,omitempty"`

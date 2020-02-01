@@ -93,7 +93,10 @@ func (os *OrderRepositoryImpl) List(db *gorm.DB, userID string, offset, limit in
 	order := models.OrderDetailsViewExternal{}
 	var orders []models.OrderDetailsViewExternal
 
-	if err := db.Table(order.TableName()).Offset(offset).Limit(limit).Find(&orders, "user_id = ?", userID).Error; err != nil {
+	if err := db.Table(order.TableName()).
+		Order("created_at DESC").
+		Offset(offset).Limit(limit).
+		Find(&orders, "user_id = ?", userID).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}
@@ -124,7 +127,11 @@ func (os *OrderRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, off
 	order := models.OrderDetailsViewExternal{}
 	var orders []models.OrderDetailsViewExternal
 
-	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "store_id = ?", storeID).Error; err != nil {
+	if err := db.Model(&order).
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&orders, "store_id = ?", storeID).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}
@@ -155,7 +162,11 @@ func (os *OrderRepositoryImpl) Search(db *gorm.DB, query, userID string, offset,
 	order := models.OrderDetailsView{}
 	var orders []models.OrderDetailsView
 
-	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "user_id = ? AND hash = ?", userID, query).Error; err != nil {
+	if err := db.Model(&order).
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&orders, "user_id = ? AND hash = ?", userID, query).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}
@@ -186,7 +197,11 @@ func (os *OrderRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, query, storeID st
 	order := models.OrderDetailsView{}
 	var orders []models.OrderDetailsView
 
-	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "store_id = ? AND hash = ?", storeID, query).Error; err != nil {
+	if err := db.Model(&order).
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&orders, "store_id = ? AND hash = ?", storeID, query).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}
