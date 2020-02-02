@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
+	"github.com/shopicano/shopicano-backend/config"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
@@ -179,8 +181,7 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 		return resp.ServerJSON(ctx)
 	}
 
-	resp.Status = http.StatusOK
-	return resp.ServerJSON(ctx)
+	return ctx.Redirect(http.StatusPermanentRedirect, fmt.Sprintf(config.App().PaymentCompleteCallback, o.ID))
 }
 
 // generatePayNonce create payment reference / nonce

@@ -15,9 +15,10 @@ const (
 
 // Application holds the application configuration
 type Application struct {
-	Base     string
-	Port     int
-	LogLevel LogLevel
+	Base                    string
+	Port                    int
+	LogLevel                LogLevel
+	PaymentCompleteCallback string
 }
 
 // app is the default application configuration
@@ -34,8 +35,9 @@ func LoadApp() {
 	defer mu.Unlock()
 
 	app = Application{
-		Base:     viper.GetString("app.host"),
-		Port:     viper.GetInt("app.port"),
-		LogLevel: LogLevel(viper.GetString("app.log_level")),
+		Base:                    viper.GetString("app.host"),
+		Port:                    viper.GetInt("app.port"),
+		LogLevel:                LogLevel(viper.GetString("app.log_level")),
+		PaymentCompleteCallback: viper.GetString("app.payment_complete_callback"),
 	}
 }
