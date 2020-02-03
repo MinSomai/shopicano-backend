@@ -10,6 +10,7 @@ import (
 
 func RegisterPaymentRoutes(g *echo.Group) {
 	g.GET("/configs/", getPaymentGatewayConfig)
+	g.GET("/confirm/", processPayOrderFor2Checkout)
 }
 
 func getPaymentGatewayConfig(ctx echo.Context) error {

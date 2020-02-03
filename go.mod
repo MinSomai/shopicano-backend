@@ -18,6 +18,9 @@ require (
 	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
 	github.com/go-ini/ini v1.48.0 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
+	github.com/gojek/heimdall v5.0.2+incompatible
+	github.com/gojektech/heimdall v5.0.2+incompatible // indirect
+	github.com/gojektech/valkyrie v0.0.0-20190210220504-8f62c1e7ba45 // indirect
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
@@ -33,7 +36,7 @@ require (
 	github.com/matcornic/hermes/v2 v2.0.2
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/mitchellh/copystructure v1.0.0 // indirect
-	github.com/nahid/gohttp v0.0.1 // indirect
+	github.com/nahid/gohttp v0.0.1
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/prometheus/client_golang v0.9.3 // indirect
 	github.com/satori/go.uuid v1.2.0
