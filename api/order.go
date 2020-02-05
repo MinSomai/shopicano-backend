@@ -193,10 +193,11 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 
 		oi := &models.OrderedItem{
-			OrderID:   o.ID,
-			ProductID: item.ID,
-			Quantity:  v.Quantity,
-			Price:     item.Price,
+			OrderID:     o.ID,
+			ProductID:   item.ID,
+			Quantity:    v.Quantity,
+			Price:       item.Price,
+			ProductCost: item.ProductCost,
 		}
 		oi.SubTotal = v.Quantity * item.Price
 

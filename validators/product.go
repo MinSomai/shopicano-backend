@@ -55,6 +55,7 @@ type ReqProductUpdate struct {
 	Stock            int      `json:"stock" valid:"required,range(0|100000)"`
 	Unit             string   `json:"unit" valid:"required,stringlength(1|20)"`
 	Price            int      `json:"price" valid:"required,range(0|10000000)"`
+	ProductCost      int      `json:"product_cost" valid:"required,range(0|10000000)"`
 	AdditionalImages []string `json:"additional_images"`
 }
 
