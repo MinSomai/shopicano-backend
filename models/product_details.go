@@ -15,6 +15,7 @@ type ProductDetails struct {
 	IsShippable      bool               `json:"is_shippable"`
 	IsDigital        bool               `json:"is_digital"`
 	Price            int                `json:"price"`
+	ProductCost      int                `json:"product_cost"`
 	SKU              string             `json:"sku"`
 	Stock            int                `json:"stock"`
 	Unit             string             `json:"unit"`

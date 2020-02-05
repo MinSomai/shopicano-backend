@@ -62,5 +62,6 @@ type OrderedItemDetails struct {
 	ProductName string `json:"product_name"`
 	Quantity    int    `json:"quantity"`
 	Price       int    `json:"price"`
+	ProductCost int    `json:"product_cost"`
 	Total       int    `json:"total"`
 }
