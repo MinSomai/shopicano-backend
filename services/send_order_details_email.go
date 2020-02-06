@@ -37,6 +37,23 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 	var entryCalculations []hermes.Entry
 
 	entryCalculations = append(entryCalculations, hermes.Entry{
+		Key:   "Status",
+		Value: string(order.Status),
+	})
+
+	entryCalculations = append(entryCalculations, hermes.Entry{
+		Key:   "Payment Status",
+		Value: string(order.PaymentStatus),
+	})
+
+	if !order.PaymentMethodIsOffline {
+		entryCalculations = append(entryCalculations, hermes.Entry{
+			Key:   "Payment Gateway",
+			Value: fmt.Sprintf("%s", order.PaymentGateway),
+		})
+	}
+
+	entryCalculations = append(entryCalculations, hermes.Entry{
 		Key:   "Sub Total",
 		Value: fmt.Sprintf("%d", order.SubTotal),
 	})
@@ -66,20 +83,34 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 			Signature: "With Love",
 			Name:      name,
 			Intros: []string{
-				"Your order has been placed successfully.",
+				"Your order has been placed successfully.<br> Please check order details below,",
 			},
 			Table: hermes.Table{
 				Data: entryItems,
+				Columns: hermes.Columns{
+					CustomWidth: map[string]string{
+						"Item":      "40%",
+						"Price":     "20%",
+						"Quantity":  "15%",
+						"Sub Total": "25%",
+					},
+					CustomAlignment: map[string]string{
+						"Item":      "left",
+						"Price":     "right",
+						"Quantity":  "right",
+						"Sub Total": "right",
+					},
+				},
 			},
 			Dictionary: entryCalculations,
 			Actions: []hermes.Action{
 				{
 					Instructions: "",
 					Button: hermes.Button{
-						Link:      fmt.Sprintf("%s/v1/orders/%s", config.EmailService().VerificationUrl, order.ID),
-						Color:     "white",
+						Link:      fmt.Sprintf(config.App().PaymentCompleteCallback, order.ID),
+						Color:     "green",
 						Text:      "Order Details",
-						TextColor: "black",
+						TextColor: "white",
 					},
 				},
 			},
