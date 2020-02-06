@@ -431,7 +431,10 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
-	if o.GrandTotal-o.DiscountedAmount == 0 {
+	o.OriginalGrandTotal = o.GrandTotal
+	o.GrandTotal -= o.DiscountedAmount
+
+	if o.GrandTotal == 0 {
 		o.PaymentStatus = models.PaymentCompleted
 
 		err = ou.UpdatePaymentStatus(db, &o)
