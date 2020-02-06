@@ -624,6 +624,8 @@ var invoiceTemplate = `
                                                          style="text-decoration:none; color:#ffffff;"><span
                                                          class="link c-white"
                                                          style="text-decoration:none; color:#ffffff;">www.shopicano.com</span></a>
+														<br>
+														Copyright &copy 2020 Shopicano | All rights reserved.
                                                    </td>
                                                 </tr>
                                              </table>
