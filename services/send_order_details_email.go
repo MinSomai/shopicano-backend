@@ -10,7 +10,7 @@ import (
 )
 
 func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) error {
-	var entries [][]hermes.Entry
+	var entryItems [][]hermes.Entry
 
 	for _, v := range order.Items {
 		var rows []hermes.Entry
@@ -31,28 +31,34 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 			Value: fmt.Sprintf("%d", v.SubTotal),
 		})
 
-		entries = append(entries, rows)
+		entryItems = append(entryItems, rows)
 	}
 
-	// Grand Total
-	var rows []hermes.Entry
-	rows = append(rows, hermes.Entry{
-		Key:   "Item",
-		Value: "",
-	})
-	rows = append(rows, hermes.Entry{
-		Key:   "Quantity",
-		Value: "",
-	})
-	rows = append(rows, hermes.Entry{
-		Key:   "Price",
-		Value: "Grand Total",
-	})
-	rows = append(rows, hermes.Entry{
+	var entryCalculations []hermes.Entry
+
+	entryCalculations = append(entryCalculations, hermes.Entry{
 		Key:   "Sub Total",
+		Value: fmt.Sprintf("%d", order.SubTotal),
+	})
+
+	if order.ShippingCharge != 0 {
+		entryCalculations = append(entryCalculations, hermes.Entry{
+			Key:   "Shipping Charge",
+			Value: fmt.Sprintf("%d", order.ShippingCharge),
+		})
+	}
+
+	if order.PaymentProcessingFee != 0 {
+		entryCalculations = append(entryCalculations, hermes.Entry{
+			Key:   "Payment Processing Fee",
+			Value: fmt.Sprintf("%d", order.PaymentProcessingFee),
+		})
+	}
+
+	entryCalculations = append(entryCalculations, hermes.Entry{
+		Key:   "Grand Total",
 		Value: fmt.Sprintf("%d", order.GrandTotal),
 	})
-	entries = append(entries, rows)
 
 	emailTemplate := hermes.Email{
 		Body: hermes.Body{
@@ -63,8 +69,9 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 				"Your order has been placed successfully.",
 			},
 			Table: hermes.Table{
-				Data: entries,
+				Data: entryItems,
 			},
+			Dictionary: entryCalculations,
 			Actions: []hermes.Action{
 				{
 					Instructions: "",

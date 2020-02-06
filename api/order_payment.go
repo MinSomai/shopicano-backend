@@ -11,6 +11,7 @@ import (
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
+	"github.com/shopicano/shopicano-backend/queue"
 	"github.com/shopicano/shopicano-backend/utils"
 	"io/ioutil"
 	"net/http"
@@ -121,6 +122,18 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 		return resp.ServerJSON(ctx)
 	}
 
+	if o.PaymentStatus == models.PaymentCompleted {
+		if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to enqueue task"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.FailedToEnqueueTask
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
 	if err := db.Commit().Error; err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
@@ -173,6 +186,18 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
+	}
+
+	if o.PaymentStatus == models.PaymentCompleted {
+		if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to enqueue task"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.FailedToEnqueueTask
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
 	}
 
 	if err := db.Commit().Error; err != nil {
@@ -258,6 +283,18 @@ func processPayOrderFor2Checkout(ctx echo.Context) error {
 		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
+	}
+
+	if m.PaymentStatus == models.PaymentCompleted {
+		if err := queue.SendOrderDetailsEmail(m.ID); err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to enqueue task"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.FailedToEnqueueTask
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
 	}
 
 	if err := db.Commit().Error; err != nil {
