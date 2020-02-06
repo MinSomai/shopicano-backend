@@ -30,6 +30,8 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 	params["subTotal"] = order.SubTotal
 	params["grandTotal"] = order.GrandTotal
 	params["isCouponApplied"] = false
+	params["status"] = order.Status
+	params["paymentStatus"] = order.PaymentStatus
 
 	if order.DiscountedAmount != 0 {
 		params["couponCode"] = order.CouponCode

@@ -598,6 +598,30 @@ var invoiceTemplate = `
                                                                                                             <strong>{{ .grandTotal }}</strong>
                                                                                                          </td>
                                                                                                       </tr>
+																										<tr>
+                                                                                                         <td class="title-20 lh-30 a-right mt-left pt-10"
+                                                                                                            style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 30px; text-align:right; padding-top: 10px;">
+                                                                                                            <strong>Status:</strong>
+                                                                                                         </td>
+                                                                                                         <td class="img mw-15 pt-10"
+                                                                                                            style="font-size:0pt; line-height:0pt; text-align:left; padding-top: 10px;"></td>
+                                                                                                         <td class="title-20 lh-30 c-purple pt-10 mt-right"
+                                                                                                            style="font-size:20px; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important; line-height: 30px; color:#9128df; padding-top: 10px;">
+                                                                                                            <strong>{{ .status }}</strong>
+                                                                                                         </td>
+                                                                                                      </tr>
+																										<tr>
+                                                                                                         <td class="title-20 lh-30 a-right mt-left pt-10"
+                                                                                                            style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 30px; text-align:right; padding-top: 10px;">
+                                                                                                            <strong>Payment Status:</strong>
+                                                                                                         </td>
+                                                                                                         <td class="img mw-15 pt-10"
+                                                                                                            style="font-size:0pt; line-height:0pt; text-align:left; padding-top: 10px;"></td>
+                                                                                                         <td class="title-20 lh-30 c-purple pt-10 mt-right"
+                                                                                                            style="font-size:20px; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important; line-height: 30px; color:#9128df; padding-top: 10px;">
+                                                                                                            <strong>{{ .paymentStatus }}</strong>
+                                                                                                         </td>
+                                                                                                      </tr>
                                                                                                    </table>
                                                                                                 </td>
                                                                                              </tr>
