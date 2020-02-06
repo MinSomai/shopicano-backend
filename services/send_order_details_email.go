@@ -2,8 +2,10 @@ package services
 
 import (
 	"fmt"
+	"github.com/RichardKnop/machinery/v1/tasks"
 	"github.com/go-gomail/gomail"
 	"github.com/shopicano/shopicano-backend/config"
+	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/templates"
 )
@@ -43,7 +45,8 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 
 	body, err := templates.GenerateInvoiceEmailHTML(params)
 	if err != nil {
-		return err
+		log.Log().Errorln(err)
+		return tasks.NewErrRetryTaskLater(err.Error(), TaskRetryDelay)
 	}
 
 	m := gomail.NewMessage()
@@ -53,7 +56,8 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 	m.SetBody("text/html", body)
 
 	if err := EmailDialer().DialAndSend(m); err != nil {
-		return err
+		log.Log().Errorln(err)
+		return tasks.NewErrRetryTaskLater(err.Error(), TaskRetryDelay)
 	}
 	return nil
 }
