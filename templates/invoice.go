@@ -489,6 +489,7 @@ var invoiceTemplate = `
                                                                                              </tr>
                                                                                           </table>
                                                                                        </th>
+																						{{end}}
                                                                                        <th class="column-top mpb-15"
                                                                                           valign="top"
                                                                                           width="30"
@@ -521,7 +522,6 @@ var invoiceTemplate = `
                                                                                                             {{ .subTotal }}
                                                                                                          </td>
                                                                                                       </tr>
-                                                                                                      {{ if .isShippable }}
                                                                                                       <tr>
                                                                                                          <td class="title-20 lh-30 a-right mt-left"
                                                                                                             style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 30px; text-align:right;">
