@@ -562,6 +562,20 @@ var invoiceTemplate = `
 																										<tr>
                                                                                                          <td class="title-20 lh-30 a-right mt-left"
                                                                                                             style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 30px; text-align:right;">
+                                                                                                            <strong>Discount:</strong>
+                                                                                                         </td>
+                                                                                                         <td class="img mw-15"
+                                                                                                            style="font-size:0pt; line-height:0pt; text-align:left;"></td>
+                                                                                                         <td class="title-20 lh-30 mt-right"
+                                                                                                            style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important; line-height: 30px;">
+                                                                                                            {{ .discount }}
+                                                                                                         </td>
+                                                                                                      </tr>
+																										{{end}}
+																										{{ if .isCouponApplied }}
+																										<tr>
+                                                                                                         <td class="title-20 lh-30 a-right mt-left"
+                                                                                                            style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 30px; text-align:right;">
                                                                                                             <strong>CC:</strong>
                                                                                                          </td>
                                                                                                          <td class="img mw-15"

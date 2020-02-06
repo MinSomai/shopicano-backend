@@ -33,6 +33,7 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 
 	if order.DiscountedAmount != 0 {
 		params["couponCode"] = order.CouponCode
+		params["discount"] = order.DiscountedAmount
 		params["isCouponApplied"] = true
 	}
 
