@@ -558,6 +558,20 @@ var invoiceTemplate = `
                                                                                                             {{ .paymentGateway }}
                                                                                                          </td>
                                                                                                       </tr>
+																										{{ if .isCouponApplied }}
+																										<tr>
+                                                                                                         <td class="title-20 lh-30 a-right mt-left"
+                                                                                                            style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 30px; text-align:right;">
+                                                                                                            <strong>CC:</strong>
+                                                                                                         </td>
+                                                                                                         <td class="img mw-15"
+                                                                                                            style="font-size:0pt; line-height:0pt; text-align:left;"></td>
+                                                                                                         <td class="title-20 lh-30 mt-right"
+                                                                                                            style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important; line-height: 30px;">
+                                                                                                            {{ .couponCode }}
+                                                                                                         </td>
+                                                                                                      </tr>
+																										{{end}}
                                                                                                       <tr>
                                                                                                          <td class="title-20 lh-30 a-right mt-left pt-10"
                                                                                                             style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 30px; text-align:right; padding-top: 10px;">
@@ -604,7 +618,7 @@ var invoiceTemplate = `
                                                 <tr>
                                                    <td class="text-14 lh-24 a-center c-white l-white pb-20"
                                                       style="font-size:14px; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 24px; text-align:center; color:#ffffff; padding-bottom: 20px;">
-                                                      <p style="font-size: 8px;">*SC = Shipping Charge | PPF = Payment Processing Fee | PG = Payment Gateway</p>
+                                                      <p style="font-size: 8px;">*SC = Shipping Charge | PPF = Payment Processing Fee | PG = Payment Gateway || CC = Coupon Code</p>
                                                       
                                                       Address name St. 12, City Name, State, Country Name
                                                       <br/>

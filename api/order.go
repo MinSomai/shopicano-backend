@@ -320,6 +320,8 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	o.PaymentProcessingFee = pm.CalculateProcessingFee(o.GrandTotal)
 	o.PaymentGateway = &pgName
 
+	o.GrandTotal += o.PaymentProcessingFee
+
 	err = ou.Create(db, &o)
 	if err != nil {
 		db.Rollback()

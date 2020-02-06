@@ -15,12 +15,12 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 	params["greetings"] = fmt.Sprintf("Hi %s,", order.UserName)
 	params["intros"] = "Thank you for purchasing from our platform."
 	params["orderHash"] = order.Hash
-	params["billingAddress"] = fmt.Sprintf("%s<br>%s<br>%s - %s",
+	params["billingAddress"] = fmt.Sprintf("%s\n%s\n%s - %s",
 		order.BillingAddress, order.BillingCity, order.BillingCountry, order.BillingPostcode)
 	params["isShippable"] = !order.IsAllDigitalProducts
 
 	if !order.IsAllDigitalProducts {
-		params["shippingAddress"] = fmt.Sprintf("%s<br>%s<br>%s - %s",
+		params["shippingAddress"] = fmt.Sprintf("%s\n%s\n%s - %s",
 			*order.ShippingAddress, *order.ShippingCity, *order.ShippingCountry, *order.ShippingPostcode)
 	}
 
@@ -29,6 +29,12 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 	params["paymentGateway"] = order.PaymentGateway
 	params["subTotal"] = order.SubTotal
 	params["grandTotal"] = order.GrandTotal
+	params["isCouponApplied"] = false
+
+	if order.DiscountedAmount != 0 {
+		params["couponCode"] = order.CouponCode
+		params["isCouponApplied"] = true
+	}
 
 	var items []map[string]interface{}
 
