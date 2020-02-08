@@ -321,6 +321,8 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	o.PaymentGateway = &pgName
 
 	o.GrandTotal += o.PaymentProcessingFee
+	o.OriginalGrandTotal = o.GrandTotal
+	o.GrandTotal -= o.DiscountedAmount
 
 	err = ou.Create(db, &o)
 	if err != nil {
@@ -430,9 +432,6 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			return resp.ServerJSON(ctx)
 		}
 	}
-
-	o.OriginalGrandTotal = o.GrandTotal
-	o.GrandTotal -= o.DiscountedAmount
 
 	if o.GrandTotal == 0 {
 		o.PaymentStatus = models.PaymentCompleted
