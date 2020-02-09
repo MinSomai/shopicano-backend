@@ -43,12 +43,13 @@ func login(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	db := app.DB()
+	db := app.DB().Begin()
 
 	uc := data.NewUserRepository()
 	u, err := uc.Login(db, e, p)
 
 	if err != nil {
+		db.Rollback()
 		log.Log().Errorln(err)
 
 		if errors.IsRecordNotFoundError(err) {
@@ -67,6 +68,8 @@ func login(ctx echo.Context) error {
 	}
 
 	if u.Status != models.UserActive {
+		db.Rollback()
+
 		resp.Title = "User isn't active"
 		resp.Status = http.StatusForbidden
 		resp.Code = errors.UserNotActive
@@ -84,6 +87,8 @@ func login(ctx echo.Context) error {
 	}
 
 	if err := uc.CreateSession(db, &s); err != nil {
+		db.Rollback()
+
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -93,6 +98,8 @@ func login(ctx echo.Context) error {
 
 	_, permission, err := uc.GetPermissionByUserID(db, s.UserID)
 	if err != nil {
+		db.Rollback()
+
 		log.Log().Errorln(err)
 
 		resp.Title = "Database query failed"
@@ -102,14 +109,44 @@ func login(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	resp.Data = map[string]interface{}{
+	result := map[string]interface{}{
 		"access_token":  s.AccessToken,
 		"refresh_token": s.RefreshToken,
 		"expire_on":     s.ExpireOn,
 		"permission":    permission,
 	}
 
+	sc := data.NewStoreRepository()
+	profile, err := sc.GetStoreUserProfile(db, u.ID)
+	if err != nil {
+		if !errors.IsRecordNotFoundError(err) {
+			db.Rollback()
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		result["has_store"] = false
+	} else {
+		result["has_store"] = true
+		result["store_id"] = profile.ID
+		result["store_name"] = profile.Name
+		result["store_permission"] = profile.StorePermission
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	resp.Status = http.StatusOK
+	resp.Data = result
 	return resp.ServerJSON(ctx)
 }
 
