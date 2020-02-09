@@ -39,12 +39,12 @@ func (su *StoreRepositoryImpl) AddStoreStuff(db *gorm.DB, st *models.Staff) erro
 	return nil
 }
 
-func (su *StoreRepositoryImpl) UpdateStoreStuffPermission(db *gorm.DB, storeID, userID, permissionID string) error {
+func (su *StoreRepositoryImpl) UpdateStoreStuffPermission(db *gorm.DB, staff *models.Staff) error {
 	st := models.Staff{}
 
 	if err := db.Table(st.TableName()).Select("permission_id").Update(map[string]interface{}{
-		"permission_id": permissionID,
-	}).Where("store_id = ? AND user_id = ?", storeID, userID).Error; err != nil {
+		"permission_id": staff.PermissionID,
+	}).Where("store_id = ? AND user_id = ? AND is_creator = ?", staff.StoreID, staff.UserID, false).Error; err != nil {
 		return err
 	}
 	return nil
@@ -53,7 +53,7 @@ func (su *StoreRepositoryImpl) UpdateStoreStuffPermission(db *gorm.DB, storeID, 
 func (su *StoreRepositoryImpl) DeleteStoreStuffPermission(db *gorm.DB, storeID, userID string) error {
 	st := models.Staff{}
 
-	if err := db.Table(st.TableName()).Delete(&st, "store_id = ? AND user_id = ?", storeID, userID).Error; err != nil {
+	if err := db.Table(st.TableName()).Delete(&st, "store_id = ? AND user_id = ? AND is_creator = ?", storeID, userID, false).Error; err != nil {
 		return err
 	}
 	return nil
@@ -65,4 +65,43 @@ func (su *StoreRepositoryImpl) FindStoreByID(db *gorm.DB, ID string) (*models.St
 		return nil, err
 	}
 	return &s, nil
+}
+
+func (su *StoreRepositoryImpl) IsAlreadyStaff(db *gorm.DB, userID string) (bool, error) {
+	staff := models.Staff{}
+
+	var count int
+
+	if err := db.Table(staff.TableName()).
+		Where("user_id = ?", userID).
+		Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (su *StoreRepositoryImpl) ListStaffs(db *gorm.DB, storeID string, from, limit int) ([]models.StoreUserProfile, error) {
+	var staffs []models.StoreUserProfile
+	sup := models.StoreUserProfile{}
+	if err := db.Table(sup.TableName()).
+		Where("store_id = ?", storeID).
+		Offset(from).
+		Limit(limit).
+		Find(&staffs).Error; err != nil {
+		return nil, err
+	}
+	return staffs, nil
+}
+
+func (su *StoreRepositoryImpl) SearchStaffs(db *gorm.DB, storeID, query string, from, limit int) ([]models.StoreUserProfile, error) {
+	var staffs []models.StoreUserProfile
+	sup := models.StoreUserProfile{}
+	if err := db.Table(sup.TableName()).
+		Where("store_id = ? AND (user_email LIKE ? OR user_phone LIKE ?)", storeID, "%"+query+"%", "%"+query+"%").
+		Offset(from).
+		Limit(limit).
+		Find(&staffs).Error; err != nil {
+		return nil, err
+	}
+	return staffs, nil
 }

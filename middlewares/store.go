@@ -123,6 +123,7 @@ var MustBeUserOrStoreStaffAndStoreActive = func(next echo.HandlerFunc) echo.Hand
 		uc := data.NewUserRepository()
 		userID, u, err := uc.GetPermission(db, token)
 		if err != nil {
+			log.Log().Errorln(err)
 			resp.Status = http.StatusUnauthorized
 			resp.Title = "Unauthorized request"
 			return resp.ServerJSON(ctx)

@@ -12,6 +12,7 @@ import (
 	"github.com/shopicano/shopicano-backend/validators"
 	"github.com/shopicano/shopicano-backend/values"
 	"net/http"
+	"strconv"
 )
 
 func RegisterStoreRoutes(g *echo.Group) {
@@ -22,9 +23,10 @@ func RegisterStoreRoutes(g *echo.Group) {
 
 	func(g echo.Group) {
 		g.Use(middlewares.IsStoreAdmin)
-		g.POST("/permission", addStoreStaff)
-		g.PATCH("/permission", updateStoreStaffPermission)
-		g.DELETE("/permission", deleteStoreStaff)
+		g.POST("/:store_id/staffs/", addStoreStaff)
+		g.PATCH("/:store_id/staffs/", updateStoreStaffPermission)
+		g.DELETE("/:store_id/staffs/:user_id/", deleteStoreStaff)
+		g.GET("/:store_id/staffs/", listStaffs)
 	}(*g)
 
 	func(g echo.Group) {
@@ -140,7 +142,7 @@ func getStore(ctx echo.Context) error {
 }
 
 func addStoreStaff(ctx echo.Context) error {
-	e, p, err := validators.ValidateCreateOrUpdateStoreStaff(ctx)
+	e, p, err := validators.ValidateCreateStoreStaff(ctx)
 
 	resp := core.Response{}
 
@@ -152,9 +154,10 @@ func addStoreStaff(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	db := app.DB()
+	db := app.DB().Begin()
 
 	uu := data.NewUserRepository()
+	su := data.NewStoreRepository()
 
 	u, err := uu.GetByEmail(db, *e)
 	if err != nil {
@@ -181,7 +184,23 @@ func addStoreStaff(ctx echo.Context) error {
 		IsCreator:    false,
 	}
 
-	su := data.NewStoreRepository()
+	exists, err := su.IsAlreadyStaff(db, s.UserID)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if exists {
+		resp.Title = "User already staff"
+		resp.Status = http.StatusForbidden
+		resp.Code = errors.UserAlreadyStaff
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	err = su.AddStoreStuff(db, s)
 	if err != nil {
 		resp.Title = "Database query failed"
@@ -191,24 +210,44 @@ func addStoreStaff(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	resp.Status = http.StatusOK
-	resp.Title = "User added to store"
+	resp.Title = "Staff added to store"
 	return resp.ServerJSON(ctx)
 }
 
 func updateStoreStaffPermission(ctx echo.Context) error {
+	uID, pID, err := validators.ValidateUpdateStoreStaff(ctx)
+
 	resp := core.Response{}
 
-	db := app.DB()
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.AddStoreStaffDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
 
+	db := app.DB().Begin()
+
+	uu := data.NewUserRepository()
 	su := data.NewStoreRepository()
-	profile, err := su.GetStoreUserProfile(db, ctx.Get(utils.UserID).(string))
+
+	u, err := uu.Get(db, *uID)
 	if err != nil {
 		ok := errors.IsRecordNotFoundError(err)
 		if ok {
-			resp.Title = "Store not found"
+			resp.Title = "User not found"
 			resp.Status = http.StatusNotFound
-			resp.Code = errors.StoreNotFound
+			resp.Code = errors.UserNotFound
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
@@ -220,28 +259,112 @@ func updateStoreStaffPermission(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	s := &models.Staff{
+		UserID:       u.ID,
+		StoreID:      utils.GetStoreID(ctx),
+		PermissionID: *pID,
+		IsCreator:    false,
+	}
+
+	exists, err := su.IsAlreadyStaff(db, s.UserID)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if !exists {
+		resp.Title = "Staff doesn't exists"
+		resp.Status = http.StatusNotFound
+		resp.Code = errors.StaffDoesNotExists
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	err = su.UpdateStoreStuffPermission(db, s)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	resp.Status = http.StatusOK
-	resp.Data = profile
+	resp.Title = "Staff permission updated"
 	return resp.ServerJSON(ctx)
 }
 
 func deleteStoreStaff(ctx echo.Context) error {
+	uID := ctx.Param("user_id")
+
+	resp := core.Response{}
+
+	db := app.DB().Begin()
+	su := data.NewStoreRepository()
+
+	err := su.DeleteStoreStuffPermission(db, utils.GetStoreID(ctx), uID)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusNoContent
+	resp.Title = "Staff removed"
+	return resp.ServerJSON(ctx)
+}
+
+func listStaffs(ctx echo.Context) error {
+	pageQ := ctx.Request().URL.Query().Get("page")
+	limitQ := ctx.Request().URL.Query().Get("limit")
+	query := ctx.Request().URL.Query().Get("query")
+
+	page, err := strconv.ParseInt(pageQ, 10, 64)
+	if err != nil {
+		page = 1
+	}
+	limit, err := strconv.ParseInt(limitQ, 10, 64)
+	if err != nil {
+		limit = 10
+	}
+
+	from := (page - 1) * limit
+
 	resp := core.Response{}
 
 	db := app.DB()
-
 	su := data.NewStoreRepository()
-	profile, err := su.GetStoreUserProfile(db, ctx.Get(utils.UserID).(string))
-	if err != nil {
-		ok := errors.IsRecordNotFoundError(err)
-		if ok {
-			resp.Title = "Store not found"
-			resp.Status = http.StatusNotFound
-			resp.Code = errors.StoreNotFound
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
-		}
 
+	var r interface{}
+
+	if query == "" {
+		r, err = su.ListStaffs(db, utils.GetStoreID(ctx), int(from), int(limit))
+	} else {
+		r, err = su.SearchStaffs(db, utils.GetStoreID(ctx), query, int(from), int(limit))
+	}
+
+	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -250,6 +373,6 @@ func deleteStoreStaff(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusOK
-	resp.Data = profile
+	resp.Data = r
 	return resp.ServerJSON(ctx)
 }
