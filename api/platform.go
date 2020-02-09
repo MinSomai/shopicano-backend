@@ -15,7 +15,7 @@ import (
 )
 
 func RegisterPlatformRoutes(g *echo.Group) {
-	func(g *echo.Group) {
+	func(g echo.Group) {
 		g.Use(middlewares.IsPlatformManager)
 		g.POST("/shipping-methods/", createShippingMethod)
 		g.PUT("/shipping-methods/:id/", updateShippingMethod)
@@ -28,13 +28,13 @@ func RegisterPlatformRoutes(g *echo.Group) {
 		g.GET("/payment-methods/:id/", getPaymentMethod)
 
 		g.GET("/users/", listUsers)
-	}(g)
+	}(*g)
 
-	func(g *echo.Group) {
+	func(g echo.Group) {
 		g.Use(middlewares.AuthUser)
 		g.GET("/shipping-methods/", listShippingMethods)
 		g.GET("/payment-methods/", listPaymentMethods)
-	}(g)
+	}(*g)
 }
 
 func createShippingMethod(ctx echo.Context) error {
