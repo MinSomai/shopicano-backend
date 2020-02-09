@@ -11,6 +11,7 @@ import (
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
+	"time"
 )
 
 func RegisterUserRoutes(g *echo.Group) {
@@ -79,6 +80,8 @@ func update(ctx echo.Context) error {
 
 		u.Password = pass
 	}
+
+	u.UpdatedAt = time.Now().UTC()
 
 	err = uc.Update(db, u)
 	if err != nil {
