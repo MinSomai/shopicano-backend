@@ -31,7 +31,7 @@ func RegisterPlatformRoutes(g *echo.Group) {
 	}(g)
 
 	func(g *echo.Group) {
-		g.Use(middlewares.MustBeUserOrStoreStaffAndStoreActive)
+		g.Use(middlewares.AuthUser)
 		g.GET("/shipping-methods/", listShippingMethods)
 		g.GET("/payment-methods/", listPaymentMethods)
 	}(g)
