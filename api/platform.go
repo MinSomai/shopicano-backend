@@ -16,7 +16,7 @@ import (
 
 func RegisterPlatformRoutes(g *echo.Group) {
 	func(g *echo.Group) {
-		g.Use(middlewares.AuthUser)
+		g.Use(middlewares.IsPlatformManager)
 		g.POST("/shipping-methods/", createShippingMethod)
 		g.PUT("/shipping-methods/:id/", updateShippingMethod)
 		g.DELETE("/shipping-methods/:id/", deleteShippingMethod)
