@@ -101,18 +101,21 @@ func ValidateUserUpdateStatus(ctx echo.Context) (*reqUserUpdateStatus, error) {
 	}
 
 	ok, err := govalidator.ValidateStruct(&body)
-	if ok {
-		return &body, nil
-	}
 
 	ve := errors.ValidationError{}
 
-	for k, v := range govalidator.ErrorsByField(err) {
-		ve.Add(k, v)
+	if !ok {
+		for k, v := range govalidator.ErrorsByField(err) {
+			ve.Add(k, v)
+		}
 	}
 
 	if !body.NewStatus.IsValid() {
 		ve.Add("new_status", "is invalid")
+	}
+
+	if len(ve) == 0 {
+		return &body, nil
 	}
 
 	return nil, &ve
@@ -136,9 +139,14 @@ func ValidateUserUpdatePermission(ctx echo.Context) (*reqUserUpdatePermission, e
 
 	ve := errors.ValidationError{}
 
-	for k, v := range govalidator.ErrorsByField(err) {
-		ve.Add(k, v)
+	if !ok {
+		for k, v := range govalidator.ErrorsByField(err) {
+			ve.Add(k, v)
+		}
 	}
 
+	if len(ve) == 0 {
+		return &body, nil
+	}
 	return nil, &ve
 }
