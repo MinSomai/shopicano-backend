@@ -84,7 +84,7 @@ func (su *StoreRepositoryImpl) ListStaffs(db *gorm.DB, storeID string, from, lim
 	var staffs []models.StoreUserProfile
 	sup := models.StoreUserProfile{}
 	if err := db.Table(sup.TableName()).
-		Where("store_id = ?", storeID).
+		Where("id = ?", storeID).
 		Offset(from).
 		Limit(limit).
 		Find(&staffs).Error; err != nil {
@@ -97,7 +97,7 @@ func (su *StoreRepositoryImpl) SearchStaffs(db *gorm.DB, storeID, query string, 
 	var staffs []models.StoreUserProfile
 	sup := models.StoreUserProfile{}
 	if err := db.Table(sup.TableName()).
-		Where("store_id = ? AND (user_email LIKE ? OR user_phone LIKE ?)", storeID, "%"+query+"%", "%"+query+"%").
+		Where("id = ? AND (user_email LIKE ? OR user_phone LIKE ?)", storeID, "%"+query+"%", "%"+query+"%").
 		Offset(from).
 		Limit(limit).
 		Find(&staffs).Error; err != nil {
