@@ -18,7 +18,7 @@ import (
 func RegisterCouponRoutes(g *echo.Group) {
 	func(g echo.Group) {
 		// Private endpoints only
-		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/", createCoupon)
 		g.PATCH("/:coupon_id/", updateCoupon)
 		g.DELETE("/:coupon_id/", deleteCoupon)

@@ -15,7 +15,7 @@ import (
 
 func RegisterCustomerRoutes(g *echo.Group) {
 	func(g *echo.Group) {
-		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.GET("/", listCustomers)
 	}(g)
 }

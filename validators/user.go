@@ -88,3 +88,57 @@ func ValidateUserUpdate(ctx echo.Context) (*reqUserUpdate, error) {
 	}
 	return &body, nil
 }
+
+type reqUserUpdateStatus struct {
+	NewStatus models.UserStatus `json:"new_status" valid:"required"`
+}
+
+func ValidateUserUpdateStatus(ctx echo.Context) (*reqUserUpdateStatus, error) {
+	body := reqUserUpdateStatus{}
+
+	if err := ctx.Bind(&body); err != nil {
+		return nil, err
+	}
+
+	ok, err := govalidator.ValidateStruct(&body)
+	if ok {
+		return &body, nil
+	}
+
+	ve := errors.ValidationError{}
+
+	for k, v := range govalidator.ErrorsByField(err) {
+		ve.Add(k, v)
+	}
+
+	if !body.NewStatus.IsValid() {
+		ve.Add("new_status", "is invalid")
+	}
+
+	return nil, &ve
+}
+
+type reqUserUpdatePermission struct {
+	NewPermissionID string `json:"new_permission_id" valid:"required"`
+}
+
+func ValidateUserUpdatePermission(ctx echo.Context) (*reqUserUpdatePermission, error) {
+	body := reqUserUpdatePermission{}
+
+	if err := ctx.Bind(&body); err != nil {
+		return nil, err
+	}
+
+	ok, err := govalidator.ValidateStruct(&body)
+	if ok {
+		return &body, nil
+	}
+
+	ve := errors.ValidationError{}
+
+	for k, v := range govalidator.ErrorsByField(err) {
+		ve.Add(k, v)
+	}
+
+	return nil, &ve
+}

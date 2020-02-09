@@ -21,8 +21,15 @@ func RegisterUserRoutes(g *echo.Group) {
 		g.GET("/", get)
 	}(*g)
 
-	//g.PATCH("/:id/status/", r.updateStatus)
-	//g.PATCH("/:id/permission/", r.updatePermission)
+	func(g echo.Group) {
+		g.Use(middlewares.IsPlatformManager)
+		g.PATCH("/:user_id/status/", updateStatus)
+	}(*g)
+
+	func(g echo.Group) {
+		g.Use(middlewares.IsPlatformAdmin)
+		g.PATCH("/:user_id/permission/", updatePermission)
+	}(*g)
 }
 
 func update(ctx echo.Context) error {
@@ -81,6 +88,160 @@ func update(ctx echo.Context) error {
 		u.Password = pass
 	}
 
+	u.UpdatedAt = time.Now().UTC()
+
+	err = uc.Update(db, u)
+	if err != nil {
+		db.Rollback()
+		log.Log().Errorln(err)
+
+		resp.Title = "Failed to update profile"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Data = map[string]interface{}{
+		"id":              u.ID,
+		"name":            u.Name,
+		"email":           u.Email,
+		"status":          u.Status,
+		"phone":           u.Phone,
+		"profile_picture": u.ProfilePicture,
+		"created_at":      u.CreatedAt,
+		"updated_at":      u.UpdatedAt,
+		"permission":      ctx.Get(utils.UserPermission),
+	}
+
+	resp.Status = http.StatusOK
+	return resp.ServerJSON(ctx)
+}
+
+func updateStatus(ctx echo.Context) error {
+	req, err := validators.ValidateUserUpdateStatus(ctx)
+
+	resp := core.Response{}
+
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.StoreCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	userID := ctx.Param("user_id")
+
+	db := app.DB().Begin()
+
+	uc := data.NewUserRepository()
+	u, err := uc.Get(db, userID)
+	if err != nil {
+		db.Rollback()
+		log.Log().Errorln(err)
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "User not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.UserNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Failed to get user profile"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	u.Status = req.NewStatus
+	u.UpdatedAt = time.Now().UTC()
+
+	err = uc.Update(db, u)
+	if err != nil {
+		db.Rollback()
+		log.Log().Errorln(err)
+
+		resp.Title = "Failed to update profile"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Data = map[string]interface{}{
+		"id":              u.ID,
+		"name":            u.Name,
+		"email":           u.Email,
+		"status":          u.Status,
+		"phone":           u.Phone,
+		"profile_picture": u.ProfilePicture,
+		"created_at":      u.CreatedAt,
+		"updated_at":      u.UpdatedAt,
+		"permission":      ctx.Get(utils.UserPermission),
+	}
+
+	resp.Status = http.StatusOK
+	return resp.ServerJSON(ctx)
+}
+
+func updatePermission(ctx echo.Context) error {
+	req, err := validators.ValidateUserUpdatePermission(ctx)
+
+	resp := core.Response{}
+
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.StoreCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	userID := ctx.Param("user_id")
+
+	db := app.DB().Begin()
+
+	uc := data.NewUserRepository()
+	u, err := uc.Get(db, userID)
+	if err != nil {
+		db.Rollback()
+		log.Log().Errorln(err)
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "User not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.UserNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Failed to get user profile"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	u.PermissionID = req.NewPermissionID
 	u.UpdatedAt = time.Now().UTC()
 
 	err = uc.Update(db, u)

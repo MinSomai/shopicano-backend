@@ -14,7 +14,7 @@ import (
 
 func RegisterStatsRoutes(g *echo.Group) {
 	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffWithStoreActivation)
+		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
 		g.GET("/products/", productStats)
 		g.GET("/categories/", categoryStats)
 		//g.GET("/collections/", collectionStats)
@@ -22,7 +22,7 @@ func RegisterStatsRoutes(g *echo.Group) {
 	}(g)
 
 	func(g *echo.Group) {
-		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.GET("/orders/", orderStats)
 		//g.GET("/collections/", collectionStats)
 		//g.GET("/stores/", storeStats)

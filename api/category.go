@@ -16,13 +16,13 @@ import (
 
 func RegisterCategoryRoutes(g *echo.Group) {
 	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffWithStoreActivation)
+		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
 		g.GET("/", listCategories)
 	}(g)
 
 	func(g *echo.Group) {
 		// private endpoints only
-		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/", createCategory)
 		g.DELETE("/:category_id/", deleteCategory)
 		g.PATCH("/:category_id/", updateCategory)

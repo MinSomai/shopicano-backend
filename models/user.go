@@ -19,6 +19,15 @@ const (
 type UserStatus string
 type Permission string
 
+func (us UserStatus) IsValid() bool {
+	for _, s := range []UserStatus{UserActive, UserBanned, UserSuspended} {
+		if s == us {
+			return true
+		}
+	}
+	return false
+}
+
 type User struct {
 	ID                string     `json:"id" sql:"id" gorm:"primary_key"`
 	Name              string     `json:"name" sql:"name" gorm:"not null"`

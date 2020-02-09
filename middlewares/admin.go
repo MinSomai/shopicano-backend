@@ -44,6 +44,39 @@ var IsPlatformAdmin = func(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+var IsPlatformManager = func(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		resp := core.Response{}
+
+		token, err := utils.ParseBearerToken(ctx)
+		if err != nil {
+			resp.Status = http.StatusUnauthorized
+			resp.Title = "Unauthorized request"
+			return resp.ServerJSON(ctx)
+		}
+
+		db := app.DB()
+
+		uc := data.NewUserRepository()
+		userID, userPermission, err := uc.GetPermission(db, token)
+		if err != nil {
+			resp.Status = http.StatusUnauthorized
+			resp.Title = "Unauthorized request"
+			return resp.ServerJSON(ctx)
+		}
+
+		if !(*userPermission == models.AdminPerm || *userPermission == models.ManagerPerm) {
+			resp.Status = http.StatusForbidden
+			resp.Title = "Unauthorized request"
+			return resp.ServerJSON(ctx)
+		}
+
+		ctx.Set(utils.UserID, userID)
+		ctx.Set(utils.UserPermission, userPermission)
+		return next(ctx)
+	}
+}
+
 var IsSignUpEnabled = func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		resp := core.Response{}

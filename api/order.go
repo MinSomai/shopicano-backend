@@ -26,7 +26,7 @@ func RegisterOrderRoutes(g *echo.Group) {
 	g.GET("/:order_id/pay/", payOrder)
 
 	func(g echo.Group) {
-		g.Use(middlewares.MustBeUserOrStoreStaffWithStoreActivation)
+		g.Use(middlewares.MustBeUserOrStoreStaffAndStoreActive)
 		g.GET("/", listOrders)
 		g.GET("/:order_id/", getOrder)
 	}(*g)
@@ -44,7 +44,7 @@ func RegisterOrderRoutes(g *echo.Group) {
 	}(*g)
 
 	func(g echo.Group) {
-		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/internal/", createOrder)
 		g.PATCH("/internal/:order_id/", createOrder)
 		g.PUT("/internal/items/:order_id/", createOrder)
