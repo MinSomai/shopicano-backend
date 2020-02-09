@@ -11,6 +11,7 @@ import (
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -313,5 +314,48 @@ func get(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusOK
+	return resp.ServerJSON(ctx)
+}
+
+func listUsers(ctx echo.Context) error {
+	pageQ := ctx.Request().URL.Query().Get("page")
+	limitQ := ctx.Request().URL.Query().Get("limit")
+	query := ctx.Request().URL.Query().Get("query")
+
+	page, err := strconv.ParseInt(pageQ, 10, 64)
+	if err != nil {
+		page = 1
+	}
+	limit, err := strconv.ParseInt(limitQ, 10, 64)
+	if err != nil {
+		limit = 10
+	}
+
+	from := (page * limit) - limit
+
+	db := app.DB()
+
+	uc := data.NewUserRepository()
+
+	resp := core.Response{}
+
+	var r interface{}
+
+	if query == "" {
+		r, err = uc.List(db, int(from), int(limit))
+	} else {
+		r, err = uc.Search(db, query, int(from), int(limit))
+	}
+
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = r
 	return resp.ServerJSON(ctx)
 }

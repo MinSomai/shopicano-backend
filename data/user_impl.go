@@ -179,3 +179,27 @@ func (uu *UserRepositoryImpl) IsStoreCreationEnabled(db *gorm.DB) (bool, error) 
 	}
 	return s.IsStoreCreationEnabled, nil
 }
+
+func (uu *UserRepositoryImpl) List(db *gorm.DB, from, limit int) ([]models.User, error) {
+	var users []models.User
+
+	u := models.User{}
+	if err := db.Table(u.TableName()).Offset(from).Limit(limit).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func (uu *UserRepositoryImpl) Search(db *gorm.DB, query string, from, limit int) ([]models.User, error) {
+	var users []models.User
+
+	u := models.User{}
+	if err := db.Table(u.TableName()).
+		Offset(from).
+		Limit(limit).
+		Where("email LIKE ? OR phone LIKE ?", "%"+query+"%", "%"+query+"%").
+		Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
