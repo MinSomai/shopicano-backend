@@ -71,3 +71,20 @@ func ValidateRegister(ctx echo.Context) (*models.User, error) {
 
 	return nil, &ve
 }
+
+type reqUserUpdate struct {
+	Name           *string `json:"name"`
+	Email          *string `json:"email"`
+	ProfilePicture *string `json:"profile_picture"`
+	Phone          *string `json:"phone"`
+	Password       *string `json:"password"`
+}
+
+func ValidateUserUpdate(ctx echo.Context) (*reqUserUpdate, error) {
+	body := reqUserUpdate{}
+
+	if err := ctx.Bind(&body); err != nil {
+		return nil, err
+	}
+	return &body, nil
+}
