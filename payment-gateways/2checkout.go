@@ -54,21 +54,11 @@ func (tco *twoCheckoutPaymentGateway) Pay(orderDetails *models.OrderDetailsView)
 	payload += fmt.Sprintf("phone=%s&", orderDetails.BillingPhone)
 	payload += fmt.Sprintf("email=%s&", orderDetails.BillingEmail)
 
-	for i, op := range orderDetails.Items {
-		payload += fmt.Sprintf("li_%d_type=%s&", i, "product")
-		payload += fmt.Sprintf("li_%d_name=%s&", i, op.Name)
-		payload += fmt.Sprintf("li_%d_price=%s&", i, fmt.Sprintf("%.2f", float64(op.Price)))
-		payload += fmt.Sprintf("li_%d_quantity=%s&", i, fmt.Sprintf("%d", op.Quantity))
-		payload += fmt.Sprintf("li_%d_tangible=%s&", i, "N")
-	}
-
-	if orderDetails.PaymentProcessingFee != 0 {
-		payload += fmt.Sprintf("li_%d_type=%s&", len(orderDetails.Items), "product")
-		payload += fmt.Sprintf("li_%d_name=%s&", len(orderDetails.Items), "Payment Processing Fee")
-		payload += fmt.Sprintf("li_%d_price=%s&", len(orderDetails.Items), fmt.Sprintf("%.2f", float64(orderDetails.PaymentProcessingFee)))
-		payload += fmt.Sprintf("li_%d_quantity=%s&", len(orderDetails.Items), fmt.Sprintf("%d", 1))
-		payload += fmt.Sprintf("li_%d_tangible=%s&", len(orderDetails.Items), "N")
-	}
+	payload += fmt.Sprintf("li_0_type=%s&", "product")
+	payload += fmt.Sprintf("li_0_name=%s&", fmt.Sprintf("Payment for Order %s", orderDetails.Hash))
+	payload += fmt.Sprintf("li_0_price=%s&", fmt.Sprintf("%.2f", float64(orderDetails.GrandTotal)))
+	payload += fmt.Sprintf("li_0_quantity=%s&", fmt.Sprintf("%d", 1))
+	payload += fmt.Sprintf("li_0_tangible=%s&", "N")
 
 	payload += "purchase_step=payment-method"
 

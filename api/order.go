@@ -218,6 +218,16 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 
 	o.IsAllDigitalProducts = isAllDigitalProduct
 
+	if !isAllDigitalProduct && sm == nil {
+		db.Rollback()
+
+		resp.Title = "Shipping method required"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.ShippingMethodNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	if !isAllDigitalProduct {
 		o.ShippingCharge = sm.CalculateDeliveryCharge(0)
 	}

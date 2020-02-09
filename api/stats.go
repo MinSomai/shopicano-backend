@@ -39,8 +39,10 @@ func productStats(ctx echo.Context) error {
 	var err error
 
 	isPublic := !utils.IsStoreStaff(ctx)
-	if !isPublic {
-		res, err = pu.Stats(db, utils.GetStoreID(ctx), 0, 25)
+	if isPublic {
+		res, err = pu.Stats(db, 0, 25)
+	} else {
+		res, err = pu.StatsAsStoreStaff(db, utils.GetStoreID(ctx), 0, 25)
 	}
 
 	if err != nil {

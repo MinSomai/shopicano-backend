@@ -2,7 +2,6 @@ package payment_gateways
 
 import (
 	"fmt"
-	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/checkout/session"
@@ -37,21 +36,9 @@ func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*Pa
 
 	var lineItems []*stripe.CheckoutSessionLineItemParams
 
-	for _, op := range orderDetails.Items {
-		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
-			Name:        stripe.String(op.Name),
-			Amount:      stripe.Int64(int64(op.Price)),
-			Currency:    stripe.String("usd"),
-			Description: stripe.String(op.ProductID),
-			Quantity:    stripe.Int64(int64(op.Quantity)),
-		})
-	}
-
-	log.Log().Infoln(orderDetails.PaymentProcessingFee)
-
 	lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
-		Name:     stripe.String("Payment Processing Fee"),
-		Amount:   stripe.Int64(int64(orderDetails.PaymentProcessingFee)),
+		Name:     stripe.String(fmt.Sprintf("Payment for Order #%s", orderDetails.Hash)),
+		Amount:   stripe.Int64(int64(orderDetails.GrandTotal * 100)),
 		Currency: stripe.String("usd"),
 		Quantity: stripe.Int64(int64(1)),
 	})

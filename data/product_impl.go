@@ -255,7 +255,31 @@ func (pu *ProductRepositoryImpl) GetForOrder(db *gorm.DB, productID string, quan
 	return &p, nil
 }
 
-func (pu *ProductRepositoryImpl) Stats(db *gorm.DB, storeID string, from, limit int) ([]helpers.ProductStats, error) {
+func (pu *ProductRepositoryImpl) Stats(db *gorm.DB, from, limit int) ([]helpers.ProductStats, error) {
+	var stats []helpers.ProductStats
+
+	p := models.Product{}
+	oi := models.OrderedItem{}
+
+	if err := db.Table(fmt.Sprintf("%s AS p", p.TableName())).
+		Select("p.id AS id, p.name AS name, p.stock AS stock, p.price AS price, p.image AS image, p.description AS description, COALESCE(SUM(oi.quantity), 0) AS count_skip").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS oi ON p.id = oi.product_id", oi.TableName())).
+		Group("p.id, p.name, p.stock, p.price, p.image, p.description").
+		Order("count_skip DESC").
+		Offset(from).
+		Limit(limit).
+		Find(&stats).Error; err != nil {
+		return nil, err
+	}
+
+	if stats == nil {
+		stats = []helpers.ProductStats{}
+	}
+
+	return stats, nil
+}
+
+func (pu *ProductRepositoryImpl) StatsAsStoreStaff(db *gorm.DB, storeID string, from, limit int) ([]helpers.ProductStats, error) {
 	var stats []helpers.ProductStats
 
 	p := models.Product{}

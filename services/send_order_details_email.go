@@ -30,8 +30,30 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 	params["subTotal"] = order.SubTotal
 	params["grandTotal"] = order.GrandTotal
 	params["isCouponApplied"] = false
-	params["status"] = order.Status
-	params["paymentStatus"] = order.PaymentStatus
+
+	switch order.Status {
+	case models.OrderPending:
+		params["status"] = "Pending"
+	case models.OrderConfirmed:
+		params["status"] = "Confirmed"
+	case models.OrderCancelled:
+		params["status"] = "Cancelled"
+	case models.OrderShipping:
+		params["status"] = "Shipping"
+	case models.OrderDelivered:
+		params["status"] = "Delivered"
+	}
+
+	switch order.PaymentStatus {
+	case models.PaymentPending:
+		params["paymentStatus"] = "Pending"
+	case models.PaymentCompleted:
+		params["paymentStatus"] = "Completed"
+	case models.PaymentFailed:
+		params["paymentStatus"] = "Failed"
+	case models.PaymentReverted:
+		params["paymentStatus"] = "Reverted"
+	}
 
 	if order.DiscountedAmount != 0 {
 		params["couponCode"] = order.CouponCode

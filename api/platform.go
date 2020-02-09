@@ -20,12 +20,10 @@ func RegisterPlatformRoutes(g *echo.Group) {
 		g.POST("/shipping-methods/", createShippingMethod)
 		g.PUT("/shipping-methods/:id/", updateShippingMethod)
 		g.DELETE("/shipping-methods/:id/", deleteShippingMethod)
-		g.GET("/shipping-methods/:id/", getShippingMethod)
 
 		g.POST("/payment-methods/", createPaymentMethod)
 		g.PUT("/payment-methods/:id/", updatePaymentMethod)
 		g.DELETE("/payment-methods/:id/", deletePaymentMethod)
-		g.GET("/payment-methods/:id/", getPaymentMethod)
 
 		g.GET("/users/", listUsers)
 	}(*g)
@@ -34,6 +32,8 @@ func RegisterPlatformRoutes(g *echo.Group) {
 		g.Use(middlewares.AuthUser)
 		g.GET("/shipping-methods/", listShippingMethods)
 		g.GET("/payment-methods/", listPaymentMethods)
+		g.GET("/payment-methods/:id/", getPaymentMethod)
+		g.GET("/shipping-methods/:id/", getShippingMethod)
 	}(*g)
 }
 
