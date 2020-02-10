@@ -123,7 +123,7 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 	}
 
 	if o.PaymentStatus == models.PaymentCompleted {
-		if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
+		if err := queue.SendPaymentConfirmationEmail(o.ID); err != nil {
 			db.Rollback()
 
 			resp.Title = "Failed to enqueue task"
@@ -189,7 +189,7 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 	}
 
 	if o.PaymentStatus == models.PaymentCompleted {
-		if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
+		if err := queue.SendPaymentConfirmationEmail(o.ID); err != nil {
 			db.Rollback()
 
 			resp.Title = "Failed to enqueue task"
@@ -286,7 +286,7 @@ func processPayOrderFor2Checkout(ctx echo.Context) error {
 	}
 
 	if m.PaymentStatus == models.PaymentCompleted {
-		if err := queue.SendOrderDetailsEmail(m.ID); err != nil {
+		if err := queue.SendPaymentConfirmationEmail(m.ID); err != nil {
 			db.Rollback()
 
 			resp.Title = "Failed to enqueue task"

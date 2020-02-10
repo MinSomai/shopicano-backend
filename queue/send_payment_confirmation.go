@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func SendOrderDetailsEmail(orderID string) error {
+func SendPaymentConfirmationEmail(orderID string) error {
 	now := time.Now().Add(time.Second * 10)
 
 	sig := &tasks.Signature{

@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	SendOrderDetailsEmailTaskName = "send_order_details_email"
+	SendPaymentConfirmationEmailTaskName = "send_payment_confirmation_email"
 )
 
-func SendOrderDetailsEmailFn(orderID string) error {
+func SendPaymentConfirmationEmailFn(orderID string) error {
 	db := app.DB().Begin()
 
 	orderDao := data.NewOrderRepository()
@@ -30,7 +30,7 @@ func SendOrderDetailsEmailFn(orderID string) error {
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}
 
-	if err := services.SendOrderDetailsEmail(u.Email, o); err != nil {
+	if err := services.SendPaymentConfirmationEmail(u.Email, o); err != nil {
 		log.Log().Errorln(err)
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}
