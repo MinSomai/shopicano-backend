@@ -7,6 +7,7 @@ import (
 	"github.com/shopicano/shopicano-backend/config"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
+	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
 	"github.com/shopicano/shopicano-backend/templates"
 )
 
@@ -26,10 +27,18 @@ func SendOrderDetailsEmail(name, email string, order *models.OrderDetailsView) e
 
 	params["shippingCharge"] = order.ShippingCharge
 	params["paymentProcessingFee"] = order.PaymentProcessingFee
-	params["paymentGateway"] = order.PaymentGateway
 	params["subTotal"] = order.SubTotal
 	params["grandTotal"] = order.GrandTotal
 	params["isCouponApplied"] = false
+
+	switch order.PaymentGateway {
+	case payment_gateways.BrainTreePaymentGatewayName:
+		params["paymentGateway"] = "Brain Tree"
+	case payment_gateways.TwoCheckoutPaymentGatewayName:
+		params["paymentGateway"] = "2Checkout"
+	case payment_gateways.StripePaymentGatewayName:
+		params["paymentGateway"] = "Stripe"
+	}
 
 	switch order.Status {
 	case models.OrderPending:
