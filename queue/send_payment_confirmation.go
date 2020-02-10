@@ -11,7 +11,7 @@ func SendPaymentConfirmationEmail(orderID string) error {
 	now := time.Now().Add(time.Second * 10)
 
 	sig := &tasks.Signature{
-		Name: tasks2.SendOrderDetailsEmailTaskName,
+		Name: tasks2.SendPaymentConfirmationEmailTaskName,
 		Args: []tasks.Arg{
 			{
 				Type:  "string",
