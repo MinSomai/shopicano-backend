@@ -402,7 +402,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	}
 
 	if isAllDigitalProduct {
-		o.Status = models.OrderConfirmed
+		o.Status = models.OrderDelivered
 
 		err = ou.UpdateStatus(db, &o)
 		if err != nil {
@@ -429,7 +429,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			ID:        utils.NewUUID(),
 			OrderID:   o.ID,
 			Action:    string(o.Status),
-			Details:   "Order has been confirmed",
+			Details:   "Order has been delivered",
 			CreatedAt: time.Now(),
 		}
 		if err := ou.CreateLog(db, &ol); err != nil {
