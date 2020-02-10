@@ -299,3 +299,87 @@ func (os *OrderRepositoryImpl) CountByTimeAsStoreStuff(db *gorm.DB, storeID stri
 
 	return count, nil
 }
+
+func (os *OrderRepositoryImpl) CountByTimeByStatus(db *gorm.DB, storeID string, from, end time.Time, status models.OrderStatus) (int, error) {
+	order := models.OrderDetailsViewExternal{}
+
+	var count int
+
+	if err := db.Table(order.TableName()).
+		Where("store_id = ? AND (created_at >= ? AND created_at <= ?) AND status = ?", storeID, from, end, status).
+		Count(&count).Error; err != nil {
+		log.Log().Errorln(err)
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (os *OrderRepositoryImpl) CountAsStoreStuff(db *gorm.DB, storeID string) (int, error) {
+	order := models.OrderDetailsViewExternal{}
+
+	var count int
+
+	if err := db.Table(order.TableName()).
+		Where("store_id = ?", storeID).
+		Count(&count).Error; err != nil {
+		log.Log().Errorln(err)
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (os *OrderRepositoryImpl) Earnings(db *gorm.DB, storeID string) (int, error) {
+	order := models.OrderDetailsViewExternal{}
+
+	r := struct {
+		Earnings int `json:"earnings"`
+	}{}
+
+	if err := db.Table(order.TableName()).
+		Select("SUM(order_details_views.grand_total) AS earnings").
+		Where("store_id = ? AND payment_status = ?", storeID, models.PaymentCompleted).
+		Scan(&r).Error; err != nil {
+		log.Log().Errorln(err)
+		return 0, err
+	}
+
+	return r.Earnings, nil
+}
+
+func (os *OrderRepositoryImpl) EarningsByTime(db *gorm.DB, storeID string, from, end time.Time) (int, error) {
+	order := models.OrderDetailsViewExternal{}
+
+	r := struct {
+		Earnings int `json:"earnings"`
+	}{}
+
+	if err := db.Table(order.TableName()).
+		Select("SUM(order_details_views.grand_total) AS earnings").
+		Where("store_id = ? AND (created_at >= ? AND created_at <= ?)", storeID, from, end).
+		Scan(&r).Error; err != nil {
+		log.Log().Errorln(err)
+		return 0, err
+	}
+
+	return r.Earnings, nil
+}
+
+func (os *OrderRepositoryImpl) EarningsByTimeByStatus(db *gorm.DB, storeID string, from, end time.Time, status models.PaymentStatus) (int, error) {
+	order := models.OrderDetailsViewExternal{}
+
+	r := struct {
+		Earnings int `json:"earnings"`
+	}{}
+
+	if err := db.Table(order.TableName()).
+		Select("SUM(order_details_views.grand_total) AS earnings").
+		Where("store_id = ? AND (created_at >= ? AND created_at <= ?) AND payment_status = ?", storeID, from, end, status).
+		Scan(&r).Error; err != nil {
+		log.Log().Errorln(err)
+		return 0, err
+	}
+
+	return r.Earnings, nil
+}

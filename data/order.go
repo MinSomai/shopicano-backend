@@ -22,4 +22,9 @@ type OrderRepository interface {
 	Search(db *gorm.DB, query, userID string, offset, limit int) ([]models.OrderDetailsView, error)
 	SearchAsStoreStuff(db *gorm.DB, query, storeID string, offset, limit int) ([]models.OrderDetailsView, error)
 	CountByTimeAsStoreStuff(db *gorm.DB, storeID string, from, end time.Time) (int, error)
+	CountAsStoreStuff(db *gorm.DB, storeID string) (int, error)
+	CountByTimeByStatus(db *gorm.DB, storeID string, from, end time.Time, status models.OrderStatus) (int, error)
+	Earnings(db *gorm.DB, storeID string) (int, error)
+	EarningsByTimeByStatus(db *gorm.DB, storeID string, from, end time.Time, status models.PaymentStatus) (int, error)
+	EarningsByTime(db *gorm.DB, storeID string, from, end time.Time) (int, error)
 }
