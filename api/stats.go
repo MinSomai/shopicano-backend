@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
@@ -142,29 +141,8 @@ func orderStats(ctx echo.Context) error {
 	}
 
 	var timeWiseSummary []*models.Summary
-	ordersStats := treemap.NewWith(func(a, b interface{}) int {
-		x := a.(string)
-		y := b.(string)
-
-		xStart, _ := time.Parse(utils.DateFormat, x)
-		yStart, _ := time.Parse(utils.DateFormat, y)
-		if xStart.After(yStart) {
-			return 1
-		}
-		return -1
-	})
-
-	earningsStats := treemap.NewWith(func(a, b interface{}) int {
-		x := a.(string)
-		y := b.(string)
-
-		xStart, _ := time.Parse(utils.DateFormat, x)
-		yStart, _ := time.Parse(utils.DateFormat, y)
-		if xStart.After(yStart) {
-			return 1
-		}
-		return -1
-	})
+	var ordersStats []map[string]interface{}
+	var earningsStats []map[string]interface{}
 
 	for k, v := range timeFrames {
 		sum, err := ou.StoreSummaryByTime(db, utils.GetStoreID(ctx), k, v)
@@ -176,7 +154,9 @@ func orderStats(ctx echo.Context) error {
 			return resp.ServerJSON(ctx)
 		}
 		sum.Time = k.Format(utils.DateFormat)
+		timeWiseSummary = append(timeWiseSummary, sum)
 
+		// Orders Calculation
 		cStat, err := ou.CountByStatus(db, utils.GetStoreID(ctx), k, v)
 		if err != nil {
 			resp.Title = "Database query failed"
@@ -207,7 +187,8 @@ func orderStats(ctx echo.Context) error {
 			}
 		}
 
-		ordersStats.Put(sum.Time, map[string]int{
+		ordersStats = append(ordersStats, map[string]interface{}{
+			"time":      sum.Time,
 			"pending":   pending,
 			"confirmed": confirmed,
 			"shipping":  shipping,
@@ -215,6 +196,7 @@ func orderStats(ctx echo.Context) error {
 			"cancelled": cancelled,
 		})
 
+		// Earnings Calculation
 		eStat, err := ou.EarningsByStatus(db, utils.GetStoreID(ctx), k, v)
 		if err != nil {
 			resp.Title = "Database query failed"
@@ -242,14 +224,13 @@ func orderStats(ctx echo.Context) error {
 			}
 		}
 
-		earningsStats.Put(sum.Time, map[string]int{
+		earningsStats = append(earningsStats, map[string]interface{}{
+			"time":      sum.Time,
 			"pending":   pending,
 			"completed": completed,
 			"failed":    failed,
 			"reverted":  reverted,
 		})
-
-		timeWiseSummary = append(timeWiseSummary, sum)
 	}
 
 	sort.Slice(timeWiseSummary, func(i, j int) bool {
@@ -261,22 +242,30 @@ func orderStats(ctx echo.Context) error {
 		return !xStart.After(yStart)
 	})
 
-	ordersIt := map[string]map[string]int{}
-	ordersStats.Each(func(k interface{}, v interface{}) {
-		ordersIt[k.(string)] = v.(map[string]int)
+	sort.Slice(ordersStats, func(i, j int) bool {
+		x := ordersStats[i]
+		y := ordersStats[j]
+
+		xStart, _ := time.Parse(utils.DateFormat, x["time"].(string))
+		yStart, _ := time.Parse(utils.DateFormat, y["time"].(string))
+		return !xStart.After(yStart)
 	})
 
-	earningsIt := map[string]map[string]int{}
-	earningsStats.Each(func(k interface{}, v interface{}) {
-		earningsIt[k.(string)] = v.(map[string]int)
+	sort.Slice(earningsStats, func(i, j int) bool {
+		x := earningsStats[i]
+		y := earningsStats[j]
+
+		xStart, _ := time.Parse(utils.DateFormat, x["time"].(string))
+		yStart, _ := time.Parse(utils.DateFormat, y["time"].(string))
+		return !xStart.After(yStart)
 	})
 
 	resp.Status = http.StatusOK
 	resp.Data = map[string]interface{}{
 		"report":           summary,
 		"reports_by_time":  timeWiseSummary,
-		"orders_by_time":   ordersIt,
-		"earnings_by_time": earningsIt,
+		"orders_by_time":   ordersStats,
+		"earnings_by_time": earningsStats,
 	}
 	return resp.ServerJSON(ctx)
 }
