@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
@@ -141,8 +142,29 @@ func orderStats(ctx echo.Context) error {
 	}
 
 	var timeWiseSummary []*models.Summary
-	ordersStats := map[string]map[string]int{}
-	earningsStats := map[string]map[string]int{}
+	ordersStats := treemap.NewWith(func(a, b interface{}) int {
+		x := a.(string)
+		y := b.(string)
+
+		xStart, _ := time.Parse(utils.DateFormat, x)
+		yStart, _ := time.Parse(utils.DateFormat, y)
+		if xStart.After(yStart) {
+			return 1
+		}
+		return -1
+	})
+
+	earningsStats := treemap.NewWith(func(a, b interface{}) int {
+		x := a.(string)
+		y := b.(string)
+
+		xStart, _ := time.Parse(utils.DateFormat, x)
+		yStart, _ := time.Parse(utils.DateFormat, y)
+		if xStart.After(yStart) {
+			return 1
+		}
+		return -1
+	})
 
 	for k, v := range timeFrames {
 		sum, err := ou.StoreSummaryByTime(db, utils.GetStoreID(ctx), k, v)
@@ -185,13 +207,13 @@ func orderStats(ctx echo.Context) error {
 			}
 		}
 
-		ordersStats[sum.Time] = map[string]int{
+		ordersStats.Put(sum.Time, map[string]int{
 			"pending":   pending,
 			"confirmed": confirmed,
 			"shipping":  shipping,
 			"delivered": delivered,
 			"cancelled": cancelled,
-		}
+		})
 
 		eStat, err := ou.EarningsByStatus(db, utils.GetStoreID(ctx), k, v)
 		if err != nil {
@@ -220,12 +242,12 @@ func orderStats(ctx echo.Context) error {
 			}
 		}
 
-		earningsStats[sum.Time] = map[string]int{
+		earningsStats.Put(sum.Time, map[string]int{
 			"pending":   pending,
 			"completed": completed,
 			"failed":    failed,
 			"reverted":  reverted,
-		}
+		})
 
 		timeWiseSummary = append(timeWiseSummary, sum)
 	}
@@ -239,12 +261,22 @@ func orderStats(ctx echo.Context) error {
 		return !xStart.After(yStart)
 	})
 
+	ordersIt := map[string]map[string]int{}
+	ordersStats.Each(func(k interface{}, v interface{}) {
+		ordersIt[k.(string)] = v.(map[string]int)
+	})
+
+	earningsIt := map[string]map[string]int{}
+	earningsStats.Each(func(k interface{}, v interface{}) {
+		earningsIt[k.(string)] = v.(map[string]int)
+	})
+
 	resp.Status = http.StatusOK
 	resp.Data = map[string]interface{}{
 		"report":           summary,
 		"reports_by_time":  timeWiseSummary,
-		"orders_by_time":   ordersStats,
-		"earnings_by_time": earningsStats,
+		"orders_by_time":   ordersIt,
+		"earnings_by_time": earningsIt,
 	}
 	return resp.ServerJSON(ctx)
 }
