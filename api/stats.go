@@ -153,7 +153,7 @@ func orderStats(ctx echo.Context) error {
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
-		sum.Time = k.Format(utils.DateFormat)
+		sum.Time = v.Format(utils.DateFormat)
 		timeWiseSummary = append(timeWiseSummary, sum)
 
 		// Orders Calculation
