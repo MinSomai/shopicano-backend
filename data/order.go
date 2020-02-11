@@ -24,6 +24,6 @@ type OrderRepository interface {
 	// Report functionality
 	StoreSummary(db *gorm.DB, storeID string) (*models.Summary, error)
 	StoreSummaryByTime(db *gorm.DB, storeID string, from, end time.Time) (*models.Summary, error)
-	CountByStatus(db *gorm.DB, storeID string) (int, error)
-	EarningsByStatus(db *gorm.DB, storeID string) (int, error)
+	CountByStatus(db *gorm.DB, storeID string, from, end time.Time) ([]models.StatusReport, error)
+	EarningsByStatus(db *gorm.DB, storeID string, from, end time.Time) ([]models.StatusReport, error)
 }

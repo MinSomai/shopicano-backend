@@ -323,10 +323,32 @@ func (os *OrderRepositoryImpl) StoreSummaryByTime(db *gorm.DB, storeID string, f
 	return &sum, nil
 }
 
-func (os *OrderRepositoryImpl) CountByStatus(db *gorm.DB, storeID string) (int, error) {
-	return 0, nil
+func (os *OrderRepositoryImpl) CountByStatus(db *gorm.DB, storeID string, from, end time.Time) ([]models.StatusReport, error) {
+	o := models.Order{}
+
+	var stats []models.StatusReport
+
+	if err := db.Table(fmt.Sprintf("%s AS o", o.TableName())).
+		Select("o.status AS key, COUNT(o.status) AS value").
+		Group("o.status").
+		Where("o.store_id = ? AND created_at >= ? AND created_at <= ?", storeID, from, end).
+		Scan(&stats).Error; err != nil {
+		return nil, err
+	}
+	return stats, nil
 }
 
-func (os *OrderRepositoryImpl) EarningsByStatus(db *gorm.DB, storeID string) (int, error) {
-	return 0, nil
+func (os *OrderRepositoryImpl) EarningsByStatus(db *gorm.DB, storeID string, from, end time.Time) ([]models.StatusReport, error) {
+	o := models.Order{}
+
+	var stats []models.StatusReport
+
+	if err := db.Table(fmt.Sprintf("%s AS o", o.TableName())).
+		Select("o.payment_status AS key, SUM(o.grand_total) AS value").
+		Group("o.payment_status").
+		Where("o.store_id = ? AND created_at >= ? AND created_at <= ?", storeID, from, end).
+		Scan(&stats).Error; err != nil {
+		return nil, err
+	}
+	return stats, nil
 }

@@ -141,6 +141,8 @@ func orderStats(ctx echo.Context) error {
 	}
 
 	var timeWiseSummary []*models.Summary
+	ordersStats := map[string]map[string]int{}
+	earningsStats := map[string]map[string]int{}
 
 	for k, v := range timeFrames {
 		sum, err := ou.StoreSummaryByTime(db, utils.GetStoreID(ctx), k, v)
@@ -152,6 +154,78 @@ func orderStats(ctx echo.Context) error {
 			return resp.ServerJSON(ctx)
 		}
 		sum.Time = k.Format(utils.DateFormat)
+
+		cStat, err := ou.CountByStatus(db, utils.GetStoreID(ctx), k, v)
+		if err != nil {
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		pending := 0
+		confirmed := 0
+		shipping := 0
+		delivered := 0
+		cancelled := 0
+
+		for _, x := range cStat {
+			switch x.Key {
+			case string(models.OrderPending):
+				pending = x.Value
+			case string(models.OrderConfirmed):
+				confirmed = x.Value
+			case string(models.OrderShipping):
+				shipping = x.Value
+			case string(models.OrderDelivered):
+				delivered = x.Value
+			case string(models.OrderCancelled):
+				cancelled = x.Value
+			}
+		}
+
+		ordersStats[sum.Time] = map[string]int{
+			"pending":   pending,
+			"confirmed": confirmed,
+			"shipping":  shipping,
+			"delivered": delivered,
+			"cancelled": cancelled,
+		}
+
+		eStat, err := ou.EarningsByStatus(db, utils.GetStoreID(ctx), k, v)
+		if err != nil {
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		pending = 0
+		completed := 0
+		failed := 0
+		reverted := 0
+
+		for _, x := range eStat {
+			switch x.Key {
+			case string(models.PaymentPending):
+				pending = x.Value
+			case string(models.PaymentCompleted):
+				completed = x.Value
+			case string(models.PaymentFailed):
+				failed = x.Value
+			case string(models.PaymentReverted):
+				reverted = x.Value
+			}
+		}
+
+		earningsStats[sum.Time] = map[string]int{
+			"pending":   pending,
+			"completed": completed,
+			"failed":    failed,
+			"reverted":  reverted,
+		}
 
 		timeWiseSummary = append(timeWiseSummary, sum)
 	}
@@ -167,8 +241,10 @@ func orderStats(ctx echo.Context) error {
 
 	resp.Status = http.StatusOK
 	resp.Data = map[string]interface{}{
-		"report":          summary,
-		"reports_by_time": timeWiseSummary,
+		"report":           summary,
+		"reports_by_time":  timeWiseSummary,
+		"orders_by_time":   ordersStats,
+		"earnings_by_time": earningsStats,
 	}
 	return resp.ServerJSON(ctx)
 }
