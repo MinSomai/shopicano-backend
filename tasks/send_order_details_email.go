@@ -14,7 +14,7 @@ const (
 )
 
 func SendOrderDetailsEmailFn(orderID string) error {
-	db := app.DB().Begin()
+	db := app.DB()
 
 	orderDao := data.NewOrderRepository()
 	o, err := orderDao.GetDetails(db, orderID)

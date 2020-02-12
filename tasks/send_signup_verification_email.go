@@ -20,6 +20,8 @@ func SendSignUpVerificationEmailFn(userID string) error {
 	userDao := data.NewUserRepository()
 	u, err := userDao.Get(db, userID)
 	if err != nil {
+		db.Rollback()
+
 		log.Log().Errorln(err)
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}

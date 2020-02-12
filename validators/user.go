@@ -150,3 +150,36 @@ func ValidateUserUpdatePermission(ctx echo.Context) (*reqUserUpdatePermission, e
 	}
 	return nil, &ve
 }
+
+type reqResetPassword struct {
+	NewPassword      string `json:"new_password" valid:"required,stringlength(8|100)"`
+	NewPasswordAgain string `json:"new_password_again" valid:"required,stringlength(8|100)"`
+	Token            string `json:"token" valid:"required"`
+	Email            string `json:"email" valid:"required,email"`
+}
+
+func ValidateResetPassword(ctx echo.Context) (*reqResetPassword, error) {
+	body := reqResetPassword{}
+
+	if err := ctx.Bind(&body); err != nil {
+		return nil, err
+	}
+
+	ok, err := govalidator.ValidateStruct(&body)
+	if ok {
+		return &body, nil
+	}
+
+	ve := errors.ValidationError{}
+
+	if !ok {
+		for k, v := range govalidator.ErrorsByField(err) {
+			ve.Add(k, v)
+		}
+	}
+
+	if len(ve) == 0 {
+		return &body, nil
+	}
+	return nil, &ve
+}

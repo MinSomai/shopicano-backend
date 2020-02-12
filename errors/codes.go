@@ -25,6 +25,7 @@ const (
 	OrderDataInvalid                              ErrorCode = "422013"
 	OrderPaymentDataInvalid                       ErrorCode = "422014"
 	AddStoreStaffDataInvalid                      ErrorCode = "422015"
+	ResetPasswordDataInvalid                      ErrorCode = "422016"
 	StoreCreationQueryFailed                      ErrorCode = "500001"
 	DatabaseQueryFailed                           ErrorCode = "500002"
 	PasswordEncryptionFailed                      ErrorCode = "500003"

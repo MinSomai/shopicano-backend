@@ -29,18 +29,20 @@ func (us UserStatus) IsValid() bool {
 }
 
 type User struct {
-	ID                string     `json:"id" sql:"id" gorm:"primary_key"`
-	Name              string     `json:"name" sql:"name" gorm:"not null"`
-	Email             string     `json:"email" sql:"email" gorm:"unique;not null"`
-	ProfilePicture    *string    `json:"profile_picture,omitempty" sql:"profile_picture"`
-	Phone             *string    `json:"phone,omitempty" sql:"phone" gorm:"unique"`
-	Password          string     `json:"-" sql:"password" gorm:"not null"`
-	VerificationToken *string    `json:"-" sql:"verification_token" gorm:"unique"`
-	Status            UserStatus `json:"status" sql:"status" gorm:"index;not null"`
-	IsEmailVerified   bool       `json:"is_email_verified" json:"is_email_verified"`
-	PermissionID      string     `json:"-" sql:"permission_id" gorm:"index;not null"`
-	CreatedAt         time.Time  `json:"created_at" sql:"created_at" gorm:"index"`
-	UpdatedAt         time.Time  `json:"updated_at" sql:"updated_at"`
+	ID                            string     `json:"id" gorm:"column:id;primary_key"`
+	Name                          string     `json:"name" gorm:"column:name;not null"`
+	Email                         string     `json:"email" gorm:"column:email;unique;not null"`
+	ProfilePicture                *string    `json:"profile_picture,omitempty" gorm:"column:profile_picture"`
+	Phone                         *string    `json:"phone,omitempty" gorm:"column:phone;unique"`
+	Password                      string     `json:"-" gorm:"column:password;not null"`
+	VerificationToken             *string    `json:"-" gorm:"column:verification_token;unique"`
+	ResetPasswordToken            *string    `json:"-" gorm:"column:reset_password_token;index"`
+	ResetPasswordTokenGeneratedAt *time.Time `json:"-" gorm:"column:reset_password_token_generated_at"`
+	Status                        UserStatus `json:"status" gorm:"column:status;index;not null"`
+	IsEmailVerified               bool       `json:"is_email_verified" gorm:"column:is_email_verified"`
+	PermissionID                  string     `json:"-" gorm:"column:permission_id;index;not null"`
+	CreatedAt                     time.Time  `json:"created_at" gorm:"column:created_at;index"`
+	UpdatedAt                     time.Time  `json:"updated_at" gorm:"column:updated_at"`
 }
 
 func (u *User) TableName() string {
@@ -56,12 +58,12 @@ func (u *User) ForeignKeys() []string {
 }
 
 type Session struct {
-	ID           string    `json:"-" sql:"id" gorm:"primary_key"`
-	UserID       string    `json:"-" sql:"user_id" gorm:"index;not null"`
-	AccessToken  string    `json:"access_token" sql:"access_token" gorm:"unique;not null"`
-	RefreshToken string    `json:"refresh_token" sql:"refresh_token" gorm:"unique;not null"`
-	CreatedAt    time.Time `json:"-" sql:"created_at" gorm:"index;not null"`
-	ExpireOn     int64     `json:"expire_on" sql:"expire_on" gorm:"index;not null"`
+	ID           string    `json:"-" gorm:"column:id;primary_key"`
+	UserID       string    `json:"-" gorm:"column:user_id;index;not null"`
+	AccessToken  string    `json:"access_token" gorm:"column:access_token;unique;not null"`
+	RefreshToken string    `json:"refresh_token" gorm:"column:refresh_token;unique;not null"`
+	CreatedAt    time.Time `json:"-" gorm:"column:created_at;index;not null"`
+	ExpireOn     int64     `json:"expire_on" gorm:"column:expire_on;index;not null"`
 }
 
 func (s *Session) TableName() string {
@@ -77,8 +79,8 @@ func (s *Session) ForeignKeys() []string {
 }
 
 type UserPermission struct {
-	ID         string     `json:"id" sql:"id" gorm:"primary_key"`
-	Permission Permission `json:"permission" sql:"permission" gorm:"index;not null"`
+	ID         string     `json:"id" gorm:"column:id;primary_key"`
+	Permission Permission `json:"permission" gorm:"column:permission;index;not null"`
 }
 
 func (up *UserPermission) TableName() string {

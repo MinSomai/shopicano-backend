@@ -192,3 +192,12 @@ func SendPaymentConfirmationEmail(email string, order *models.OrderDetailsView) 
 	}
 	return nil
 }
+
+func SendEmail(subject, email, body string) error {
+	m := gomail.NewMessage()
+	m.SetHeader("From", fmt.Sprintf("%s", config.EmailService().FromEmailAddress))
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", body)
+	return EmailDialer().DialAndSend(m)
+}

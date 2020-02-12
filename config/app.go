@@ -18,7 +18,13 @@ type Application struct {
 	Base                    string
 	Port                    int
 	LogLevel                LogLevel
+	FrontStoreUrl           string
+	DashboardUrl            string
 	PaymentCompleteCallback string
+	ShopicanoAddress        string
+	ShopicanoEmail          string
+	ShopicanoPhone          string
+	ShopicanoWebsite        string
 }
 
 // app is the default application configuration
@@ -39,5 +45,11 @@ func LoadApp() {
 		Port:                    viper.GetInt("app.port"),
 		LogLevel:                LogLevel(viper.GetString("app.log_level")),
 		PaymentCompleteCallback: viper.GetString("app.payment_complete_callback"),
+		FrontStoreUrl:           viper.GetString("app.front_store_url"),
+		DashboardUrl:            viper.GetString("app.dashboard_url"),
+		ShopicanoAddress:        viper.GetString("app.shopicano_address"),
+		ShopicanoEmail:          viper.GetString("app.shopicano_email"),
+		ShopicanoPhone:          viper.GetString("app.shopicano_phone"),
+		ShopicanoWebsite:        viper.GetString("app.shopicano_website"),
 	}
 }

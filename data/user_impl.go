@@ -91,17 +91,19 @@ func (uu *UserRepositoryImpl) RefreshToken(db *gorm.DB, token string) (*models.S
 func (uu *UserRepositoryImpl) Update(db *gorm.DB, u *models.User) error {
 	if err := db.Table(u.TableName()).
 		Where("id = ?", u.ID).
-		Select("name, profile_picture, phone, password, verification_token, is_email_verified, status, permission_id, updated_at").
+		Select("name, profile_picture, phone, password, reset_password_token, reset_password_token_generated_at, verification_token, is_email_verified, status, permission_id, updated_at").
 		Updates(map[string]interface{}{
-			"name":               u.Name,
-			"profile_picture":    u.ProfilePicture,
-			"phone":              u.Phone,
-			"password":           u.Password,
-			"verification_token": u.VerificationToken,
-			"is_email_verified":  u.IsEmailVerified,
-			"status":             u.Status,
-			"permission_id":      u.PermissionID,
-			"updated_at":         u.UpdatedAt,
+			"name":                              u.Name,
+			"profile_picture":                   u.ProfilePicture,
+			"phone":                             u.Phone,
+			"password":                          u.Password,
+			"verification_token":                u.VerificationToken,
+			"reset_password_token":              u.ResetPasswordToken,
+			"reset_password_token_generated_at": u.ResetPasswordTokenGeneratedAt,
+			"is_email_verified":                 u.IsEmailVerified,
+			"status":                            u.Status,
+			"permission_id":                     u.PermissionID,
+			"updated_at":                        u.UpdatedAt,
 		}).Error; err != nil {
 		return err
 	}
