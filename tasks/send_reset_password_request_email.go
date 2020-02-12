@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	SendResetPasswordEmailTaskName = "send_reset_password_email"
+	SendResetPasswordEmailTaskName             = "send_reset_password_email"
+	SendResetPasswordConfirmationEmailTaskName = "send_reset_password_confirmation_email"
 )
 
 func SendResetPasswordEmailFn(userID string) error {
@@ -64,6 +65,36 @@ func SendResetPasswordEmailFn(userID string) error {
 	}
 
 	if err := db.Commit().Error; err != nil {
+		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
+	}
+	return nil
+}
+
+func SendResetPasswordConfirmationEmailFn(userID string) error {
+	db := app.DB()
+
+	userDao := data.NewUserRepository()
+	u, err := userDao.Get(db, userID)
+	if err != nil {
+		db.Rollback()
+
+		log.Log().Errorln(err)
+		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
+	}
+
+	content, err := templates.GenerateResetPasswordConfirmationEmailHTML(map[string]interface{}{
+		"shopicanoAddress": config.App().ShopicanoAddress,
+		"shopicanoPhone":   config.App().ShopicanoPhone,
+		"shopicanoEmail":   config.App().ShopicanoEmail,
+		"shopicanoWebsite": config.App().ShopicanoWebsite,
+	})
+	if err != nil {
+		log.Log().Errorln(err)
+		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
+	}
+
+	if err := services.SendEmail("Password Changed", u.Email, content); err != nil {
+		log.Log().Errorln(err)
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}
 	return nil

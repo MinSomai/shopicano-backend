@@ -481,6 +481,14 @@ func resetPasswordUpdate(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	if err := queue.SendPasswordResetConfirmationEmail(u.ID); err != nil {
+		resp.Title = "Task queueing failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.FailedToEnqueueTask
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	if err := db.Commit().Error; err != nil {
 		resp.Title = "Password reset failed"
 		resp.Status = http.StatusInternalServerError
@@ -488,7 +496,7 @@ func resetPasswordUpdate(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	resp.Title = "Password reset succeed"
+	resp.Title = "Password has been changed"
 	resp.Status = http.StatusOK
 	return resp.ServerJSON(ctx)
 }
