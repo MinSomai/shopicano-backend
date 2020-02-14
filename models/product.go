@@ -16,6 +16,7 @@ type Product struct {
 	Stock               int       `json:"stock" gorm:"column:stock;index"`
 	Unit                string    `json:"unit" gorm:"column:unit"`
 	Price               int       `json:"price" gorm:"column:price;index"`
+	ProductCost         int       `json:"product_cost" gorm:"column:product_cost;index"`
 	AdditionalImages    string    `json:"additional_images" gorm:"column:additional_images"`
 	Image               string    `json:"image,omitempty" gorm:"column:image"`
 	IsShippable         bool      `json:"is_shippable" gorm:"column:is_shippable;index"`

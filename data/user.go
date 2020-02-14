@@ -18,4 +18,6 @@ type UserRepository interface {
 	IsSignUpEnabled(db *gorm.DB) (bool, error)
 	IsStoreCreationEnabled(db *gorm.DB) (bool, error)
 	GetByEmail(db *gorm.DB, email string) (*models.User, error)
+	List(db *gorm.DB, from, limit int) ([]models.User, error)
+	Search(db *gorm.DB, query string, from, limit int) ([]models.User, error)
 }

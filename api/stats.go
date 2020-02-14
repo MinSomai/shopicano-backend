@@ -7,14 +7,16 @@ import (
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/middlewares"
+	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
 	"net/http"
+	"sort"
 	"time"
 )
 
 func RegisterStatsRoutes(g *echo.Group) {
 	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffWithStoreActivation)
+		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
 		g.GET("/products/", productStats)
 		g.GET("/categories/", categoryStats)
 		//g.GET("/collections/", collectionStats)
@@ -22,7 +24,7 @@ func RegisterStatsRoutes(g *echo.Group) {
 	}(g)
 
 	func(g *echo.Group) {
-		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.GET("/orders/", orderStats)
 		//g.GET("/collections/", collectionStats)
 		//g.GET("/stores/", storeStats)
@@ -42,7 +44,7 @@ func productStats(ctx echo.Context) error {
 	if isPublic {
 		res, err = pu.Stats(db, 0, 25)
 	} else {
-		res, err = pu.StatsAsStoreStuff(db, utils.GetStoreID(ctx), 0, 25)
+		res, err = pu.StatsAsStoreStaff(db, utils.GetStoreID(ctx), 0, 25)
 	}
 
 	if err != nil {
@@ -129,10 +131,33 @@ func orderStats(ctx echo.Context) error {
 		}
 	}
 
-	var res []interface{}
+	summary, err := ou.StoreSummary(db, utils.GetStoreID(ctx))
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	var timeWiseSummary []*models.Summary
+	var ordersStats []map[string]interface{}
+	var earningsStats []map[string]interface{}
 
 	for k, v := range timeFrames {
-		count, err := ou.CountByTimeAsStoreStuff(db, utils.GetStoreID(ctx), k, v)
+		sum, err := ou.StoreSummaryByTime(db, utils.GetStoreID(ctx), k, v)
+		if err != nil {
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+		sum.Time = v.Format(utils.DateFormat)
+		timeWiseSummary = append(timeWiseSummary, sum)
+
+		// Orders Calculation
+		cStat, err := ou.CountByStatus(db, utils.GetStoreID(ctx), k, v)
 		if err != nil {
 			resp.Title = "Database query failed"
 			resp.Status = http.StatusInternalServerError
@@ -141,19 +166,106 @@ func orderStats(ctx echo.Context) error {
 			return resp.ServerJSON(ctx)
 		}
 
-		res = append(res, struct {
-			ID        int
-			StartTime string `json:"start_time"`
-			EndTime   string `json:"end_time"`
-			Count     int    `json:"count"`
-		}{
-			StartTime: k.Format(utils.DateFormat),
-			EndTime:   v.Format(utils.DateFormat),
-			Count:     count,
+		pending := 0
+		confirmed := 0
+		shipping := 0
+		delivered := 0
+		cancelled := 0
+
+		for _, x := range cStat {
+			switch x.Key {
+			case string(models.OrderPending):
+				pending = x.Value
+			case string(models.OrderConfirmed):
+				confirmed = x.Value
+			case string(models.OrderShipping):
+				shipping = x.Value
+			case string(models.OrderDelivered):
+				delivered = x.Value
+			case string(models.OrderCancelled):
+				cancelled = x.Value
+			}
+		}
+
+		ordersStats = append(ordersStats, map[string]interface{}{
+			"time":      sum.Time,
+			"pending":   pending,
+			"confirmed": confirmed,
+			"shipping":  shipping,
+			"delivered": delivered,
+			"cancelled": cancelled,
+		})
+
+		// Earnings Calculation
+		eStat, err := ou.EarningsByStatus(db, utils.GetStoreID(ctx), k, v)
+		if err != nil {
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		pending = 0
+		completed := 0
+		failed := 0
+		reverted := 0
+
+		for _, x := range eStat {
+			switch x.Key {
+			case string(models.PaymentPending):
+				pending = x.Value
+			case string(models.PaymentCompleted):
+				completed = x.Value
+			case string(models.PaymentFailed):
+				failed = x.Value
+			case string(models.PaymentReverted):
+				reverted = x.Value
+			}
+		}
+
+		earningsStats = append(earningsStats, map[string]interface{}{
+			"time":      sum.Time,
+			"pending":   pending,
+			"completed": completed,
+			"failed":    failed,
+			"reverted":  reverted,
 		})
 	}
 
+	sort.Slice(timeWiseSummary, func(i, j int) bool {
+		x := timeWiseSummary[i].Time
+		y := timeWiseSummary[j].Time
+
+		xStart, _ := time.Parse(utils.DateFormat, x)
+		yStart, _ := time.Parse(utils.DateFormat, y)
+		return !xStart.After(yStart)
+	})
+
+	sort.Slice(ordersStats, func(i, j int) bool {
+		x := ordersStats[i]
+		y := ordersStats[j]
+
+		xStart, _ := time.Parse(utils.DateFormat, x["time"].(string))
+		yStart, _ := time.Parse(utils.DateFormat, y["time"].(string))
+		return !xStart.After(yStart)
+	})
+
+	sort.Slice(earningsStats, func(i, j int) bool {
+		x := earningsStats[i]
+		y := earningsStats[j]
+
+		xStart, _ := time.Parse(utils.DateFormat, x["time"].(string))
+		yStart, _ := time.Parse(utils.DateFormat, y["time"].(string))
+		return !xStart.After(yStart)
+	})
+
 	resp.Status = http.StatusOK
-	resp.Data = res
+	resp.Data = map[string]interface{}{
+		"report":           summary,
+		"reports_by_time":  timeWiseSummary,
+		"orders_by_time":   ordersStats,
+		"earnings_by_time": earningsStats,
+	}
 	return resp.ServerJSON(ctx)
 }

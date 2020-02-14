@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
@@ -93,7 +94,10 @@ func (os *OrderRepositoryImpl) List(db *gorm.DB, userID string, offset, limit in
 	order := models.OrderDetailsViewExternal{}
 	var orders []models.OrderDetailsViewExternal
 
-	if err := db.Table(order.TableName()).Offset(offset).Limit(limit).Find(&orders, "user_id = ?", userID).Error; err != nil {
+	if err := db.Table(order.TableName()).
+		Order("created_at DESC").
+		Offset(offset).Limit(limit).
+		Find(&orders, "user_id = ?", userID).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}
@@ -124,7 +128,11 @@ func (os *OrderRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, off
 	order := models.OrderDetailsViewExternal{}
 	var orders []models.OrderDetailsViewExternal
 
-	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "store_id = ?", storeID).Error; err != nil {
+	if err := db.Model(&order).
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&orders, "store_id = ?", storeID).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}
@@ -155,7 +163,11 @@ func (os *OrderRepositoryImpl) Search(db *gorm.DB, query, userID string, offset,
 	order := models.OrderDetailsView{}
 	var orders []models.OrderDetailsView
 
-	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "user_id = ? AND hash = ?", userID, query).Error; err != nil {
+	if err := db.Model(&order).
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&orders, "user_id = ? AND hash = ?", userID, query).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}
@@ -186,7 +198,11 @@ func (os *OrderRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, query, storeID st
 	order := models.OrderDetailsView{}
 	var orders []models.OrderDetailsView
 
-	if err := db.Model(&order).Offset(offset).Limit(limit).Find(&orders, "store_id = ? AND hash = ?", storeID, query).Error; err != nil {
+	if err := db.Model(&order).
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&orders, "store_id = ? AND hash = ?", storeID, query).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
 	}
@@ -270,17 +286,69 @@ func (os *OrderRepositoryImpl) GetDetailsAsUser(db *gorm.DB, userID, orderID str
 	return &order, nil
 }
 
-func (os *OrderRepositoryImpl) CountByTimeAsStoreStuff(db *gorm.DB, storeID string, from, end time.Time) (int, error) {
-	order := models.OrderDetailsViewExternal{}
+func (os *OrderRepositoryImpl) StoreSummary(db *gorm.DB, storeID string) (*models.Summary, error) {
+	o := models.Order{}
+	oi := models.OrderedItem{}
 
-	var count int
+	sum := models.Summary{}
 
-	if err := db.Table(order.TableName()).
-		Where("store_id = ? AND (created_at >= ? AND created_at <= ?)", storeID, from, end).
-		Count(&count).Error; err != nil {
-		log.Log().Errorln(err)
-		return 0, err
+	if err := db.Table(fmt.Sprintf("%s AS o", o.TableName())).
+		Select("COUNT(o.id) AS total_orders, SUM(oi.price * oi.quantity) AS earnings, SUM(oi.product_cost * oi.quantity) AS expenses,"+
+			"SUM(oi.price * oi.quantity) - SUM(oi.product_cost * oi.quantity) AS profits, SUM(o.discounted_amount) AS discounts,"+
+			"COUNT(DISTINCT (o.user_id)) AS customers").
+		Joins(fmt.Sprintf("JOIN %s AS oi ON o.id = oi.order_id", oi.TableName())).
+		Where("o.store_id = ? AND o.status = ? AND o.payment_status = ?", storeID, models.OrderDelivered, models.PaymentCompleted).
+		Find(&sum).Error; err != nil {
+		return nil, err
 	}
+	return &sum, nil
+}
 
-	return count, nil
+func (os *OrderRepositoryImpl) StoreSummaryByTime(db *gorm.DB, storeID string, from, end time.Time) (*models.Summary, error) {
+	o := models.Order{}
+	oi := models.OrderedItem{}
+
+	sum := models.Summary{}
+
+	if err := db.Table(fmt.Sprintf("%s AS o", o.TableName())).
+		Select("COUNT(o.id) AS total_orders, SUM(oi.price * oi.quantity) AS earnings, SUM(oi.product_cost * oi.quantity) AS expenses,"+
+			"SUM(oi.price * oi.quantity) - SUM(oi.product_cost * oi.quantity) AS profits, SUM(o.discounted_amount) AS discounts,"+
+			"COUNT(DISTINCT (o.user_id)) AS customers").
+		Joins(fmt.Sprintf("JOIN %s AS oi ON o.id = oi.order_id", oi.TableName())).
+		Where("o.store_id = ? AND o.created_at >= ? AND o.created_At <= ? AND o.status = ? AND o.payment_status = ?",
+			storeID, from, end, models.OrderDelivered, models.PaymentCompleted).
+		Find(&sum).Error; err != nil {
+		return nil, err
+	}
+	return &sum, nil
+}
+
+func (os *OrderRepositoryImpl) CountByStatus(db *gorm.DB, storeID string, from, end time.Time) ([]models.StatusReport, error) {
+	o := models.Order{}
+
+	var stats []models.StatusReport
+
+	if err := db.Table(fmt.Sprintf("%s AS o", o.TableName())).
+		Select("o.status AS key, COUNT(o.status) AS value").
+		Group("o.status").
+		Where("o.store_id = ? AND created_at >= ? AND created_at <= ?", storeID, from, end).
+		Scan(&stats).Error; err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
+func (os *OrderRepositoryImpl) EarningsByStatus(db *gorm.DB, storeID string, from, end time.Time) ([]models.StatusReport, error) {
+	o := models.Order{}
+
+	var stats []models.StatusReport
+
+	if err := db.Table(fmt.Sprintf("%s AS o", o.TableName())).
+		Select("o.payment_status AS key, SUM(o.grand_total) AS value").
+		Group("o.payment_status").
+		Where("o.store_id = ? AND created_at >= ? AND created_at <= ?", storeID, from, end).
+		Scan(&stats).Error; err != nil {
+		return nil, err
+	}
+	return stats, nil
 }

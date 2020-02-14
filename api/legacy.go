@@ -22,6 +22,8 @@ func RegisterLegacyRoutes(g *echo.Group) {
 	g.GET("/logout/", logout)
 	g.GET("/refresh-token/", refreshToken)
 	g.GET("/email-verification/", emailVerification)
+	g.GET("/reset-password/", resetPasswordRequest)
+	g.POST("/reset-password/", resetPasswordUpdate)
 
 	func(g echo.Group) {
 		g.Use(middlewares.IsSignUpEnabled)
@@ -43,12 +45,13 @@ func login(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	db := app.DB()
+	db := app.DB().Begin()
 
 	uc := data.NewUserRepository()
 	u, err := uc.Login(db, e, p)
 
 	if err != nil {
+		db.Rollback()
 		log.Log().Errorln(err)
 
 		if errors.IsRecordNotFoundError(err) {
@@ -67,6 +70,8 @@ func login(ctx echo.Context) error {
 	}
 
 	if u.Status != models.UserActive {
+		db.Rollback()
+
 		resp.Title = "User isn't active"
 		resp.Status = http.StatusForbidden
 		resp.Code = errors.UserNotActive
@@ -84,6 +89,8 @@ func login(ctx echo.Context) error {
 	}
 
 	if err := uc.CreateSession(db, &s); err != nil {
+		db.Rollback()
+
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -93,6 +100,8 @@ func login(ctx echo.Context) error {
 
 	_, permission, err := uc.GetPermissionByUserID(db, s.UserID)
 	if err != nil {
+		db.Rollback()
+
 		log.Log().Errorln(err)
 
 		resp.Title = "Database query failed"
@@ -102,14 +111,44 @@ func login(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	resp.Data = map[string]interface{}{
+	result := map[string]interface{}{
 		"access_token":  s.AccessToken,
 		"refresh_token": s.RefreshToken,
 		"expire_on":     s.ExpireOn,
 		"permission":    permission,
 	}
 
+	sc := data.NewStoreRepository()
+	profile, err := sc.GetStoreUserProfile(db, u.ID)
+	if err != nil {
+		if !errors.IsRecordNotFoundError(err) {
+			db.Rollback()
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		result["has_store"] = false
+	} else {
+		result["has_store"] = true
+		result["store_id"] = profile.ID
+		result["store_name"] = profile.Name
+		result["store_permission"] = profile.StorePermission
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	resp.Status = http.StatusOK
+	resp.Data = result
 	return resp.ServerJSON(ctx)
 }
 
@@ -211,6 +250,8 @@ func register(ctx echo.Context) error {
 	u.PermissionID = values.UserGroupID
 
 	if err := uc.Register(db, u); err != nil {
+		db.Rollback()
+
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
 			resp.Title = "User already register"
@@ -310,6 +351,152 @@ func emailVerification(ctx echo.Context) error {
 	}
 
 	resp.Title = "Email verification succeed"
+	resp.Status = http.StatusOK
+	return resp.ServerJSON(ctx)
+}
+
+func resetPasswordRequest(ctx echo.Context) error {
+	resp := core.Response{}
+
+	email := ctx.QueryParam("email")
+
+	db := app.DB()
+
+	uc := data.NewUserRepository()
+
+	u, err := uc.GetByEmail(db, email)
+	if err != nil {
+		ok := errors.IsRecordNotFoundError(err)
+		if ok {
+			resp.Title = "Email not registered"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.UserNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Reset password failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := queue.SendPasswordResetRequestEmail(u.ID); err != nil {
+		resp.Title = "Task queueing failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.FailedToEnqueueTask
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Title = "Reset password email sent"
+	resp.Status = http.StatusOK
+	return resp.ServerJSON(ctx)
+}
+
+func resetPasswordUpdate(ctx echo.Context) error {
+	pld, err := validators.ValidateResetPassword(ctx)
+
+	resp := core.Response{}
+
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.ResetPasswordDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if pld.NewPassword != pld.NewPasswordAgain {
+		resp.Title = "Password mismatch"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.ResetPasswordDataInvalid
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+
+	uc := data.NewUserRepository()
+
+	u, err := uc.GetByEmail(db, pld.Email)
+	if err != nil {
+		db.Rollback()
+
+		ok := errors.IsRecordNotFoundError(err)
+		if ok {
+			resp.Title = "Email not registered"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.UserNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Email verification failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if u.ResetPasswordToken == nil || pld.Token != *u.ResetPasswordToken {
+		db.Rollback()
+
+		resp.Title = "Invalid token"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.ResetPasswordDataInvalid
+		return resp.ServerJSON(ctx)
+	}
+
+	now := time.Now().UTC()
+	if now.After(*u.ResetPasswordTokenGeneratedAt) {
+		db.Rollback()
+
+		resp.Title = "Token expired"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.ResetPasswordDataInvalid
+		return resp.ServerJSON(ctx)
+	}
+
+	pass, err := utils.GeneratePassword(pld.NewPassword)
+	if err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to generate password hash"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.PasswordEncryptionFailed
+		return resp.ServerJSON(ctx)
+	}
+
+	u.ResetPasswordTokenGeneratedAt = nil
+	u.ResetPasswordToken = nil
+	u.Password = pass
+
+	if err := uc.Update(db, u); err != nil {
+		db.Rollback()
+
+		resp.Title = "Password reset failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := queue.SendPasswordResetConfirmationEmail(u.ID); err != nil {
+		resp.Title = "Task queueing failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.FailedToEnqueueTask
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Password reset failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Title = "Password has been changed"
 	resp.Status = http.StatusOK
 	return resp.ServerJSON(ctx)
 }

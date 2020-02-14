@@ -47,4 +47,10 @@ if [ "$cmd" = "drop" ]; then
   exit
 fi
 
+if [ "$cmd" = "docker" ]; then
+  echo "Executing docker build command"
+  docker build -t docker.pkg.github.com/shopicano/shopicano-backend/shopicano-backend:"$2" .
+  exit
+fi
+
 echo "No command specified"

@@ -23,14 +23,14 @@ import (
 
 func RegisterProductRoutes(g *echo.Group) {
 	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffWithStoreActivation)
+		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
 		g.GET("/", listProducts)
 		g.GET("/:product_id/", getProduct)
 	}(g)
 
 	func(g *echo.Group) {
 		// Private endpoints only
-		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/", createProduct)
 		g.PATCH("/:product_id/", updateProduct)
 		g.DELETE("/:product_id/", deleteProduct)
@@ -75,6 +75,7 @@ func createProduct(ctx echo.Context) error {
 		ID:               utils.NewUUID(),
 		StoreID:          storeID,
 		Price:            req.Price,
+		ProductCost:      req.ProductCost,
 		Stock:            req.Stock,
 		Name:             req.Name,
 		IsShippable:      req.IsShippable,
@@ -163,6 +164,7 @@ func updateProduct(ctx echo.Context) error {
 
 	p.ID = productID
 	p.Price = req.Price
+	p.ProductCost = req.ProductCost
 	p.Stock = req.Stock
 	p.Name = req.Name
 	p.IsShippable = req.IsShippable

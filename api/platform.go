@@ -15,24 +15,26 @@ import (
 )
 
 func RegisterPlatformRoutes(g *echo.Group) {
-	func(g *echo.Group) {
-		g.Use(middlewares.AuthUser)
+	func(g echo.Group) {
+		g.Use(middlewares.IsPlatformManager)
 		g.POST("/shipping-methods/", createShippingMethod)
 		g.PUT("/shipping-methods/:id/", updateShippingMethod)
 		g.DELETE("/shipping-methods/:id/", deleteShippingMethod)
-		g.GET("/shipping-methods/:id/", getShippingMethod)
 
 		g.POST("/payment-methods/", createPaymentMethod)
 		g.PUT("/payment-methods/:id/", updatePaymentMethod)
 		g.DELETE("/payment-methods/:id/", deletePaymentMethod)
-		g.GET("/payment-methods/:id/", getPaymentMethod)
-	}(g)
 
-	func(g *echo.Group) {
-		g.Use(middlewares.MustBeUserOrStoreStaffWithStoreActivation)
+		g.GET("/users/", listUsers)
+	}(*g)
+
+	func(g echo.Group) {
+		g.Use(middlewares.AuthUser)
 		g.GET("/shipping-methods/", listShippingMethods)
 		g.GET("/payment-methods/", listPaymentMethods)
-	}(g)
+		g.GET("/payment-methods/:id/", getPaymentMethod)
+		g.GET("/shipping-methods/:id/", getShippingMethod)
+	}(*g)
 }
 
 func createShippingMethod(ctx echo.Context) error {

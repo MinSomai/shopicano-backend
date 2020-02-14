@@ -17,13 +17,13 @@ import (
 
 func RegisterCollectionRoutes(g *echo.Group) {
 	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffWithStoreActivation)
+		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
 		g.GET("/", listCollections)
 	}(g)
 
 	func(g *echo.Group) {
 		// Private endpoints only
-		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/", createCollection)
 		g.DELETE("/:collection_id/", deleteCollection)
 		g.PATCH("/:collection_id/", updateCollection)

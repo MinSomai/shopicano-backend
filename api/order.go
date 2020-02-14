@@ -26,7 +26,7 @@ func RegisterOrderRoutes(g *echo.Group) {
 	g.GET("/:order_id/pay/", payOrder)
 
 	func(g echo.Group) {
-		g.Use(middlewares.MustBeUserOrStoreStaffWithStoreActivation)
+		g.Use(middlewares.MustBeUserOrStoreStaffAndStoreActive)
 		g.GET("/", listOrders)
 		g.GET("/:order_id/", getOrder)
 	}(*g)
@@ -35,11 +35,16 @@ func RegisterOrderRoutes(g *echo.Group) {
 		g.Use(middlewares.AuthUser)
 		g.POST("/", createOrder)
 		g.POST("/:order_id/nonce/", generatePayNonce)
-		g.GET("/:order_id/products/:product_id/download/", downloadProductAsUser)
 	}(*g)
 
 	func(g echo.Group) {
-		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.Use(middlewares.AuthUserWithQueryToken)
+		g.GET("/:order_id/products/:product_id/download/", downloadProductAsUser)
+		g.GET("/:order_id/nonce/", generatePayNonce)
+	}(*g)
+
+	func(g echo.Group) {
+		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/internal/", createOrder)
 		g.PATCH("/internal/:order_id/", createOrder)
 		g.PUT("/internal/items/:order_id/", createOrder)
@@ -188,10 +193,11 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 
 		oi := &models.OrderedItem{
-			OrderID:   o.ID,
-			ProductID: item.ID,
-			Quantity:  v.Quantity,
-			Price:     item.Price,
+			OrderID:     o.ID,
+			ProductID:   item.ID,
+			Quantity:    v.Quantity,
+			Price:       item.Price,
+			ProductCost: item.ProductCost,
 		}
 		oi.SubTotal = v.Quantity * item.Price
 
@@ -210,7 +216,19 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if o.ShippingMethodID != nil {
+	o.IsAllDigitalProducts = isAllDigitalProduct
+
+	if !isAllDigitalProduct && sm == nil {
+		db.Rollback()
+
+		resp.Title = "Shipping method required"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.ShippingMethodNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if !isAllDigitalProduct {
 		o.ShippingCharge = sm.CalculateDeliveryCharge(0)
 	}
 
@@ -312,6 +330,10 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	o.PaymentProcessingFee = pm.CalculateProcessingFee(o.GrandTotal)
 	o.PaymentGateway = &pgName
 
+	o.GrandTotal += o.PaymentProcessingFee
+	o.OriginalGrandTotal = o.GrandTotal
+	o.GrandTotal -= o.DiscountedAmount
+
 	err = ou.Create(db, &o)
 	if err != nil {
 		db.Rollback()
@@ -380,7 +402,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	}
 
 	if isAllDigitalProduct {
-		o.Status = models.OrderConfirmed
+		o.Status = models.OrderDelivered
 
 		err = ou.UpdateStatus(db, &o)
 		if err != nil {
@@ -407,7 +429,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			ID:        utils.NewUUID(),
 			OrderID:   o.ID,
 			Action:    string(o.Status),
-			Details:   "Order has been confirmed",
+			Details:   "Order has been delivered",
 			CreatedAt: time.Now(),
 		}
 		if err := ou.CreateLog(db, &ol); err != nil {
@@ -421,7 +443,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
-	if o.GrandTotal-o.DiscountedAmount == 0 {
+	if o.GrandTotal == 0 {
 		o.PaymentStatus = models.PaymentCompleted
 
 		err = ou.UpdatePaymentStatus(db, &o)
@@ -474,16 +496,14 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if m.PaymentMethodIsOffline {
-		if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
-			db.Rollback()
+	if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
+		db.Rollback()
 
-			resp.Title = "Failed to queue send order details"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.FailedToEnqueueTask
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
-		}
+		resp.Title = "Failed to queue send order details"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.FailedToEnqueueTask
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
 	}
 
 	if err := db.Commit().Error; err != nil {

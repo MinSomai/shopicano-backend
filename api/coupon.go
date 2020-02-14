@@ -16,9 +16,9 @@ import (
 )
 
 func RegisterCouponRoutes(g *echo.Group) {
-	func(g *echo.Group) {
+	func(g echo.Group) {
 		// Private endpoints only
-		g.Use(middlewares.IsStoreStaffWithStoreActivation)
+		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/", createCoupon)
 		g.PATCH("/:coupon_id/", updateCoupon)
 		g.DELETE("/:coupon_id/", deleteCoupon)
@@ -26,13 +26,13 @@ func RegisterCouponRoutes(g *echo.Group) {
 		g.GET("/", listCoupons)
 		g.PATCH("/:coupon_id/users/", addCouponUsers)
 		g.DELETE("/:coupon_id/users/", removeCouponUsers)
-	}(g)
+	}(*g)
 
-	func(g *echo.Group) {
+	func(g echo.Group) {
 		// Private endpoints only
 		g.Use(middlewares.AuthUser)
 		g.GET("/:coupon_code/check/", checkCouponAvailability)
-	}(g)
+	}(*g)
 }
 
 func createCoupon(ctx echo.Context) error {

@@ -12,7 +12,7 @@ import (
 	"net/http"
 )
 
-var IsStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.HandlerFunc {
+var IsStoreStaffAndStoreActive = func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		resp := core.Response{}
 
@@ -48,7 +48,7 @@ var IsStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.HandlerFu
 			return resp.ServerJSON(ctx)
 		}
 
-		if store.Status == models.StoreRegistered || store.Status == models.StoreBanned || store.Status == models.StoreSuspended {
+		if store.Status != models.StoreActive {
 			resp.Status = http.StatusForbidden
 			resp.Title = "Store isn't active"
 			return resp.ServerJSON(ctx)
@@ -61,7 +61,7 @@ var IsStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.HandlerFu
 	}
 }
 
-var MightBeStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.HandlerFunc {
+var MightBeStoreStaffAndStoreActive = func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		resp := core.Response{}
 
@@ -107,7 +107,7 @@ var MightBeStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.Hand
 	}
 }
 
-var MustBeUserOrStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo.HandlerFunc {
+var MustBeUserOrStoreStaffAndStoreActive = func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		resp := core.Response{}
 
@@ -123,6 +123,7 @@ var MustBeUserOrStoreStaffWithStoreActivation = func(next echo.HandlerFunc) echo
 		uc := data.NewUserRepository()
 		userID, u, err := uc.GetPermission(db, token)
 		if err != nil {
+			log.Log().Errorln(err)
 			resp.Status = http.StatusUnauthorized
 			resp.Title = "Unauthorized request"
 			return resp.ServerJSON(ctx)

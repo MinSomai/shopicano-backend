@@ -31,7 +31,16 @@ func (pm *PaymentMethod) CalculateProcessingFee(bill int) int {
 	log.Log().Info("Pf : ", pm.ProcessingFee)
 
 	if pm.IsFlat {
+		fee := pm.ProcessingFee
+		log.Log().Info("Fee Flat : ", fee)
 
+		if fee > pm.MaxProcessingFee && pm.MaxProcessingFee != 0 {
+			return pm.MaxProcessingFee
+		} else if fee < pm.MinProcessingFee && pm.MinProcessingFee != 0 {
+			return pm.MinProcessingFee
+		} else {
+			return fee
+		}
 	}
 
 	fee := (bill * pm.ProcessingFee) / 100

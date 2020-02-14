@@ -71,3 +71,115 @@ func ValidateRegister(ctx echo.Context) (*models.User, error) {
 
 	return nil, &ve
 }
+
+type reqUserUpdate struct {
+	Name           *string `json:"name"`
+	Email          *string `json:"email"`
+	ProfilePicture *string `json:"profile_picture"`
+	Phone          *string `json:"phone"`
+	Password       *string `json:"password"`
+}
+
+func ValidateUserUpdate(ctx echo.Context) (*reqUserUpdate, error) {
+	body := reqUserUpdate{}
+
+	if err := ctx.Bind(&body); err != nil {
+		return nil, err
+	}
+	return &body, nil
+}
+
+type reqUserUpdateStatus struct {
+	NewStatus models.UserStatus `json:"new_status" valid:"required"`
+}
+
+func ValidateUserUpdateStatus(ctx echo.Context) (*reqUserUpdateStatus, error) {
+	body := reqUserUpdateStatus{}
+
+	if err := ctx.Bind(&body); err != nil {
+		return nil, err
+	}
+
+	ok, err := govalidator.ValidateStruct(&body)
+
+	ve := errors.ValidationError{}
+
+	if !ok {
+		for k, v := range govalidator.ErrorsByField(err) {
+			ve.Add(k, v)
+		}
+	}
+
+	if !body.NewStatus.IsValid() {
+		ve.Add("new_status", "is invalid")
+	}
+
+	if len(ve) == 0 {
+		return &body, nil
+	}
+
+	return nil, &ve
+}
+
+type reqUserUpdatePermission struct {
+	NewPermissionID string `json:"new_permission_id" valid:"required"`
+}
+
+func ValidateUserUpdatePermission(ctx echo.Context) (*reqUserUpdatePermission, error) {
+	body := reqUserUpdatePermission{}
+
+	if err := ctx.Bind(&body); err != nil {
+		return nil, err
+	}
+
+	ok, err := govalidator.ValidateStruct(&body)
+	if ok {
+		return &body, nil
+	}
+
+	ve := errors.ValidationError{}
+
+	if !ok {
+		for k, v := range govalidator.ErrorsByField(err) {
+			ve.Add(k, v)
+		}
+	}
+
+	if len(ve) == 0 {
+		return &body, nil
+	}
+	return nil, &ve
+}
+
+type reqResetPassword struct {
+	NewPassword      string `json:"new_password" valid:"required,stringlength(8|100)"`
+	NewPasswordAgain string `json:"new_password_again" valid:"required,stringlength(8|100)"`
+	Token            string `json:"token" valid:"required"`
+	Email            string `json:"email" valid:"required,email"`
+}
+
+func ValidateResetPassword(ctx echo.Context) (*reqResetPassword, error) {
+	body := reqResetPassword{}
+
+	if err := ctx.Bind(&body); err != nil {
+		return nil, err
+	}
+
+	ok, err := govalidator.ValidateStruct(&body)
+	if ok {
+		return &body, nil
+	}
+
+	ve := errors.ValidationError{}
+
+	if !ok {
+		for k, v := range govalidator.ErrorsByField(err) {
+			ve.Add(k, v)
+		}
+	}
+
+	if len(ve) == 0 {
+		return &body, nil
+	}
+	return nil, &ve
+}

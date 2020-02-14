@@ -22,18 +22,24 @@ type PaymentGatewayResponse struct {
 var activePaymentGateway PaymentGateway
 
 func SetActivePaymentGateway(cfg config.PaymentGatewayCfg) error {
-	if cfg.Name == "stripe" {
+	if cfg.Name == StripePaymentGatewayName {
 		stripe, err := NewStripePaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
 		if err != nil {
 			return err
 		}
 		activePaymentGateway = stripe
-	} else if cfg.Name == "brain_tree" {
+	} else if cfg.Name == BrainTreePaymentGatewayName {
 		bt, err := NewBrainTreePaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
 		if err != nil {
 			return err
 		}
 		activePaymentGateway = bt
+	} else if cfg.Name == TwoCheckoutPaymentGatewayName {
+		tco, err := NewTwoCheckoutPaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
+		if err != nil {
+			return err
+		}
+		activePaymentGateway = tco
 	}
 	return nil
 }
@@ -44,18 +50,24 @@ func GetActivePaymentGateway() PaymentGateway {
 
 func GetPaymentGatewayByName(name string) (PaymentGateway, error) {
 	cfg := config.PaymentGateway()
-	if name == "stripe" {
+	if name == StripePaymentGatewayName {
 		stripe, err := NewStripePaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
 		if err != nil {
 			return nil, err
 		}
 		return stripe, nil
-	} else if name == "brain_tree" {
+	} else if name == BrainTreePaymentGatewayName {
 		bt, err := NewBrainTreePaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
 		if err != nil {
 			return nil, err
 		}
 		return bt, nil
+	} else if name == TwoCheckoutPaymentGatewayName {
+		tco, err := NewTwoCheckoutPaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		return tco, nil
 	}
 	return nil, errors.New("payment gateway not found")
 }

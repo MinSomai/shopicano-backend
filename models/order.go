@@ -33,9 +33,11 @@ type Order struct {
 	ShippingCharge       int           `json:"shipping_charge" gomr:"column:shipping_charge"`
 	PaymentProcessingFee int           `json:"payment_processing_fee" gorm:"column:payment_processing_fee"`
 	SubTotal             int           `json:"sub_total" gorm:"column:sub_total"`
+	IsAllDigitalProducts bool          `json:"is_all_digital_products" gorm:"column:is_all_digital_products;index"`
 	PaymentGateway       *string       `json:"payment_gateway" gorm:"column:payment_gateway"`
 	Nonce                *string       `json:"nonce" gomr:"column:nonce"`
 	TransactionID        *string       `json:"transaction_id" gorm:"column:transaction_id;unique_index"`
+	OriginalGrandTotal   int           `json:"original_grand_total" gorm:"column:original_grand_total"`
 	GrandTotal           int           `json:"grand_total" gorm:"column:grand_total"`
 	DiscountedAmount     int           `json:"discounted_amount" gorm:"column:discounted_amount"`
 	Status               OrderStatus   `json:"status" gorm:"column:status"`
