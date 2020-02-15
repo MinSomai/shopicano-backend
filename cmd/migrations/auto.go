@@ -27,6 +27,7 @@ func auto(cmd *cobra.Command, args []string) {
 	tables = append(tables, &models.ProductAttribute{}, &models.OrderLog{})
 	tables = append(tables, &models.Order{}, &models.OrderedItem{})
 	tables = append(tables, &models.Coupon{}, &models.CouponFor{}, &models.CouponUsage{})
+	tables = append(tables, &models.Location{})
 
 	for _, t := range tables {
 		if err := tx.AutoMigrate(t).Error; err != nil {
@@ -63,6 +64,16 @@ func auto(cmd *cobra.Command, args []string) {
 
 	for _, v := range views {
 		if err := v.CreateView(tx); err != nil {
+			tx.Rollback()
+			log.Log().Errorln(err)
+			return
+		}
+	}
+
+	var flatTables []core.FlatTable
+	flatTables = append(flatTables, &models.Location{})
+	for _, ft := range flatTables {
+		if err := ft.Populate(tx); err != nil {
 			tx.Rollback()
 			log.Log().Errorln(err)
 			return
