@@ -17,8 +17,8 @@ type LocationType int64
 type Location struct {
 	ID          int64        `json:"id" gorm:"column:id;primary_key"`
 	Name        string       `json:"name" gorm:"column:name;not null;index"`
-	Type        LocationType `json:"type" gorm:"column:type;not null;index"`
-	ParentID    int64        `json:"parent_id" gorm:"column:parent_id;type:bigint;not null;index"`
+	Type        LocationType `json:"-" gorm:"column:type;not null;index"`
+	ParentID    int64        `json:"-" gorm:"column:parent_id;type:bigint;not null;index"`
 	IsPublished int64        `json:"is_published" gorm:"column:is_published;not null;index"`
 	CreatedAt   time.Time    `json:"created_at" gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
 }
