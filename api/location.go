@@ -10,6 +10,7 @@ import (
 	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
+	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,6 +20,12 @@ func RegisterLocationRoutes(g *echo.Group) {
 	func(g echo.Group) {
 		g.Use(middlewares.MustBeUserOrStoreStaffAndStoreActive)
 		g.GET("/", listLocations)
+	}(*g)
+
+	func(g echo.Group) {
+		g.Use(middlewares.IsPlatformManager)
+		g.PATCH("/:location_id/", updateLocation)
+		g.PATCH("/", enableLocation)
 	}(*g)
 }
 
@@ -102,4 +109,73 @@ func listLocationsForUser(name string, locationType models.LocationType, parentI
 	}
 
 	return locDao.List(db, where, args)
+}
+
+func updateLocation(ctx echo.Context) error {
+	resp := core.Response{}
+
+	req, err := validators.ValidateUpdateLocation(ctx, true)
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.InvalidRequest
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	locationIDQ := ctx.Param("location_id")
+	locationID, _ := strconv.ParseInt(locationIDQ, 10, 64)
+
+	toggle := int64(0)
+	if req.IsPublished {
+		toggle = 1
+	}
+
+	db := app.DB()
+
+	locDao := data.NewLocationRepository()
+	err = locDao.UpdateByID(db, locationID, toggle)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	return resp.ServerJSON(ctx)
+}
+
+func enableLocation(ctx echo.Context) error {
+	resp := core.Response{}
+
+	req, err := validators.ValidateUpdateLocation(ctx, false)
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.InvalidRequest
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	toggle := int64(0)
+	if req.IsPublished {
+		toggle = 1
+	}
+
+	db := app.DB()
+
+	locDao := data.NewLocationRepository()
+	err = locDao.UpdateAll(db, toggle)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	return resp.ServerJSON(ctx)
 }
