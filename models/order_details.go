@@ -53,6 +53,8 @@ type OrderDetails struct {
 	ShippingMethodID        string        `json:"shipping_method_id"`
 	ShippingMethodName      string        `json:"shipping_method_name"`
 	ApproximateDeliveryTime int           `json:"approximate_delivery_time"`
+	ReviewRating            int           `json:"review_rating"`
+	ReviewDescription       string        `json:"review_description"`
 }
 
 func (od *OrderDetails) TableName() string {

@@ -35,6 +35,7 @@ func RegisterOrderRoutes(g *echo.Group) {
 		g.Use(middlewares.AuthUser)
 		g.POST("/", createOrder)
 		g.POST("/:order_id/nonce/", generatePayNonce)
+		g.POST("/:order_id/review/", createReview)
 	}(*g)
 
 	func(g echo.Group) {

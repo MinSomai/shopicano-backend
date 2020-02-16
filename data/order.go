@@ -21,6 +21,8 @@ type OrderRepository interface {
 	ListAsStoreStuff(db *gorm.DB, storeID string, offset, limit int) ([]models.OrderDetailsViewExternal, error)
 	Search(db *gorm.DB, query, userID string, offset, limit int) ([]models.OrderDetailsView, error)
 	SearchAsStoreStuff(db *gorm.DB, query, storeID string, offset, limit int) ([]models.OrderDetailsView, error)
+	CreateReview(db *gorm.DB, review *models.Review) error
+
 	// Report functionality
 	StoreSummary(db *gorm.DB, storeID string) (*models.Summary, error)
 	StoreSummaryByTime(db *gorm.DB, storeID string, from, end time.Time) (*models.Summary, error)

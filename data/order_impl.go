@@ -352,3 +352,10 @@ func (os *OrderRepositoryImpl) EarningsByStatus(db *gorm.DB, storeID string, fro
 	}
 	return stats, nil
 }
+
+func (os *OrderRepositoryImpl) CreateReview(db *gorm.DB, r *models.Review) error {
+	if err := db.Table(r.TableName()).Create(r).Error; err != nil {
+		return err
+	}
+	return nil
+}
