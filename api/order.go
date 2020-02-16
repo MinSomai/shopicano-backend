@@ -93,7 +93,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	au := data.NewAdminRepository()
 	cu := data.NewCouponRepository()
 
-	pm, err := au.GetPaymentMethod(o.PaymentMethodID)
+	pm, err := au.GetPaymentMethod(db, o.PaymentMethodID)
 	if err != nil {
 		db.Rollback()
 
@@ -115,7 +115,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	var sm *models.ShippingMethod
 
 	if o.ShippingMethodID != nil {
-		sm, err = au.GetShippingMethod(*o.ShippingMethodID)
+		sm, err = au.GetShippingMethod(db, *o.ShippingMethodID)
 		if err != nil {
 			db.Rollback()
 

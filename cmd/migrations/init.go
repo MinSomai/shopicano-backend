@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"github.com/jaswdr/faker"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
@@ -18,30 +19,6 @@ var MigInitCmd = &cobra.Command{
 
 func initCmd(cmd *cobra.Command, args []string) {
 	tx := app.DB().Begin()
-
-	s := models.Settings{
-		ID:                     "1",
-		Name:                   "Shopicano Marketplace",
-		URL:                    "http://shopicano.com",
-		IsActive:               true,
-		CompanyName:            "Shopicano Ltd.",
-		CompanyAddress:         "Dhaka",
-		CompanyCity:            "Dhaka",
-		CompanyCountry:         "Bangladesh",
-		CompanyPostcode:        "1207",
-		CompanyEmail:           "admin@example.com",
-		CompanyPhone:           "0000000000",
-		IsSignUpEnabled:        false,
-		IsStoreCreationEnabled: false,
-		TagLine:                "Do it",
-		CreatedAt:              time.Now().UTC(),
-		UpdatedAt:              time.Now().UTC(),
-	}
-	if err := tx.Table(s.TableName()).Create(&s).Error; err != nil {
-		tx.Rollback()
-		log.Log().Errorln(err)
-		return
-	}
 
 	upAdmin := models.UserPermission{
 		ID:         values.AdminGroupID,
@@ -105,6 +82,44 @@ func initCmd(cmd *cobra.Command, args []string) {
 		UpdatedAt:      time.Now().UTC(),
 	}
 	if err := tx.Table(u.TableName()).Create(&u).Error; err != nil {
+		tx.Rollback()
+		log.Log().Errorln(err)
+		return
+	}
+
+	a := models.Address{
+		ID:        utils.NewUUID(),
+		Name:      "Company Address",
+		Address:   faker.New().Address().Address(),
+		Email:     "example@shopicano.com",
+		Phone:     "8801710333333",
+		Postcode:  "1209",
+		Country:   "Bangladesh",
+		City:      "Dhaka",
+		UserID:    u.ID,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	}
+	if err := tx.Table(a.TableName()).Create(&a).Error; err != nil {
+		tx.Rollback()
+		log.Log().Errorln(err)
+		return
+	}
+
+	s := models.Settings{
+		ID:                     "1",
+		Name:                   "Shopicano Marketplace",
+		Website:                "http://shopicano.com",
+		IsActive:               true,
+		CompanyAddressID:       a.ID,
+		DefaultCommissionRate:  0,
+		IsSignUpEnabled:        false,
+		IsStoreCreationEnabled: false,
+		TagLine:                "Do it",
+		CreatedAt:              time.Now().UTC(),
+		UpdatedAt:              time.Now().UTC(),
+	}
+	if err := tx.Table(s.TableName()).Create(&s).Error; err != nil {
 		tx.Rollback()
 		log.Log().Errorln(err)
 		return

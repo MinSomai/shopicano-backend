@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
@@ -50,6 +51,8 @@ func createShippingMethod(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	db := app.DB()
+
 	m := &models.ShippingMethod{
 		ID:                      utils.NewUUID(),
 		Name:                    req.Name,
@@ -63,7 +66,7 @@ func createShippingMethod(ctx echo.Context) error {
 	}
 
 	au := data.NewAdminRepository()
-	if err := au.CreateShippingMethod(m); err != nil {
+	if err := au.CreateShippingMethod(db, m); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
 			resp.Title = msg
@@ -100,8 +103,10 @@ func updateShippingMethod(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	db := app.DB()
+
 	au := data.NewAdminRepository()
-	m, err := au.GetShippingMethod(ID)
+	m, err := au.GetShippingMethod(db, ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Shipping method not found"
@@ -126,7 +131,7 @@ func updateShippingMethod(ctx echo.Context) error {
 	m.WeightUnit = req.WeightUnit
 	m.UpdatedAt = time.Now().UTC()
 
-	if err := au.UpdateShippingMethod(m); err != nil {
+	if err := au.UpdateShippingMethod(db, m); err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -144,8 +149,10 @@ func deleteShippingMethod(ctx echo.Context) error {
 
 	resp := core.Response{}
 
+	db := app.DB()
+
 	au := data.NewAdminRepository()
-	if err := au.DeleteShippingMethod(ID); err != nil {
+	if err := au.DeleteShippingMethod(db, ID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Shipping method not found"
 			resp.Status = http.StatusNotFound
@@ -170,8 +177,10 @@ func getShippingMethod(ctx echo.Context) error {
 
 	resp := core.Response{}
 
+	db := app.DB()
+
 	au := data.NewAdminRepository()
-	sm, err := au.GetShippingMethod(ID)
+	sm, err := au.GetShippingMethod(db, ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Shipping method not found"
@@ -208,15 +217,17 @@ func listShippingMethods(ctx echo.Context) error {
 
 	resp := core.Response{}
 
+	db := app.DB()
+
 	from := (page - 1) * limit
 	au := data.NewAdminRepository()
 
 	var v interface{}
 
 	if utils.IsPlatformAdmin(ctx) {
-		v, err = au.ListShippingMethods(int(from), int(limit))
+		v, err = au.ListShippingMethods(db, int(from), int(limit))
 	} else {
-		v, err = au.ListActiveShippingMethods(int(from), int(limit))
+		v, err = au.ListActiveShippingMethods(db, int(from), int(limit))
 	}
 
 	if err != nil {
@@ -258,8 +269,10 @@ func createPaymentMethod(ctx echo.Context) error {
 		UpdatedAt:        time.Now().UTC(),
 	}
 
+	db := app.DB()
+
 	au := data.NewAdminRepository()
-	if err := au.CreatePaymentMethod(m); err != nil {
+	if err := au.CreatePaymentMethod(db, m); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
 			resp.Title = msg
@@ -296,8 +309,10 @@ func updatePaymentMethod(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	db := app.DB()
+
 	au := data.NewAdminRepository()
-	m, err := au.GetPaymentMethod(ID)
+	m, err := au.GetPaymentMethod(db, ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Payment method not found"
@@ -323,7 +338,7 @@ func updatePaymentMethod(ctx echo.Context) error {
 	m.IsOfflinePayment = req.IsOfflinePayment
 	m.UpdatedAt = time.Now().UTC()
 
-	if err := au.UpdatePaymentMethod(m); err != nil {
+	if err := au.UpdatePaymentMethod(db, m); err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -341,8 +356,10 @@ func deletePaymentMethod(ctx echo.Context) error {
 
 	resp := core.Response{}
 
+	db := app.DB()
+
 	au := data.NewAdminRepository()
-	if err := au.DeletePaymentMethod(ID); err != nil {
+	if err := au.DeletePaymentMethod(db, ID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Payment method not found"
 			resp.Status = http.StatusNotFound
@@ -367,8 +384,10 @@ func getPaymentMethod(ctx echo.Context) error {
 
 	resp := core.Response{}
 
+	db := app.DB()
+
 	au := data.NewAdminRepository()
-	pm, err := au.GetPaymentMethod(ID)
+	pm, err := au.GetPaymentMethod(db, ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Payment method not found"
@@ -405,15 +424,17 @@ func listPaymentMethods(ctx echo.Context) error {
 
 	resp := core.Response{}
 
+	db := app.DB()
+
 	from := (page - 1) * limit
 	au := data.NewAdminRepository()
 
 	var v interface{}
 
 	if utils.IsPlatformAdmin(ctx) {
-		v, err = au.ListPaymentMethods(int(from), int(limit))
+		v, err = au.ListPaymentMethods(db, int(from), int(limit))
 	} else {
-		v, err = au.ListActivePaymentMethods(int(from), int(limit))
+		v, err = au.ListActivePaymentMethods(db, int(from), int(limit))
 	}
 
 	if err != nil {

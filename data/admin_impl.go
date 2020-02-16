@@ -1,7 +1,8 @@
 package data
 
 import (
-	"github.com/shopicano/shopicano-backend/app"
+	"fmt"
+	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/models"
 )
 
@@ -17,16 +18,14 @@ func NewAdminRepository() AdminRepository {
 	return adminRepository
 }
 
-func (au *AdminRepositoryImpl) CreateShippingMethod(sm *models.ShippingMethod) error {
-	db := app.DB()
+func (au *AdminRepositoryImpl) CreateShippingMethod(db *gorm.DB, sm *models.ShippingMethod) error {
 	if err := db.Table(sm.TableName()).Create(sm).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (au *AdminRepositoryImpl) UpdateShippingMethod(sm *models.ShippingMethod) error {
-	db := app.DB()
+func (au *AdminRepositoryImpl) UpdateShippingMethod(db *gorm.DB, sm *models.ShippingMethod) error {
 	if err := db.Table(sm.TableName()).
 		Where("id = ?", sm.ID).Save(sm).Error; err != nil {
 		return err
@@ -34,8 +33,7 @@ func (au *AdminRepositoryImpl) UpdateShippingMethod(sm *models.ShippingMethod) e
 	return nil
 }
 
-func (au *AdminRepositoryImpl) ListShippingMethods(from, limit int) ([]models.ShippingMethod, error) {
-	db := app.DB()
+func (au *AdminRepositoryImpl) ListShippingMethods(db *gorm.DB, from, limit int) ([]models.ShippingMethod, error) {
 	var data []models.ShippingMethod
 	m := models.ShippingMethod{}
 	if err := db.Table(m.TableName()).
@@ -46,8 +44,7 @@ func (au *AdminRepositoryImpl) ListShippingMethods(from, limit int) ([]models.Sh
 	return data, nil
 }
 
-func (au *AdminRepositoryImpl) ListActiveShippingMethods(from, limit int) ([]models.ShippingMethod, error) {
-	db := app.DB()
+func (au *AdminRepositoryImpl) ListActiveShippingMethods(db *gorm.DB, from, limit int) ([]models.ShippingMethod, error) {
 	var data []models.ShippingMethod
 	m := models.ShippingMethod{}
 	if err := db.Table(m.TableName()).
@@ -59,8 +56,7 @@ func (au *AdminRepositoryImpl) ListActiveShippingMethods(from, limit int) ([]mod
 	return data, nil
 }
 
-func (au *AdminRepositoryImpl) DeleteShippingMethod(ID string) error {
-	db := app.DB()
+func (au *AdminRepositoryImpl) DeleteShippingMethod(db *gorm.DB, ID string) error {
 	m := models.ShippingMethod{}
 	if err := db.Table(m.TableName()).
 		Where("id = ?", ID).
@@ -70,8 +66,7 @@ func (au *AdminRepositoryImpl) DeleteShippingMethod(ID string) error {
 	return nil
 }
 
-func (au *AdminRepositoryImpl) GetShippingMethod(ID string) (*models.ShippingMethod, error) {
-	db := app.DB()
+func (au *AdminRepositoryImpl) GetShippingMethod(db *gorm.DB, ID string) (*models.ShippingMethod, error) {
 	m := models.ShippingMethod{}
 	if err := db.Table(m.TableName()).
 		Where("id = ?", ID).
@@ -81,16 +76,14 @@ func (au *AdminRepositoryImpl) GetShippingMethod(ID string) (*models.ShippingMet
 	return &m, nil
 }
 
-func (au *AdminRepositoryImpl) CreatePaymentMethod(pm *models.PaymentMethod) error {
-	db := app.DB()
+func (au *AdminRepositoryImpl) CreatePaymentMethod(db *gorm.DB, pm *models.PaymentMethod) error {
 	if err := db.Table(pm.TableName()).Create(pm).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (au *AdminRepositoryImpl) UpdatePaymentMethod(pm *models.PaymentMethod) error {
-	db := app.DB()
+func (au *AdminRepositoryImpl) UpdatePaymentMethod(db *gorm.DB, pm *models.PaymentMethod) error {
 	if err := db.Table(pm.TableName()).
 		Where("id = ?", pm.ID).Save(pm).Error; err != nil {
 		return err
@@ -98,8 +91,7 @@ func (au *AdminRepositoryImpl) UpdatePaymentMethod(pm *models.PaymentMethod) err
 	return nil
 }
 
-func (au *AdminRepositoryImpl) ListPaymentMethods(from, limit int) ([]models.PaymentMethod, error) {
-	db := app.DB()
+func (au *AdminRepositoryImpl) ListPaymentMethods(db *gorm.DB, from, limit int) ([]models.PaymentMethod, error) {
 	var data []models.PaymentMethod
 	m := models.PaymentMethod{}
 	if err := db.Table(m.TableName()).
@@ -110,8 +102,7 @@ func (au *AdminRepositoryImpl) ListPaymentMethods(from, limit int) ([]models.Pay
 	return data, nil
 }
 
-func (au *AdminRepositoryImpl) ListActivePaymentMethods(from, limit int) ([]models.PaymentMethod, error) {
-	db := app.DB()
+func (au *AdminRepositoryImpl) ListActivePaymentMethods(db *gorm.DB, from, limit int) ([]models.PaymentMethod, error) {
 	var data []models.PaymentMethod
 	m := models.PaymentMethod{}
 	if err := db.Table(m.TableName()).
@@ -123,8 +114,7 @@ func (au *AdminRepositoryImpl) ListActivePaymentMethods(from, limit int) ([]mode
 	return data, nil
 }
 
-func (au *AdminRepositoryImpl) DeletePaymentMethod(ID string) error {
-	db := app.DB()
+func (au *AdminRepositoryImpl) DeletePaymentMethod(db *gorm.DB, ID string) error {
 	m := models.PaymentMethod{}
 	if err := db.Table(m.TableName()).
 		Where("id = ?", ID).
@@ -134,8 +124,7 @@ func (au *AdminRepositoryImpl) DeletePaymentMethod(ID string) error {
 	return nil
 }
 
-func (au *AdminRepositoryImpl) GetPaymentMethod(ID string) (*models.PaymentMethod, error) {
-	db := app.DB()
+func (au *AdminRepositoryImpl) GetPaymentMethod(db *gorm.DB, ID string) (*models.PaymentMethod, error) {
 	m := models.PaymentMethod{}
 	if err := db.Table(m.TableName()).
 		Where("id = ?", ID).
@@ -143,4 +132,17 @@ func (au *AdminRepositoryImpl) GetPaymentMethod(ID string) (*models.PaymentMetho
 		return &m, err
 	}
 	return &m, nil
+}
+
+func (au *AdminRepositoryImpl) GetSettings(db *gorm.DB) (*models.SettingsDetails, error) {
+	settings := models.Settings{}
+	settingsDetails := models.SettingsDetails{}
+	a := models.Address{}
+	if err := db.Table(fmt.Sprintf("%s AS s", settings.TableName())).
+		Select("s.id AS id, s.name AS name, s.website AS website, s.is_active AS is_active, a.address AS address, a.city AS city, a.country AS country, a.postcode AS postcode, a.email AS email, a.phone AS phone, s.is_sign_up_enabled AS is_sign_up_enabled, s.is_store_creation_enabled AS is_store_creation_enabled, s.default_commission_rate AS default_commission_rate, s.tag_line AS tag_line, s.created_at AS created_at, s.updated_at AS updated_at").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS a ON s.company_address_id = a.id", a.TableName())).
+		First(&settingsDetails).Error; err != nil {
+		return nil, err
+	}
+	return &settingsDetails, nil
 }

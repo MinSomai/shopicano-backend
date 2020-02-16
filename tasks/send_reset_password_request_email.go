@@ -21,6 +21,15 @@ const (
 func SendResetPasswordEmailFn(userID string) error {
 	db := app.DB().Begin()
 
+	adminDao := data.NewAdminRepository()
+	settings, err := adminDao.GetSettings(db)
+	if err != nil {
+		db.Rollback()
+
+		log.Log().Errorln(err)
+		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
+	}
+
 	userDao := data.NewUserRepository()
 	u, err := userDao.Get(db, userID)
 	if err != nil {
@@ -43,12 +52,14 @@ func SendResetPasswordEmailFn(userID string) error {
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}
 
+	address := fmt.Sprintf("%s, %s, %s - %s", settings.Address, settings.City, settings.Country, settings.Postcode)
+
 	content, err := templates.GenerateResetPasswordEmailHTML(map[string]interface{}{
 		"resetPasswordUrl": fmt.Sprintf("%s/#/reset-password?token=%s&email=%s", config.App().FrontStoreUrl, *u.ResetPasswordToken, u.Email),
-		"shopicanoAddress": config.App().ShopicanoAddress,
-		"shopicanoPhone":   config.App().ShopicanoPhone,
-		"shopicanoEmail":   config.App().ShopicanoEmail,
-		"shopicanoWebsite": config.App().ShopicanoWebsite,
+		"shopicanoAddress": address,
+		"shopicanoPhone":   settings.Phone,
+		"shopicanoEmail":   settings.Email,
+		"shopicanoWebsite": settings.Website,
 	})
 	if err != nil {
 		db.Rollback()
@@ -73,6 +84,15 @@ func SendResetPasswordEmailFn(userID string) error {
 func SendResetPasswordConfirmationEmailFn(userID string) error {
 	db := app.DB()
 
+	adminDao := data.NewAdminRepository()
+	settings, err := adminDao.GetSettings(db)
+	if err != nil {
+		db.Rollback()
+
+		log.Log().Errorln(err)
+		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
+	}
+
 	userDao := data.NewUserRepository()
 	u, err := userDao.Get(db, userID)
 	if err != nil {
@@ -82,18 +102,20 @@ func SendResetPasswordConfirmationEmailFn(userID string) error {
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}
 
+	address := fmt.Sprintf("%s, %s, %s - %s", settings.Address, settings.City, settings.Country, settings.Postcode)
+
 	content, err := templates.GenerateResetPasswordConfirmationEmailHTML(map[string]interface{}{
-		"shopicanoAddress": config.App().ShopicanoAddress,
-		"shopicanoPhone":   config.App().ShopicanoPhone,
-		"shopicanoEmail":   config.App().ShopicanoEmail,
-		"shopicanoWebsite": config.App().ShopicanoWebsite,
+		"shopicanoAddress": address,
+		"shopicanoPhone":   settings.Phone,
+		"shopicanoEmail":   settings.Email,
+		"shopicanoWebsite": settings.Website,
 	})
 	if err != nil {
 		log.Log().Errorln(err)
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}
 
-	if err := services.SendEmail("Password Changed", u.Email, content); err != nil {
+	if err := services.SendEmail("Your password changed", u.Email, content); err != nil {
 		log.Log().Errorln(err)
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}
