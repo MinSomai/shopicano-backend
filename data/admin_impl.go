@@ -139,9 +139,10 @@ func (au *AdminRepositoryImpl) GetSettings(db *gorm.DB) (*models.SettingsDetails
 	settingsDetails := models.SettingsDetails{}
 	a := models.Address{}
 	if err := db.Table(fmt.Sprintf("%s AS s", settings.TableName())).
+		Where("s.id = ?", "1").
 		Select("s.id AS id, s.name AS name, s.website AS website, s.is_active AS is_active, a.address AS address, a.city AS city, a.country AS country, a.postcode AS postcode, a.email AS email, a.phone AS phone, s.is_sign_up_enabled AS is_sign_up_enabled, s.is_store_creation_enabled AS is_store_creation_enabled, s.default_commission_rate AS default_commission_rate, s.tag_line AS tag_line, s.created_at AS created_at, s.updated_at AS updated_at").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS a ON s.company_address_id = a.id", a.TableName())).
-		First(&settingsDetails).Error; err != nil {
+		Find(&settingsDetails).Error; err != nil {
 		return nil, err
 	}
 	return &settingsDetails, nil

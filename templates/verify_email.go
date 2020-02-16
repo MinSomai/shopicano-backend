@@ -102,14 +102,14 @@ var verifyEmailTemplate = `<!DOCTYPE html>
                                 <img src="thick@3x.png" width="74" height="74" alt="">
                                 <h3 class="my-28">Activate Your Account</h3>
 
-                                <p>Hi {{ .userName }}, Use the link below to verify your email and start enjoying {{ .platformName }}</p>
+                                <p>Hi {{ .userName }}, Click the button below to activate your account and start buying from {{ .platformName }}</p>
 
-                                <button class="btn">Activate Account</button>
+                                <button class="btn" onclick="location.href='{{ .verificationUrl }}'">Activate Account</button>
 
                                 <p class="my-28">If you’re having trouble with the button 'Activate Account', 
                                     copy and paste the URL below into your web browser.</p>
 
-                                <a href="{{ .verification_url }}">{{ .verificationUrl }}</a>
+                                <a href="{{ .verificationUrl }}">{{ .verificationUrl }}</a>
                             </td>
                         </tr>
                     </table>
@@ -121,7 +121,7 @@ var verifyEmailTemplate = `<!DOCTYPE html>
                                     © 2020 {{ .platformName }}. All rights reserved.
                                 </P>
                                 <p style="font-size: 14px;font-weight: normal;font-stretch: normal;font-style: normal;line-height: 1.29;letter-spacing: normal;color: #6b7694;text-align: center!important">
-                                    Powered by <a href="{{ .platformWebsite }}" target="_blank" style="text-decoration: none">{{ .platformName }}</a>
+                                    Powered by <a href="{{ .platformWebsite }}" style="text-decoration: none">{{ .platformName }}</a>
                                 </P>
                             </td>
                         </tr>
