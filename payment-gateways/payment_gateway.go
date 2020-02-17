@@ -11,6 +11,8 @@ type PaymentGateway interface {
 	GetName() string
 	GetConfig() (map[string]interface{}, error)
 	Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error)
+	ValidateTransaction(orderDetails *models.OrderDetailsView) error
+	VoidTransaction(map[string]interface{}) error
 }
 
 type PaymentGatewayResponse struct {

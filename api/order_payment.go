@@ -155,10 +155,22 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 	db := app.DB().Begin()
 	or := data.NewOrderRepository()
 
-	if ctx.QueryParam("status") == "success" {
-		o.PaymentStatus = models.PaymentCompleted
-	} else {
+	pg, err := payment_gateways.GetPaymentGatewayByName(o.PaymentGateway)
+	if err != nil {
+		db.Rollback()
+
+		resp.Title = "Invalid payment gateway"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.PaymentGatewayFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := pg.ValidateTransaction(o); err != nil {
+		log.Log().Errorln(err)
 		o.PaymentStatus = models.PaymentFailed
+	} else {
+		o.PaymentStatus = models.PaymentCompleted
 	}
 
 	if err := or.UpdatePaymentInfo(db, o); err != nil {

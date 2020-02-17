@@ -101,3 +101,11 @@ func (bt *brainTreePaymentGateway) GetConfig() (map[string]interface{}, error) {
 
 	return cfg, nil
 }
+
+func (bt *brainTreePaymentGateway) ValidateTransaction(orderDetails *models.OrderDetailsView) error {
+	return nil
+}
+
+func (bt *brainTreePaymentGateway) VoidTransaction(map[string]interface{}) error {
+	return nil
+}

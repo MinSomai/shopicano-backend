@@ -75,3 +75,11 @@ func (tco *twoCheckoutPaymentGateway) GetConfig() (map[string]interface{}, error
 	}
 	return cfg, nil
 }
+
+func (tco *twoCheckoutPaymentGateway) ValidateTransaction(orderDetails *models.OrderDetailsView) error {
+	return nil
+}
+
+func (tco *twoCheckoutPaymentGateway) VoidTransaction(map[string]interface{}) error {
+	return nil
+}

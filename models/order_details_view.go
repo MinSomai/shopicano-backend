@@ -15,7 +15,7 @@ type OrderDetailsView struct {
 	PaymentGateway          string            `json:"payment_gateway"`
 	Nonce                   *string           `json:"nonce,omitempty"`          // Private
 	TransactionID           *string           `json:"transaction_id,omitempty"` //Private
-	GrandTotal              int               `json:"grand_total"`
+	GrandTotal              int64             `json:"grand_total"`
 	DiscountedAmount        int               `json:"discounted_amount"`
 	CouponCode              string            `json:"coupon_code"`
 	Status                  OrderStatus       `json:"status"`
