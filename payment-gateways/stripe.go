@@ -109,12 +109,47 @@ func (spg *stripePaymentGateway) ValidateTransaction(orderDetails *models.OrderD
 
 	capturedAmount /= 100
 
-	if capturedAmount == orderDetails.GrandTotal {
+	log.Log().Infoln("Captured : ", capturedAmount)
+	log.Log().Infoln("Grand Total : ", orderDetails.GrandTotal)
+
+	if capturedAmount != orderDetails.GrandTotal {
 		return errors.New("paid amount is invalid")
 	}
 	return nil
 }
 
-func (spg *stripePaymentGateway) VoidTransaction(map[string]interface{}) error {
+func (spg *stripePaymentGateway) VoidTransaction(orderDetails *models.OrderDetailsView, params map[string]interface{}) error {
+	result, err := spg.client.PaymentIntents.Get(*orderDetails.TransactionID, &stripe.PaymentIntentParams{})
+	if err != nil {
+		return err
+	}
+
+	if result.Status != stripe.PaymentIntentStatusSucceeded {
+		return errors.New("payment isn't paid yet")
+	}
+
+	for _, c := range result.Charges.Data {
+		typ := params["type"].(int)
+		reason := stripe.RefundReasonRequestedByCustomer
+
+		switch typ {
+		case 1:
+			reason = stripe.RefundReasonDuplicate
+		case 2:
+			reason = stripe.RefundReasonFraudulent
+		}
+
+		_, err := spg.client.Refunds.New(&stripe.RefundParams{
+			Amount:               stripe.Int64(orderDetails.GrandTotal - orderDetails.PaymentProcessingFee),
+			Reason:               stripe.String(string(reason)),
+			Charge:               stripe.String(c.ID),
+			ReverseTransfer:      stripe.Bool(false),
+			RefundApplicationFee: stripe.Bool(false),
+		})
+		if err != nil {
+			return errors.New("failed to issue refund")
+		}
+	}
+
 	return nil
 }

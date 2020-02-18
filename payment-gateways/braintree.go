@@ -106,6 +106,6 @@ func (bt *brainTreePaymentGateway) ValidateTransaction(orderDetails *models.Orde
 	return nil
 }
 
-func (bt *brainTreePaymentGateway) VoidTransaction(map[string]interface{}) error {
+func (bt *brainTreePaymentGateway) VoidTransaction(orderDetails *models.OrderDetailsView, params map[string]interface{}) error {
 	return nil
 }

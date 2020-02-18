@@ -45,6 +45,11 @@ func RegisterOrderRoutes(g *echo.Group) {
 	}(*g)
 
 	func(g echo.Group) {
+		g.Use(middlewares.IsStoreAdmin)
+		g.POST("/:order_id/revert-payment/", revertOrderPayment)
+	}(*g)
+
+	func(g echo.Group) {
 		g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/internal/", createOrder)
 		g.PATCH("/internal/:order_id/", createOrder)

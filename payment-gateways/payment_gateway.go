@@ -12,7 +12,7 @@ type PaymentGateway interface {
 	GetConfig() (map[string]interface{}, error)
 	Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error)
 	ValidateTransaction(orderDetails *models.OrderDetailsView) error
-	VoidTransaction(map[string]interface{}) error
+	VoidTransaction(orderDetails *models.OrderDetailsView, params map[string]interface{}) error
 }
 
 type PaymentGatewayResponse struct {

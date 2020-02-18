@@ -9,14 +9,14 @@ import (
 type OrderDetailsView struct {
 	ID                      string            `json:"id,omitempty"`
 	Hash                    string            `json:"hash"`
-	ShippingCharge          int               `json:"shipping_charge"`
-	PaymentProcessingFee    int               `json:"payment_processing_fee"`
-	SubTotal                int               `json:"sub_total"`
+	ShippingCharge          int64             `json:"shipping_charge"`
+	PaymentProcessingFee    int64             `json:"payment_processing_fee"`
+	SubTotal                int64             `json:"sub_total"`
 	PaymentGateway          string            `json:"payment_gateway"`
 	Nonce                   *string           `json:"nonce,omitempty"`          // Private
 	TransactionID           *string           `json:"transaction_id,omitempty"` //Private
 	GrandTotal              int64             `json:"grand_total"`
-	DiscountedAmount        int               `json:"discounted_amount"`
+	DiscountedAmount        int64             `json:"discounted_amount"`
 	CouponCode              string            `json:"coupon_code"`
 	Status                  OrderStatus       `json:"status"`
 	PaymentStatus           PaymentStatus     `json:"payment_status"`

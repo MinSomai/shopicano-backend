@@ -80,6 +80,6 @@ func (tco *twoCheckoutPaymentGateway) ValidateTransaction(orderDetails *models.O
 	return nil
 }
 
-func (tco *twoCheckoutPaymentGateway) VoidTransaction(map[string]interface{}) error {
+func (tco *twoCheckoutPaymentGateway) VoidTransaction(orderDetails *models.OrderDetailsView, params map[string]interface{}) error {
 	return nil
 }
