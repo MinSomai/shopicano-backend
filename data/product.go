@@ -23,5 +23,7 @@ type ProductRepository interface {
 	Stats(db *gorm.DB, offset, limit int) ([]helpers.ProductStats, error)
 	StatsAsStoreStaff(db *gorm.DB, storeID string, offset, limit int) ([]helpers.ProductStats, error)
 	AddAttribute(db *gorm.DB, v *models.ProductAttribute) error
-	RemoveAttribute(db *gorm.DB, productID, attributeKey string) error
+	RemoveAttribute(db *gorm.DB, productID, attributeID string) error
+	ListAttributes(db *gorm.DB, productID string) (map[string][]models.ProductKV, error)
+	GetAttribute(db *gorm.DB, productID, ID string) (*models.ProductAttribute, error)
 }

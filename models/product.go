@@ -14,6 +14,7 @@ type Product struct {
 	CategoryID          *string   `json:"category_id,omitempty" gorm:"column:category_id;index"`
 	SKU                 string    `json:"sku" gorm:"column:sku;unique"`
 	Stock               int       `json:"stock" gorm:"column:stock;index"`
+	MaxQuantityCount    int       `json:"max_quantity_count" gorm:"column:max_quantity_count;not null;default:10"`
 	Unit                string    `json:"unit" gorm:"column:unit"`
 	Price               int       `json:"price" gorm:"column:price;index"`
 	ProductCost         int       `json:"product_cost" gorm:"column:product_cost;index"`

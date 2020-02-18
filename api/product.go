@@ -35,7 +35,7 @@ func RegisterProductRoutes(g *echo.Group) {
 		g.PATCH("/:product_id/", updateProduct)
 		g.DELETE("/:product_id/", deleteProduct)
 		g.PUT("/:product_id/attributes/", addProductAttribute)
-		g.DELETE("/:product_id/attributes/:attribute_key/", deleteProductAttribute)
+		g.DELETE("/:product_id/attributes/:attribute_id/", deleteProductAttribute)
 		g.GET("/:product_id/download/", downloadProduct)
 		g.POST("/:product_id/upload/", saveDownloadableProduct)
 	}(g)
@@ -359,6 +359,7 @@ func addProductAttribute(ctx echo.Context) error {
 	}
 
 	v := models.ProductAttribute{
+		ID:        utils.NewUUID(),
 		ProductID: p.ID,
 		Key:       req.Key,
 		Value:     req.Value,
@@ -390,7 +391,7 @@ func addProductAttribute(ctx echo.Context) error {
 func deleteProductAttribute(ctx echo.Context) error {
 	storeID := ctx.Get(utils.StoreID).(string)
 	productID := ctx.Param("product_id")
-	attributeKey := ctx.Param("attribute_key")
+	attributeID := ctx.Param("attribute_id")
 
 	resp := core.Response{}
 
@@ -406,7 +407,7 @@ func deleteProductAttribute(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	err = pu.RemoveAttribute(db, p.ID, attributeKey)
+	err = pu.RemoveAttribute(db, p.ID, attributeID)
 	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError

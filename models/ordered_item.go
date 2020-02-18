@@ -3,6 +3,7 @@ package models
 import "fmt"
 
 type OrderedItem struct {
+	ID          string `json:"id" gorm:"column:id;primary_key;not null"`
 	OrderID     string `json:"order_id" gorm:"column:order_id"`
 	ProductID   string `json:"product_id" gorm:"column:product_id"`
 	Quantity    int    `json:"quantity" gorm:"column:quantity"`

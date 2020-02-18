@@ -7,8 +7,9 @@ import (
 )
 
 type ReqOrderItem struct {
-	ID       string `json:"id" valid:"required"`
-	Quantity int    `json:"quantity" valid:"range(1|10000000)"`
+	ID         string   `json:"id" valid:"required"`
+	Quantity   int      `json:"quantity" valid:"range(1|10000000)"`
+	Attributes []string `json:"attributes"`
 }
 
 type ReqOrderCreate struct {

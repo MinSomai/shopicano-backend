@@ -82,6 +82,21 @@ func (os *OrderRepositoryImpl) AddOrderedItem(db *gorm.DB, oi *models.OrderedIte
 	return nil
 }
 
+func (os *OrderRepositoryImpl) AddOrderedItemAttribute(db *gorm.DB, attr *models.OrderedItemAttribute) error {
+	if err := db.Table(attr.TableName()).Create(attr).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (os *OrderRepositoryImpl) GetOrderedItemAttribute(db *gorm.DB, orderedItemID string) (*models.OrderedItemAttribute, error) {
+	oi := models.OrderedItemAttribute{}
+	if err := db.Table(oi.TableName()).Find(&oi, "ordered_item_id = ?", orderedItemID).Error; err != nil {
+		return nil, err
+	}
+	return &oi, nil
+}
+
 func (os *OrderRepositoryImpl) GetOrderedItem(db *gorm.DB, orderID, productID string) (*models.OrderedItem, error) {
 	oi := models.OrderedItem{}
 	if err := db.Table(oi.TableName()).Find(&oi, "order_id = ? AND product_id = ?", orderID, productID).Error; err != nil {

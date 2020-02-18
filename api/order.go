@@ -110,11 +110,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			return resp.ServerJSON(ctx)
 		}
 
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+		return serveDatabaseQueryFailed(ctx, err)
 	}
 
 	var sm *models.ShippingMethod
@@ -132,11 +128,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 				return resp.ServerJSON(ctx)
 			}
 
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}
 
@@ -146,31 +138,63 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	isAllDigitalProduct := true
 
 	var availableItems []*models.OrderedItem
+	var productAttributes []*models.OrderedItemAttribute
 
 	var storeID *string
 
 	for _, v := range pld.Items {
+		orderedItemID := utils.NewUUID()
+
 		item, err := pu.GetForOrder(db, v.ID, v.Quantity)
 		if err != nil {
 			db.Rollback()
 
 			if errors.IsRecordNotFoundError(err) {
-				resp.Title = "Product unavailable"
+				resp.Title = fmt.Sprintf("Product %s is unavailable", v.ID)
 				resp.Status = http.StatusNotFound
 				resp.Code = errors.ProductUnavailable
 				resp.Errors = err
 				return resp.ServerJSON(ctx)
 			}
 
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 
 		if item.IsDigital {
 			v.Quantity = 1
+		} else {
+			if v.Quantity > item.MaxQuantityCount {
+				db.Rollback()
+
+				resp.Title = fmt.Sprintf("Exceed max order amount for item %s", item.Name)
+				resp.Status = http.StatusBadRequest
+				resp.Code = errors.ExceedMaxProductQuantity
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+		}
+
+		for _, a := range v.Attributes {
+			attr, err := pu.GetAttribute(db, v.ID, a)
+			if err != nil {
+				db.Rollback()
+
+				if errors.IsRecordNotFoundError(err) {
+					resp.Title = "Attribute not found"
+					resp.Status = http.StatusNotFound
+					resp.Code = errors.AttributeNotFound
+					resp.Errors = err
+					return resp.ServerJSON(ctx)
+				}
+
+				return serveDatabaseQueryFailed(ctx, err)
+			}
+
+			productAttributes = append(productAttributes, &models.OrderedItemAttribute{
+				OrderedItemID:  orderedItemID,
+				AttributeKey:   attr.Key,
+				AttributeValue: attr.Value,
+			})
 		}
 
 		if storeID == nil {
@@ -199,6 +223,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 
 		oi := &models.OrderedItem{
+			ID:          orderedItemID,
 			OrderID:     o.ID,
 			ProductID:   item.ID,
 			Quantity:    v.Quantity,
@@ -254,12 +279,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 				resp.Errors = err
 				return resp.ServerJSON(ctx)
 			}
-
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 
 		if !coupon.IsValid() {
@@ -276,12 +296,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			ok, err := cu.HasUser(db, *storeID, coupon.ID, pld.UserID)
 			if err != nil {
 				db.Rollback()
-
-				resp.Title = "Database query failed"
-				resp.Status = http.StatusInternalServerError
-				resp.Code = errors.DatabaseQueryFailed
-				resp.Errors = err
-				return resp.ServerJSON(ctx)
+				return serveDatabaseQueryFailed(ctx, err)
 			}
 
 			if !ok {
@@ -295,7 +310,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			}
 		}
 
-		previousUsage, err := cu.GetUsage(db, coupon.ID, o.UserID)
+		previousUsage, err := cu.GetUsage(db, coupon.ID, o.UserID) // TODO : Cross check
 		if err != nil {
 			db.Rollback()
 
@@ -354,11 +369,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			return resp.ServerJSON(ctx)
 		}
 
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+		return serveDatabaseQueryFailed(ctx, err)
 	}
 
 	if couponID != nil {
@@ -369,24 +380,21 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 		if err := cu.AddUsage(db, &couponUsage); err != nil {
 			db.Rollback()
-
-			resp.Title = "Failed to add coupon usage"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}
 
 	for _, v := range availableItems {
 		if err := ou.AddOrderedItem(db, v); err != nil {
 			db.Rollback()
+			return serveDatabaseQueryFailed(ctx, err)
+		}
+	}
 
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+	for _, v := range productAttributes {
+		if err := ou.AddOrderedItemAttribute(db, v); err != nil {
+			db.Rollback()
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}
 
@@ -399,12 +407,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	}
 	if err := ou.CreateLog(db, &ol); err != nil {
 		db.Rollback()
-
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+		return serveDatabaseQueryFailed(ctx, err)
 	}
 
 	if isAllDigitalProduct {
@@ -423,12 +426,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 				resp.Errors = err
 				return resp.ServerJSON(ctx)
 			}
-
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 
 		ol := models.OrderLog{
@@ -440,12 +438,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 		if err := ou.CreateLog(db, &ol); err != nil {
 			db.Rollback()
-
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}
 
@@ -466,11 +459,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 				return resp.ServerJSON(ctx)
 			}
 
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 
 		ol := models.OrderLog{
@@ -482,12 +471,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 		if err := ou.CreateLog(db, &ol); err != nil {
 			db.Rollback()
-
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}
 
@@ -513,11 +497,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	}
 
 	if err := db.Commit().Error; err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+		return serveDatabaseQueryFailed(ctx, err)
 	}
 
 	resp.Status = http.StatusCreated
@@ -762,4 +742,13 @@ func downloadProductAsUser(ctx echo.Context) error {
 	}
 
 	return resp.ServeStreamFromMinio(ctx, f)
+}
+
+func serveDatabaseQueryFailed(ctx echo.Context, err error) error {
+	resp := core.Response{}
+	resp.Title = "Database query failed"
+	resp.Status = http.StatusInternalServerError
+	resp.Code = errors.DatabaseQueryFailed
+	resp.Errors = err
+	return resp.ServerJSON(ctx)
 }
