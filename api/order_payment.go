@@ -117,9 +117,8 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 	o.TransactionID = &res.Result
 
 	if err := pg.ValidateTransaction(o); err != nil {
-		db.Rollback()
-
 		log.Log().Errorln(err)
+
 		o.PaymentStatus = models.PaymentFailed
 	} else {
 		o.PaymentStatus = models.PaymentCompleted
@@ -197,9 +196,8 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 	}
 
 	if err := pg.ValidateTransaction(o); err != nil {
-		db.Rollback()
-
 		log.Log().Errorln(err)
+
 		o.PaymentStatus = models.PaymentFailed
 	} else {
 		o.PaymentStatus = models.PaymentCompleted
@@ -293,12 +291,22 @@ func processPayOrderFor2Checkout(ctx echo.Context) error {
 		return serveInvalidPaymentRequest(ctx)
 	}
 
-	if ctx.QueryParam("credit_card_processed") == "Y" {
-		m.PaymentStatus = models.PaymentCompleted
-		trx := ctx.QueryParam("invoice_id")
-		m.TransactionID = &trx
-	} else {
+	pg, err := payment_gateways.GetPaymentGatewayByName(m.PaymentGateway)
+	if err != nil {
+		db.Rollback()
+
+		return serveInvalidPaymentRequest(ctx)
+	}
+
+	trx := ctx.QueryParam("invoice_id")
+	m.TransactionID = &trx
+
+	if err := pg.ValidateTransaction(m); err != nil {
+		log.Log().Errorln(err)
+
 		m.PaymentStatus = models.PaymentFailed
+	} else {
+		m.PaymentStatus = models.PaymentCompleted
 	}
 
 	or := data.NewOrderRepository()

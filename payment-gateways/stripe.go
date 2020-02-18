@@ -85,6 +85,10 @@ func (spg *stripePaymentGateway) GetConfig() (map[string]interface{}, error) {
 }
 
 func (spg *stripePaymentGateway) ValidateTransaction(orderDetails *models.OrderDetailsView) error {
+	if orderDetails.TransactionID == nil {
+		return errors.New("invalid transactionID")
+	}
+
 	result, err := spg.client.PaymentIntents.Get(*orderDetails.TransactionID, &stripe.PaymentIntentParams{})
 	if err != nil {
 		return err
@@ -119,6 +123,10 @@ func (spg *stripePaymentGateway) ValidateTransaction(orderDetails *models.OrderD
 }
 
 func (spg *stripePaymentGateway) VoidTransaction(orderDetails *models.OrderDetailsView, params map[string]interface{}) error {
+	if orderDetails.TransactionID == nil {
+		return errors.New("invalid transactionID")
+	}
+
 	result, err := spg.client.PaymentIntents.Get(*orderDetails.TransactionID, &stripe.PaymentIntentParams{})
 	if err != nil {
 		return err
