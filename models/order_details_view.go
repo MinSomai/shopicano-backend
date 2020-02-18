@@ -8,21 +8,21 @@ import (
 
 type OrderDetailsView struct {
 	ID                      string            `json:"id,omitempty"`
-	Hash                    string            `json:"hash"`
-	ShippingCharge          int64             `json:"shipping_charge"`
-	PaymentProcessingFee    int64             `json:"payment_processing_fee"`
-	SubTotal                int64             `json:"sub_total"`
-	PaymentGateway          string            `json:"payment_gateway"`
+	Hash                    string            `json:"hash,omitempty"`
+	ShippingCharge          int64             `json:"shipping_charge,omitempty"`
+	PaymentProcessingFee    int64             `json:"payment_processing_fee,omitempty"`
+	SubTotal                int64             `json:"sub_total,omitempty"`
+	PaymentGateway          string            `json:"payment_gateway,omitempty"`
 	Nonce                   *string           `json:"nonce,omitempty"`          // Private
 	TransactionID           *string           `json:"transaction_id,omitempty"` //Private
-	GrandTotal              int64             `json:"grand_total"`
-	DiscountedAmount        int64             `json:"discounted_amount"`
-	CouponCode              string            `json:"coupon_code"`
-	Status                  OrderStatus       `json:"status"`
-	PaymentStatus           PaymentStatus     `json:"payment_status"`
-	IsAllDigitalProducts    bool              `json:"is_all_digital_products"`
-	CreatedAt               *time.Time        `json:"created_at"`
-	UpdatedAt               *time.Time        `json:"updated_at"`
+	GrandTotal              int64             `json:"grand_total,omitempty"`
+	DiscountedAmount        int64             `json:"discounted_amount,omitempty"`
+	CouponCode              string            `json:"coupon_code,omitempty"`
+	Status                  OrderStatus       `json:"status,omitempty"`
+	PaymentStatus           PaymentStatus     `json:"payment_status,omitempty"`
+	IsAllDigitalProducts    bool              `json:"is_all_digital_products,omitempty"`
+	CreatedAt               *time.Time        `json:"created_at,omitempty"`
+	UpdatedAt               *time.Time        `json:"updated_at,omitempty"`
 	ShippingID              *string           `json:"shipping_id,omitempty"`
 	ShippingName            *string           `json:"shipping_name,omitempty"`
 	ShippingAddress         *string           `json:"shipping_address,omitempty"`
@@ -31,25 +31,25 @@ type OrderDetailsView struct {
 	ShippingPostcode        *string           `json:"shipping_postcode,omitempty"`
 	ShippingEmail           *string           `json:"shipping_email,omitempty"`
 	ShippingPhone           *string           `json:"shipping_phone,omitempty"`
-	BillingID               string            `json:"billing_id"`
-	BillingName             string            `json:"billing_name"`
-	BillingAddress          string            `json:"billing_address"`
-	BillingCity             string            `json:"billing_city"`
-	BillingCountry          string            `json:"billing_country"`
-	BillingPostcode         string            `json:"billing_postcode"`
-	BillingEmail            string            `json:"billing_email"`
-	BillingPhone            string            `json:"billing_phone"`
-	StoreID                 string            `json:"store_id"`
-	StoreName               string            `json:"store_name"`
-	StoreAddress            string            `json:"store_address"`
-	StoreCity               string            `json:"store_city"`
-	StoreCountry            string            `json:"store_country"`
-	StorePostcode           string            `json:"store_postcode"`
-	StoreEmail              string            `json:"store_email"`
-	StorePhone              string            `json:"store_phone"`
-	StoreStatus             string            `json:"store_status"`
-	PaymentMethodID         string            `json:"payment_method_id"`
-	PaymentMethodName       string            `json:"payment_method_name"`
+	BillingID               string            `json:"billing_id,omitempty"`
+	BillingName             string            `json:"billing_name,omitempty"`
+	BillingAddress          string            `json:"billing_address,omitempty"`
+	BillingCity             string            `json:"billing_city,omitempty"`
+	BillingCountry          string            `json:"billing_country,omitempty"`
+	BillingPostcode         string            `json:"billing_postcode,omitempty"`
+	BillingEmail            string            `json:"billing_email,omitempty"`
+	BillingPhone            string            `json:"billing_phone,omitempty"`
+	StoreID                 string            `json:"store_id,omitempty"`
+	StoreName               string            `json:"store_name,omitempty"`
+	StoreAddress            string            `json:"store_address,omitempty"`
+	StoreCity               string            `json:"store_city,omitempty"`
+	StoreCountry            string            `json:"store_country,omitempty"`
+	StorePostcode           string            `json:"store_postcode,omitempty"`
+	StoreEmail              string            `json:"store_email,omitempty"`
+	StorePhone              string            `json:"store_phone,omitempty"`
+	StoreStatus             string            `json:"store_status,omitempty"`
+	PaymentMethodID         string            `json:"payment_method_id,omitempty"`
+	PaymentMethodName       string            `json:"payment_method_name,omitempty"`
 	PaymentMethodIsOffline  bool              `json:"payment_method_is_offline"`
 	ShippingMethodID        string            `json:"shipping_method_id"`
 	ShippingMethodName      string            `json:"shipping_method_name"`
@@ -60,8 +60,8 @@ type OrderDetailsView struct {
 	UserEmail               string            `json:"user_email"`
 	UserPhone               *string           `json:"user_phone,omitempty"`
 	UserPicture             *string           `json:"user_picture,omitempty"`
-	ReviewRating            int               `json:"review_rating"`
-	ReviewDescription       string            `json:"review_description"`
+	ReviewRating            int               `json:"review_rating,omitempty"`
+	ReviewDescription       string            `json:"review_description,omitempty"`
 }
 
 func (odv *OrderDetailsView) TableName() string {

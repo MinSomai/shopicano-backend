@@ -166,7 +166,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			if v.Quantity > item.MaxQuantityCount {
 				db.Rollback()
 
-				resp.Title = fmt.Sprintf("Exceed max order amount for item %s", item.Name)
+				resp.Title = fmt.Sprintf("Exceed max order quantity for item %s", item.Name)
 				resp.Status = http.StatusBadRequest
 				resp.Code = errors.ExceedMaxProductQuantity
 				resp.Errors = err
@@ -394,6 +394,15 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	for _, v := range productAttributes {
 		if err := ou.AddOrderedItemAttribute(db, v); err != nil {
 			db.Rollback()
+
+			msg, ok := errors.IsDuplicateKeyError(err)
+			if ok {
+				resp.Title = msg
+				resp.Status = http.StatusConflict
+				resp.Code = errors.ProductAttributeAlreadyExists
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
 			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}

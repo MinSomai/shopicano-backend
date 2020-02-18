@@ -7,6 +7,11 @@ type ProductKV struct {
 	Value string `json:"value"`
 }
 
+type OrderItemAttributeKV struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type ProductAttribute struct {
 	ID        string `json:"id" gorm:"column:id;unique_index;not null"`
 	ProductID string `json:"-" gorm:"column:product_id;primary_key"`
