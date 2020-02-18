@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nahid/gohttp"
+	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	"io/ioutil"
 	"net/http"
@@ -138,7 +139,10 @@ func (tco *twoCheckoutPaymentGateway) ValidateTransaction(orderDetails *models.O
 	orderID := ""
 
 	for _, in := range body.Sale.Invoices {
-		if in.Status != "deposited" {
+		log.Log().Infoln(in)
+		log.Log().Infoln(in.Status)
+
+		if in.Status != "deposited" && in.Status != "approved" {
 			return errors.New("invalid transaction status")
 		}
 
