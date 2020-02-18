@@ -36,10 +36,26 @@ func payOrder(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	if m.Status == models.OrderCancelled {
+		resp.Title = "Order already cancelled"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.OrderAlreadyCancelled
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	if m.PaymentStatus == models.PaymentCompleted {
 		resp.Title = "Order already paid"
 		resp.Status = http.StatusConflict
 		resp.Code = errors.PaymentAlreadyProcessed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if m.PaymentStatus == models.PaymentReverted {
+		resp.Title = "Order payment already reverted"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.OrderPaymentAlreadyReverted
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
@@ -65,6 +81,8 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 
 	body := reqBrainTreeNonce{}
 	if err := ctx.Bind(&body); err != nil {
+		db.Rollback()
+
 		resp.Title = "Invalid data"
 		resp.Status = http.StatusUnprocessableEntity
 		resp.Code = errors.OrderPaymentDataInvalid
@@ -76,6 +94,8 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 
 	pg, err := payment_gateways.GetPaymentGatewayByName(o.PaymentGateway)
 	if err != nil {
+		db.Rollback()
+
 		resp.Title = "Invalid payment gateway"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.PaymentProcessingFailed
@@ -85,6 +105,8 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 
 	res, err := pg.Pay(o)
 	if err != nil {
+		db.Rollback()
+
 		resp.Title = "Failed to process payment"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.PaymentProcessingFailed
@@ -93,7 +115,14 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 	}
 
 	o.TransactionID = &res.Result
-	o.PaymentStatus = models.PaymentCompleted
+
+	if err := pg.ValidateTransaction(o); err != nil {
+		log.Log().Errorln(err)
+
+		o.PaymentStatus = models.PaymentFailed
+	} else {
+		o.PaymentStatus = models.PaymentCompleted
+	}
 
 	if err := or.UpdatePaymentInfo(db, o); err != nil {
 		db.Rollback()
@@ -155,10 +184,23 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 	db := app.DB().Begin()
 	or := data.NewOrderRepository()
 
-	if ctx.QueryParam("status") == "success" {
-		o.PaymentStatus = models.PaymentCompleted
-	} else {
+	pg, err := payment_gateways.GetPaymentGatewayByName(o.PaymentGateway)
+	if err != nil {
+		db.Rollback()
+
+		resp.Title = "Invalid payment gateway"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.PaymentGatewayFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := pg.ValidateTransaction(o); err != nil {
+		log.Log().Errorln(err)
+
 		o.PaymentStatus = models.PaymentFailed
+	} else {
+		o.PaymentStatus = models.PaymentCompleted
 	}
 
 	if err := or.UpdatePaymentInfo(db, o); err != nil {
@@ -208,7 +250,8 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 		return resp.ServerJSON(ctx)
 	}
 
-	return ctx.Redirect(http.StatusPermanentRedirect, fmt.Sprintf(config.App().PaymentCompleteCallback, o.ID))
+	paymentCompletedCallback := fmt.Sprintf("%s/#/ordertrack/%s", config.App().FrontStoreUrl, o.ID)
+	return ctx.Redirect(http.StatusPermanentRedirect, paymentCompletedCallback)
 }
 
 func processPayOrderFor2Checkout(ctx echo.Context) error {
@@ -248,12 +291,22 @@ func processPayOrderFor2Checkout(ctx echo.Context) error {
 		return serveInvalidPaymentRequest(ctx)
 	}
 
-	if ctx.QueryParam("credit_card_processed") == "Y" {
-		m.PaymentStatus = models.PaymentCompleted
-		trx := ctx.QueryParam("invoice_id")
-		m.TransactionID = &trx
-	} else {
+	pg, err := payment_gateways.GetPaymentGatewayByName(m.PaymentGateway)
+	if err != nil {
+		db.Rollback()
+
+		return serveInvalidPaymentRequest(ctx)
+	}
+
+	trx := ctx.QueryParam("invoice_id")
+	m.TransactionID = &trx
+
+	if err := pg.ValidateTransaction(m); err != nil {
+		log.Log().Errorln(err)
+
 		m.PaymentStatus = models.PaymentFailed
+	} else {
+		m.PaymentStatus = models.PaymentCompleted
 	}
 
 	or := data.NewOrderRepository()
@@ -305,7 +358,8 @@ func processPayOrderFor2Checkout(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	return ctx.Redirect(http.StatusPermanentRedirect, fmt.Sprintf(config.App().PaymentCompleteCallback, orderID))
+	paymentCompletedCallback := fmt.Sprintf("%s/#/ordertrack/%s", config.App().FrontStoreUrl, orderID)
+	return ctx.Redirect(http.StatusPermanentRedirect, paymentCompletedCallback)
 }
 
 // generatePayNonce create payment reference / nonce
@@ -416,5 +470,147 @@ func serveInvalidPaymentRequest(ctx echo.Context) error {
 	resp.Title = "Invalid payment request"
 	resp.Status = http.StatusForbidden
 	resp.Code = errors.PaymentProcessingFailed
+	return resp.ServerJSON(ctx)
+}
+
+func revertOrderPayment(ctx echo.Context) error {
+	orderID := ctx.Param("order_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+
+	ou := data.NewOrderRepository()
+	m, err := ou.GetDetails(db, orderID)
+	if err != nil {
+		resp.Title = "Order not found"
+		resp.Status = http.StatusNotFound
+		resp.Code = errors.OrderNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if m.PaymentStatus == models.PaymentReverted {
+		resp.Title = "Order payment already reverted"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.OrderPaymentAlreadyReverted
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if m.PaymentStatus != models.PaymentCompleted {
+		resp.Title = "Order not paid yet"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.OrderNotPaidYet
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	switch m.PaymentGateway {
+	case payment_gateways.StripePaymentGatewayName:
+		return revertOrderPaymentForAny(ctx, m)
+	case payment_gateways.BrainTreePaymentGatewayName:
+		return revertOrderPaymentForAny(ctx, m)
+	case payment_gateways.TwoCheckoutPaymentGatewayName:
+		return revertOrderPaymentForAny(ctx, m)
+	}
+	return serveInvalidPaymentRequest(ctx)
+}
+
+type reqRevertPayment struct {
+	Reason string `json:"reason"`
+	Type   int    `json:"type"`
+}
+
+func revertOrderPaymentForAny(ctx echo.Context, details *models.OrderDetailsView) error {
+	resp := core.Response{}
+
+	body := reqRevertPayment{}
+	if err := ctx.Bind(&body); err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.OrderPaymentRevertDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+	or := data.NewOrderRepository()
+
+	pg, err := payment_gateways.GetPaymentGatewayByName(details.PaymentGateway)
+	if err != nil {
+		db.Rollback()
+
+		resp.Title = "Invalid payment gateway"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.PaymentGatewayFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := pg.VoidTransaction(details, map[string]interface{}{
+		"reason": body.Reason,
+		"type":   body.Type,
+	}); err != nil {
+		db.Rollback()
+
+		log.Log().Errorln(err)
+
+		resp.Title = "Failed to revert payment"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.PaymentGatewayFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	} else {
+		details.PaymentStatus = models.PaymentReverted
+	}
+
+	if err := or.UpdatePaymentInfo(db, details); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to update payment info"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   details.ID,
+		Action:    string(details.PaymentStatus),
+		Details:   fmt.Sprintf("Payment reverted for : %s", body.Reason),
+		CreatedAt: time.Now().UTC(),
+	}
+	if err := or.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := queue.SendPaymentRevertedEmail(details.ID); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to enqueue task"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.FailedToEnqueueTask
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Title = "Payment successfully reverted"
 	return resp.ServerJSON(ctx)
 }

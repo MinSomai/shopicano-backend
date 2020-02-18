@@ -11,6 +11,8 @@ type PaymentGateway interface {
 	GetName() string
 	GetConfig() (map[string]interface{}, error)
 	Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error)
+	ValidateTransaction(orderDetails *models.OrderDetailsView) error
+	VoidTransaction(orderDetails *models.OrderDetailsView, params map[string]interface{}) error
 }
 
 type PaymentGatewayResponse struct {
@@ -51,19 +53,19 @@ func GetActivePaymentGateway() PaymentGateway {
 func GetPaymentGatewayByName(name string) (PaymentGateway, error) {
 	cfg := config.PaymentGateway()
 	if name == StripePaymentGatewayName {
-		stripe, err := NewStripePaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
+		stripe, err := NewStripePaymentGateway(cfg.Configs[StripePaymentGatewayName].(map[string]interface{}))
 		if err != nil {
 			return nil, err
 		}
 		return stripe, nil
 	} else if name == BrainTreePaymentGatewayName {
-		bt, err := NewBrainTreePaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
+		bt, err := NewBrainTreePaymentGateway(cfg.Configs[BrainTreePaymentGatewayName].(map[string]interface{}))
 		if err != nil {
 			return nil, err
 		}
 		return bt, nil
 	} else if name == TwoCheckoutPaymentGatewayName {
-		tco, err := NewTwoCheckoutPaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
+		tco, err := NewTwoCheckoutPaymentGateway(cfg.Configs[TwoCheckoutPaymentGatewayName].(map[string]interface{}))
 		if err != nil {
 			return nil, err
 		}

@@ -56,6 +56,8 @@ type OrderDetailsViewExternal struct {
 	UserEmail               string                    `json:"user_email"`
 	UserPhone               *string                   `json:"user_phone,omitempty"`
 	UserPicture             *string                   `json:"user_picture,omitempty"`
+	ReviewRating            int                       `json:"review_rating"`
+	ReviewDescription       string                    `json:"review_description"`
 }
 
 func (odi *OrderDetailsViewExternal) TableName() string {

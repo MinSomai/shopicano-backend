@@ -18,13 +18,14 @@ func drop(cmd *cobra.Command, args []string) {
 	tx := app.DB().Begin()
 
 	var tables []core.Table
-	tables = append(tables, &models.CouponUsage{}, &models.CouponFor{}, &models.Coupon{})
+	tables = append(tables, &models.CouponUsage{}, &models.CouponFor{}, &models.Coupon{}, &models.Review{})
 	tables = append(tables, &models.ProductAttribute{}, &models.OrderLog{})
 	tables = append(tables, &models.OrderedItem{}, &models.Order{})
 	tables = append(tables, &models.CollectionOfProduct{}, &models.Product{}, &models.Category{}, &models.Collection{})
 	tables = append(tables, &models.ShippingMethod{}, &models.PaymentMethod{}, &models.Settings{})
 	tables = append(tables, &models.Staff{}, &models.StorePermission{}, &models.Store{})
 	tables = append(tables, &models.Address{}, &models.Session{}, &models.User{}, &models.UserPermission{})
+	tables = append(tables, &models.Location{})
 
 	for _, t := range tables {
 		if err := tx.DropTableIfExists(t).Error; err != nil {

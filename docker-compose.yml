@@ -23,6 +23,12 @@ services:
     volumes:
       - "./storage/minio/:/data/"
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+
   consul:
     image: consul
     ports:

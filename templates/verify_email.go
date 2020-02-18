@@ -5,7 +5,7 @@ import (
 	"html/template"
 )
 
-var resetPasswordConfirmationTemplate = `<!DOCTYPE html>
+var verifyEmailTemplate = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -13,7 +13,7 @@ var resetPasswordConfirmationTemplate = `<!DOCTYPE html>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/inter-ui@3.12.0/inter.min.css">
 
-    <title>{{ .platformName }} | Password Changed</title>
+    <title>{{ .platformName }} | Activate Account</title>
 
     <style type="text/css" media="screen">
     body { padding:0 !important; margin:0 auto !important; font-family: Inter; display:block !important; min-width:100% !important; width:100% !important; background: #f6f8fc;; -webkit-text-size-adjust:none }
@@ -28,7 +28,7 @@ var resetPasswordConfirmationTemplate = `<!DOCTYPE html>
         color: #5a637c;
         text-align: center;
     }
-    a{color: #3f71f4; word-break: break-all; text-align: left;}
+    a{color: #3f71f4; word-wrap: break-word;word-break: break-all; text-align: left; text-align-last: left;}
     h3{
         font-size: 24px;
         font-weight: 500;
@@ -83,7 +83,6 @@ var resetPasswordConfirmationTemplate = `<!DOCTYPE html>
         font-style: normal;
         line-height: 1.29;
         letter-spacing: normal;
-        text-align: center;
         color: #6b7694;
         text-align: center!important;
     }
@@ -96,17 +95,22 @@ var resetPasswordConfirmationTemplate = `<!DOCTYPE html>
         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0; padding-top: 138px; width: 100%; height: 100%;">
             <tr>
                 <td style="margin: 0; padding: 0; width: 100%; height: 100%;" align="center">
-                    <a href="http://www.designmamba.com" target="_blank"><img src="group-26@3x.png" width="165px" height="42px" alt=""></a>
+                    <a href="{{ .platformWebsite }}" target="_blank"><img src="" width="165px" height="42px" alt="{{ .platformName }}"></a>
                     <table width="600" border="0" cellspacing="0" cellpadding="0" style="margin-top: 38px; padding: 0;">
                         <tr>
                             <td class="container" style="width:600px; min-width:600px; width: 100%;" align="center">
-                                <img src="tick.png" width="74" height="74" alt="">
-                                <h3 class="my-28">Password Changed</h3>
+                                <img src="thick@3x.png" width="74" height="74" alt="">
+                                <h3 class="my-28">Activate Your Account</h3>
 
-                                <p>
-                                    Hi {{ .userName }}, Your password has been changed. If you didn't do it, please contact us immediately.
-                                </p>
-                             </td>
+                                <p>Hi {{ .userName }}, Click the button below to activate your account and start buying from {{ .platformName }}</p>
+
+                                <button class="btn" onclick="location.href='{{ .verificationUrl }}'">Activate Account</button>
+
+                                <p class="my-28">If you’re having trouble with the button 'Activate Account', 
+                                    copy and paste the URL below into your web browser.</p>
+
+                                <a href="{{ .verificationUrl }}">{{ .verificationUrl }}</a>
+                            </td>
                         </tr>
                     </table>
 
@@ -117,7 +121,7 @@ var resetPasswordConfirmationTemplate = `<!DOCTYPE html>
                                     © 2020 {{ .platformName }}. All rights reserved.
                                 </P>
                                 <p style="font-size: 14px;font-weight: normal;font-stretch: normal;font-style: normal;line-height: 1.29;letter-spacing: normal;color: #6b7694;text-align: center!important">
-                                    Powered by <a href="{{ .platformWebsite }}" target="_blank" style="text-decoration: none">{{ .platformName }}</a>
+                                    Powered by <a href="{{ .platformWebsite }}" style="text-decoration: none">{{ .platformName }}</a>
                                 </P>
                             </td>
                         </tr>
@@ -130,9 +134,9 @@ var resetPasswordConfirmationTemplate = `<!DOCTYPE html>
 </html>
 `
 
-func GenerateResetPasswordConfirmationEmailHTML(params map[string]interface{}) (string, error) {
+func GenerateActivateAccountEmailHTML(params map[string]interface{}) (string, error) {
 	var buf bytes.Buffer
-	t := template.Must(template.New("ResetPasswordConfirmationTemplate").Parse(resetPasswordConfirmationTemplate))
+	t := template.Must(template.New("ActivateAccountTemplate").Parse(verifyEmailTemplate))
 	if err := t.Execute(&buf, params); err != nil {
 		return "", err
 	}

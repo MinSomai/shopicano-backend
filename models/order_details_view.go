@@ -9,14 +9,14 @@ import (
 type OrderDetailsView struct {
 	ID                      string            `json:"id,omitempty"`
 	Hash                    string            `json:"hash"`
-	ShippingCharge          int               `json:"shipping_charge"`
-	PaymentProcessingFee    int               `json:"payment_processing_fee"`
-	SubTotal                int               `json:"sub_total"`
+	ShippingCharge          int64             `json:"shipping_charge"`
+	PaymentProcessingFee    int64             `json:"payment_processing_fee"`
+	SubTotal                int64             `json:"sub_total"`
 	PaymentGateway          string            `json:"payment_gateway"`
 	Nonce                   *string           `json:"nonce,omitempty"`          // Private
 	TransactionID           *string           `json:"transaction_id,omitempty"` //Private
-	GrandTotal              int               `json:"grand_total"`
-	DiscountedAmount        int               `json:"discounted_amount"`
+	GrandTotal              int64             `json:"grand_total"`
+	DiscountedAmount        int64             `json:"discounted_amount"`
 	CouponCode              string            `json:"coupon_code"`
 	Status                  OrderStatus       `json:"status"`
 	PaymentStatus           PaymentStatus     `json:"payment_status"`
@@ -60,6 +60,8 @@ type OrderDetailsView struct {
 	UserEmail               string            `json:"user_email"`
 	UserPhone               *string           `json:"user_phone,omitempty"`
 	UserPicture             *string           `json:"user_picture,omitempty"`
+	ReviewRating            int               `json:"review_rating"`
+	ReviewDescription       string            `json:"review_description"`
 }
 
 func (odv *OrderDetailsView) TableName() string {
@@ -79,7 +81,8 @@ func (odv *OrderDetailsView) CreateView(tx *gorm.DB) error {
 		" ba.phone AS billing_phone, s.id AS store_id, s.name AS store_name, s.address AS store_address, s.city AS store_city,"+
 		" s.country AS store_country, s.postcode AS store_postcode, s.email AS store_email, s.phone AS store_phone, s.status AS store_status,"+
 		" sm.id AS shipping_method_id, sm.name AS shipping_method_name, sm.approximate_delivery_time AS approximate_delivery_time,"+
-		" pm.id AS payment_method_id, pm.name AS payment_method_name, pm.is_offline_payment AS payment_method_is_offline"+
+		" pm.id AS payment_method_id, pm.name AS payment_method_name, pm.is_offline_payment AS payment_method_is_offline,"+
+		" rv.rating AS review_rating, rv.description AS review_description"+
 		" FROM orders AS o"+
 		" LEFT JOIN addresses AS sa ON o.shipping_address_id = sa.id"+
 		" LEFT JOIN addresses AS ba ON o.billing_address_id = ba.id"+
@@ -87,6 +90,7 @@ func (odv *OrderDetailsView) CreateView(tx *gorm.DB) error {
 		" LEFT JOIN users AS u ON o.user_id = u.id"+
 		" LEFT JOIN coupon_usages AS cu ON o.id = cu.order_id"+
 		" LEFT JOIN coupons AS cop ON cu.coupon_id = cop.id"+
+		" LEFT JOIN reviews AS rv ON o.id = rv.order_id"+
 		" LEFT JOIN shipping_methods AS sm ON o.shipping_method_id = sm.id"+
 		" LEFT JOIN payment_methods AS pm ON o.payment_method_id = pm.id;", odv.TableName())
 	if err := tx.Exec(sql).Error; err != nil {

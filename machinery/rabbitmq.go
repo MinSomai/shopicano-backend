@@ -45,6 +45,9 @@ func RegisterRabbitMQTasks() error {
 	if err := machineryServer.RegisterTask(tasks.SendPaymentConfirmationEmailTaskName, tasks.SendPaymentConfirmationEmailFn); err != nil {
 		return err
 	}
+	if err := machineryServer.RegisterTask(tasks.SendPaymentRevertedEmailTaskName, tasks.SendPaymentRevertedEmailFn); err != nil {
+		return err
+	}
 	if err := machineryServer.RegisterTask(tasks.SendResetPasswordEmailTaskName, tasks.SendResetPasswordEmailFn); err != nil {
 		return err
 	}

@@ -7,9 +7,7 @@ import (
 
 const (
 	StoreRegistered StoreStatus = "registered"
-	StoreOpen       StoreStatus = "open"
 	StoreActive     StoreStatus = "active"
-	StoreClosed     StoreStatus = "closed"
 	StoreSuspended  StoreStatus = "suspended"
 	StoreBanned     StoreStatus = "banned"
 )
@@ -17,21 +15,22 @@ const (
 type StoreStatus string
 
 type Store struct {
-	ID                       string      `json:"id" sql:"id" gorm:"primary_key"`
-	Name                     string      `json:"name" sql:"name" gorm:"unique;not null"`
-	Address                  string      `json:"address" sql:"address" gorm:"not null"`
-	City                     string      `json:"city" sql:"city" gorm:"not null"`
-	Country                  string      `json:"country" sql:"country" gorm:"not null"`
-	Postcode                 string      `json:"postcode" sql:"postcode" gorm:"not null"`
-	Email                    string      `json:"email" sql:"email" gorm:"unique;not null"`
-	Phone                    string      `json:"phone" sql:"phone" gorm:"unique;not null"`
-	Status                   StoreStatus `json:"status" sql:"status" gorm:"index"`
-	IsProductCreationEnabled bool        `json:"-" sql:"is_product_creation_enabled" gorm:"not null;index"`
-	IsOrderCreationEnabled   bool        `json:"is_order_creation_enabled" sql:"is_order_creation_enabled" gorm:"not null;index"`
-	IsAutoConfirmEnabled     bool        `json:"is_auto_confirm_enabled" sql:"is_auto_confirm_enabled" json:"not null;index"`
-	Description              string      `json:"description" sql:"description" gorm:"not null"`
-	CreatedAt                time.Time   `json:"created_at" sql:"created_at" gorm:"index;not null"`
-	UpdatedAt                time.Time   `json:"updated_at" sql:"updated_at" gorm:"not null"`
+	ID                       string      `json:"id" gorm:"column:id;primary_key"`
+	Name                     string      `json:"name" gorm:"column:name;unique;not null"`
+	Address                  string      `json:"address" gorm:"column:address;not null"`
+	City                     string      `json:"city" gorm:"column:city;not null"`
+	Country                  string      `json:"country" gorm:"column:country;not null"`
+	Postcode                 string      `json:"postcode" gorm:"column:postcode;not null"`
+	Email                    string      `json:"email" gorm:"column:email;unique;not null"`
+	Phone                    string      `json:"phone" gorm:"column:phone;unique;not null"`
+	Status                   StoreStatus `json:"status" gorm:"column:status;index"`
+	CommissionRate           int64       `json:"commission_rate" gorm:"column:commission_rate;not null;default:0"`
+	IsProductCreationEnabled bool        `json:"is_product_creation_enabled" gorm:"column:is_product_creation_enabled;not null;index"`
+	IsOrderCreationEnabled   bool        `json:"is_order_creation_enabled" gorm:"column:is_order_creation_enabled;not null;index"`
+	IsAutoConfirmEnabled     bool        `json:"is_auto_confirm_enabled" json:"column:is_auto_confirm_enabled;not null;index"`
+	Description              string      `json:"description" gorm:"column:description;not null"`
+	CreatedAt                time.Time   `json:"created_at" gorm:"column:created_at;index;not null"`
+	UpdatedAt                time.Time   `json:"updated_at" gorm:"column:updated_at;not null"`
 }
 
 func (s *Store) TableName() string {
@@ -43,10 +42,10 @@ func (s *Store) ForeignKeys() []string {
 }
 
 type Staff struct {
-	UserID       string `json:"user_id" sql:"user_id" gorm:"primary_key"`
-	StoreID      string `json:"store_id" sql:"store_id" gorm:"primary_key"`
-	PermissionID string `json:"permission_id" sql:"permission_id" gorm:"primary_key"`
-	IsCreator    bool   `json:"is_creator" sql:"is_creator" gorm:"index"`
+	UserID       string `json:"user_id" gorm:"column:user_id;primary_key"`
+	StoreID      string `json:"store_id" gorm:"column:store_id;primary_key"`
+	PermissionID string `json:"permission_id" gorm:"column:permission_id;primary_key"`
+	IsCreator    bool   `json:"is_creator" gorm:"column:is_creator;index"`
 }
 
 func (sf *Staff) TableName() string {
@@ -66,8 +65,8 @@ func (sf *Staff) ForeignKeys() []string {
 }
 
 type StorePermission struct {
-	ID         string     `json:"id" sql:"id" gorm:"primary_key"`
-	Permission Permission `json:"permission" sql:"permission" gorm:"index;not null"`
+	ID         string     `json:"id" gorm:"column:id;primary_key"`
+	Permission Permission `json:"permission" gorm:"column:permission;index;not null"`
 }
 
 func (up *StorePermission) TableName() string {

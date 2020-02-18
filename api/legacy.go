@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
+	"github.com/shopicano/shopicano-backend/config"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
@@ -350,9 +351,7 @@ func emailVerification(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	resp.Title = "Email verification succeed"
-	resp.Status = http.StatusOK
-	return resp.ServerJSON(ctx)
+	return ctx.Redirect(http.StatusPermanentRedirect, config.App().FrontStoreUrl)
 }
 
 func resetPasswordRequest(ctx echo.Context) error {

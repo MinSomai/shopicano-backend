@@ -1,10 +1,13 @@
 package payment_gateways
 
 import (
+	"errors"
 	"fmt"
+	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/checkout/session"
+	"github.com/stripe/stripe-go/client"
 )
 
 const (
@@ -16,6 +19,7 @@ type stripePaymentGateway struct {
 	SuccessCallback string
 	FailureCallback string
 	PublicKey       string
+	client          *client.API
 }
 
 func NewStripePaymentGateway(cfg map[string]interface{}) (*stripePaymentGateway, error) {
@@ -24,6 +28,7 @@ func NewStripePaymentGateway(cfg map[string]interface{}) (*stripePaymentGateway,
 		SuccessCallback: cfg["success_callback"].(string),
 		FailureCallback: cfg["failure_callback"].(string),
 		PublicKey:       cfg["public_key"].(string),
+		client:          client.New(cfg["secret_key"].(string), nil),
 	}, nil
 }
 
@@ -77,4 +82,83 @@ func (spg *stripePaymentGateway) GetConfig() (map[string]interface{}, error) {
 	}
 
 	return cfg, nil
+}
+
+func (spg *stripePaymentGateway) ValidateTransaction(orderDetails *models.OrderDetailsView) error {
+	if orderDetails.TransactionID == nil {
+		return errors.New("invalid transactionID")
+	}
+
+	result, err := spg.client.PaymentIntents.Get(*orderDetails.TransactionID, &stripe.PaymentIntentParams{})
+	if err != nil {
+		return err
+	}
+
+	if result.Status != stripe.PaymentIntentStatusSucceeded {
+		return errors.New("payment intent status isn't succeed")
+	}
+
+	capturedAmount := int64(0)
+
+	for _, c := range result.Charges.Data {
+		_, err := spg.client.Charges.Capture(c.ID, &stripe.CaptureParams{})
+		formattedErr := err.(*stripe.Error)
+		if err != nil && formattedErr.Code != stripe.ErrorCodeChargeAlreadyCaptured {
+			log.Log().Infoln(formattedErr)
+			return err
+		}
+
+		capturedAmount += c.Amount
+	}
+
+	capturedAmount /= 100
+
+	log.Log().Infoln("Captured : ", capturedAmount)
+	log.Log().Infoln("Grand Total : ", orderDetails.GrandTotal)
+
+	if capturedAmount != orderDetails.GrandTotal {
+		return errors.New("paid amount is invalid")
+	}
+	return nil
+}
+
+func (spg *stripePaymentGateway) VoidTransaction(orderDetails *models.OrderDetailsView, params map[string]interface{}) error {
+	if orderDetails.TransactionID == nil {
+		return errors.New("invalid transactionID")
+	}
+
+	result, err := spg.client.PaymentIntents.Get(*orderDetails.TransactionID, &stripe.PaymentIntentParams{})
+	if err != nil {
+		return err
+	}
+
+	if result.Status != stripe.PaymentIntentStatusSucceeded {
+		return errors.New("payment isn't paid yet")
+	}
+
+	for _, c := range result.Charges.Data {
+		typ := params["type"].(int)
+		reason := stripe.RefundReasonRequestedByCustomer
+
+		switch typ {
+		case 1:
+			reason = stripe.RefundReasonDuplicate
+		case 2:
+			reason = stripe.RefundReasonFraudulent
+		}
+
+		refundAmount := (orderDetails.GrandTotal - orderDetails.PaymentProcessingFee) * 100
+		_, err := spg.client.Refunds.New(&stripe.RefundParams{
+			Amount:               stripe.Int64(refundAmount),
+			Reason:               stripe.String(string(reason)),
+			Charge:               stripe.String(c.ID),
+			ReverseTransfer:      stripe.Bool(false),
+			RefundApplicationFee: stripe.Bool(false),
+		})
+		if err != nil {
+			return errors.New("failed to issue refund")
+		}
+	}
+
+	return nil
 }

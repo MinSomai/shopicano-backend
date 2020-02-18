@@ -2,6 +2,7 @@ package payment_gateways
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/braintree-go/braintree-go"
 	"github.com/shopicano/shopicano-backend/log"
@@ -100,4 +101,45 @@ func (bt *brainTreePaymentGateway) GetConfig() (map[string]interface{}, error) {
 	}
 
 	return cfg, nil
+}
+
+func (bt *brainTreePaymentGateway) ValidateTransaction(orderDetails *models.OrderDetailsView) error {
+	if orderDetails.TransactionID == nil {
+		return errors.New("invalid transactionID")
+	}
+
+	transaction, err := bt.client.Transaction().Find(context.Background(), *orderDetails.TransactionID)
+	if err != nil {
+		log.Log().Errorln(err)
+		return err
+	}
+
+	if transaction.Status != braintree.TransactionStatusSettled {
+		return errors.New("transaction isn't settled yet")
+	}
+
+	log.Log().Infoln("Grand Total : ", orderDetails.GrandTotal)
+	log.Log().Infoln("Unscaled : ", transaction.Amount.Unscaled)
+	log.Log().Infoln("Scaled : ", transaction.Amount.Scale)
+
+	if transaction.Amount.Unscaled != orderDetails.GrandTotal {
+		return errors.New("invalid transaction amount")
+	}
+
+	return nil
+}
+
+func (bt *brainTreePaymentGateway) VoidTransaction(orderDetails *models.OrderDetailsView, params map[string]interface{}) error {
+	if orderDetails.TransactionID == nil {
+		return errors.New("invalid transactionID")
+	}
+
+	refundedAmount := orderDetails.GrandTotal - orderDetails.PaymentProcessingFee
+
+	if _, err := bt.client.Transaction().
+		Refund(context.Background(), *orderDetails.TransactionID, braintree.NewDecimal(refundedAmount, 0)); err != nil {
+		log.Log().Errorln(err)
+		return err
+	}
+	return nil
 }

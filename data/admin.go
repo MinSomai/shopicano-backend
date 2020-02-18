@@ -1,19 +1,24 @@
 package data
 
-import "github.com/shopicano/shopicano-backend/models"
+import (
+	"github.com/jinzhu/gorm"
+	"github.com/shopicano/shopicano-backend/models"
+)
 
 type AdminRepository interface {
-	CreateShippingMethod(sm *models.ShippingMethod) error
-	UpdateShippingMethod(sm *models.ShippingMethod) error
-	ListShippingMethods(from, limit int) ([]models.ShippingMethod, error)
-	ListActiveShippingMethods(from, limit int) ([]models.ShippingMethod, error)
-	DeleteShippingMethod(ID string) error
-	GetShippingMethod(ID string) (*models.ShippingMethod, error)
+	CreateShippingMethod(db *gorm.DB, sm *models.ShippingMethod) error
+	UpdateShippingMethod(db *gorm.DB, sm *models.ShippingMethod) error
+	ListShippingMethods(db *gorm.DB, from, limit int) ([]models.ShippingMethod, error)
+	ListActiveShippingMethods(db *gorm.DB, from, limit int) ([]models.ShippingMethod, error)
+	DeleteShippingMethod(db *gorm.DB, ID string) error
+	GetShippingMethod(db *gorm.DB, ID string) (*models.ShippingMethod, error)
 
-	CreatePaymentMethod(pm *models.PaymentMethod) error
-	UpdatePaymentMethod(pm *models.PaymentMethod) error
-	ListPaymentMethods(from, limit int) ([]models.PaymentMethod, error)
-	ListActivePaymentMethods(from, limit int) ([]models.PaymentMethod, error)
-	DeletePaymentMethod(ID string) error
-	GetPaymentMethod(ID string) (*models.PaymentMethod, error)
+	CreatePaymentMethod(db *gorm.DB, pm *models.PaymentMethod) error
+	UpdatePaymentMethod(db *gorm.DB, pm *models.PaymentMethod) error
+	ListPaymentMethods(db *gorm.DB, from, limit int) ([]models.PaymentMethod, error)
+	ListActivePaymentMethods(db *gorm.DB, from, limit int) ([]models.PaymentMethod, error)
+	DeletePaymentMethod(db *gorm.DB, ID string) error
+	GetPaymentMethod(db *gorm.DB, ID string) (*models.PaymentMethod, error)
+
+	GetSettings(db *gorm.DB) (*models.SettingsDetails, error)
 }

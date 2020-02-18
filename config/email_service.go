@@ -10,7 +10,6 @@ type EmailServiceCfg struct {
 	SMTPUsername     string
 	SMTPPassword     string
 	FromEmailAddress string
-	VerificationUrl  string
 }
 
 var emailServiceCfg EmailServiceCfg
@@ -25,7 +24,6 @@ func LoadEmailService() {
 		SMTPUsername:     viper.GetString("email_service.smtp_username"),
 		SMTPPassword:     viper.GetString("email_service.smtp_password"),
 		FromEmailAddress: viper.GetString("email_service.from_email_address"),
-		VerificationUrl:  viper.GetString("email_service.verification_url"),
 	}
 }
 

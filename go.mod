@@ -28,6 +28,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.9.0 // indirect
 	github.com/huandu/xstrings v1.2.1 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
+	github.com/jaswdr/faker v1.0.2
 	github.com/jaytaylor/html2text v0.0.0-20190408195923-01ec452cbe43 // indirect
 	github.com/jinzhu/gorm v1.9.11
 	github.com/jonboulle/clockwork v0.1.0 // indirect
