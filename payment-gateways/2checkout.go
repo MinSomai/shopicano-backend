@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	url2 "net/url"
+	"strconv"
 	"strings"
 )
 
@@ -89,9 +90,9 @@ func (tco *twoCheckoutPaymentGateway) GetConfig() (map[string]interface{}, error
 }
 
 type resInvoice struct {
-	Status        string  `json:"status"`
-	USDTotal      float64 `json:"usd_total"`
-	VendorOrderID string  `json:"vendor_order_id"`
+	Status        string `json:"status"`
+	USDTotal      string `json:"usd_total"`
+	VendorOrderID string `json:"vendor_order_id"`
 }
 
 type resSale struct {
@@ -141,7 +142,8 @@ func (tco *twoCheckoutPaymentGateway) ValidateTransaction(orderDetails *models.O
 			return errors.New("invalid transaction status")
 		}
 
-		capturedAmount += in.USDTotal
+		am, _ := strconv.ParseFloat(in.USDTotal, 64)
+		capturedAmount += am
 		orderID = in.VendorOrderID
 	}
 
