@@ -139,8 +139,9 @@ func (spg *stripePaymentGateway) VoidTransaction(orderDetails *models.OrderDetai
 			reason = stripe.RefundReasonFraudulent
 		}
 
+		refundAmount := (orderDetails.GrandTotal - orderDetails.PaymentProcessingFee) * 100
 		_, err := spg.client.Refunds.New(&stripe.RefundParams{
-			Amount:               stripe.Int64(orderDetails.GrandTotal - orderDetails.PaymentProcessingFee),
+			Amount:               stripe.Int64(refundAmount),
 			Reason:               stripe.String(string(reason)),
 			Charge:               stripe.String(c.ID),
 			ReverseTransfer:      stripe.Bool(false),
