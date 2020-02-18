@@ -36,10 +36,26 @@ func payOrder(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	if m.Status == models.OrderCancelled {
+		resp.Title = "Order already cancelled"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.OrderAlreadyCancelled
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	if m.PaymentStatus == models.PaymentCompleted {
 		resp.Title = "Order already paid"
 		resp.Status = http.StatusConflict
 		resp.Code = errors.PaymentAlreadyProcessed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if m.PaymentStatus == models.PaymentReverted {
+		resp.Title = "Order payment already reverted"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.OrderPaymentAlreadyReverted
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
@@ -65,6 +81,8 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 
 	body := reqBrainTreeNonce{}
 	if err := ctx.Bind(&body); err != nil {
+		db.Rollback()
+
 		resp.Title = "Invalid data"
 		resp.Status = http.StatusUnprocessableEntity
 		resp.Code = errors.OrderPaymentDataInvalid
@@ -76,6 +94,8 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 
 	pg, err := payment_gateways.GetPaymentGatewayByName(o.PaymentGateway)
 	if err != nil {
+		db.Rollback()
+
 		resp.Title = "Invalid payment gateway"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.PaymentProcessingFailed
@@ -85,6 +105,8 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 
 	res, err := pg.Pay(o)
 	if err != nil {
+		db.Rollback()
+
 		resp.Title = "Failed to process payment"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.PaymentProcessingFailed
@@ -93,7 +115,15 @@ func processPayOrderForBrainTree(ctx echo.Context, o *models.OrderDetailsView) e
 	}
 
 	o.TransactionID = &res.Result
-	o.PaymentStatus = models.PaymentCompleted
+
+	if err := pg.ValidateTransaction(o); err != nil {
+		db.Rollback()
+
+		log.Log().Errorln(err)
+		o.PaymentStatus = models.PaymentFailed
+	} else {
+		o.PaymentStatus = models.PaymentCompleted
+	}
 
 	if err := or.UpdatePaymentInfo(db, o); err != nil {
 		db.Rollback()
@@ -167,6 +197,8 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 	}
 
 	if err := pg.ValidateTransaction(o); err != nil {
+		db.Rollback()
+
 		log.Log().Errorln(err)
 		o.PaymentStatus = models.PaymentFailed
 	} else {
@@ -450,6 +482,14 @@ func revertOrderPayment(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	if m.PaymentStatus == models.PaymentReverted {
+		resp.Title = "Order payment already reverted"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.OrderPaymentAlreadyReverted
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	if m.PaymentStatus != models.PaymentCompleted {
 		resp.Title = "Order not paid yet"
 		resp.Status = http.StatusBadRequest
@@ -460,7 +500,11 @@ func revertOrderPayment(ctx echo.Context) error {
 
 	switch m.PaymentGateway {
 	case payment_gateways.StripePaymentGatewayName:
-		return revertOrderPaymentForStripe(ctx, m)
+		return revertOrderPaymentForAny(ctx, m)
+	case payment_gateways.BrainTreePaymentGatewayName:
+		return revertOrderPaymentForAny(ctx, m)
+	case payment_gateways.TwoCheckoutPaymentGatewayName:
+		return revertOrderPaymentForAny(ctx, m)
 	}
 	return serveInvalidPaymentRequest(ctx)
 }
@@ -470,7 +514,7 @@ type reqRevertPayment struct {
 	Type   int    `json:"type"`
 }
 
-func revertOrderPaymentForStripe(ctx echo.Context, details *models.OrderDetailsView) error {
+func revertOrderPaymentForAny(ctx echo.Context, details *models.OrderDetailsView) error {
 	resp := core.Response{}
 
 	body := reqRevertPayment{}

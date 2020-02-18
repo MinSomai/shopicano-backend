@@ -11,6 +11,8 @@ const (
 	AllProductsMustBeFromSameStore                ErrorCode = "400007"
 	InvalidCoupon                                 ErrorCode = "400008"
 	OrderNotPaidYet                               ErrorCode = "400009"
+	OrderPaymentAlreadyReverted                   ErrorCode = "400010"
+	OrderAlreadyCancelled                         ErrorCode = "400011"
 	StoreCreationDataInvalid                      ErrorCode = "422001"
 	UserLoginDataInvalid                          ErrorCode = "422002"
 	UserSignUpDataInvalid                         ErrorCode = "422003"
