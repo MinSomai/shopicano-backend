@@ -29,7 +29,11 @@ func EchoInfluxMonitoring(cfg InfluxConfig) echo.MiddlewareFunc {
 			size := res.Size
 
 			label := req.Method + " "
-			label += c.Path()
+			if c.Path() != "" {
+				label += c.Path()
+			} else {
+				label += req.URL.Path
+			}
 
 			first := false
 			for k, v := range req.URL.Query() {
