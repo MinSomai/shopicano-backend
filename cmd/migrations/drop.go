@@ -25,7 +25,7 @@ func drop(cmd *cobra.Command, args []string) {
 	tables = append(tables, &models.ShippingMethod{}, &models.PaymentMethod{}, &models.Settings{})
 	tables = append(tables, &models.Staff{}, &models.StorePermission{}, &models.Store{})
 	tables = append(tables, &models.Address{}, &models.Session{}, &models.User{}, &models.UserPermission{})
-	tables = append(tables, &models.Location{})
+	tables = append(tables, &models.Location{}, &models.Log{})
 
 	for _, t := range tables {
 		if err := tx.DropTableIfExists(t).Error; err != nil {

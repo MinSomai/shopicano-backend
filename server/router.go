@@ -11,9 +11,11 @@ var router = echo.New()
 
 // GetRouter returns the api router
 func GetRouter() http.Handler {
-	router.Use(middleware.Logger())
-	//router.Use(middleware.Recover())
 	router.Pre(middleware.AddTrailingSlash())
+	router.Use(middleware.Logger())
+	router.Use(middleware.Recover())
+	router.Use(EchoInfluxMonitoring(InfluxConfig{}))
+
 	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{"*"},
