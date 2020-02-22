@@ -28,6 +28,7 @@ func RegisterStoreRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.Use(middlewares.HasStore())
 		g.Use(middlewares.IsStoreManager())
 		g.GET("/", getStoreForOwner)
+		g.PATCH("/", updateStore)
 	}(*storesPublicPath)
 
 	func(g echo.Group) {
@@ -512,6 +513,104 @@ func updateStoreAsPlatformOwner(ctx echo.Context) error {
 	}
 
 	if err := su.UpdateStoreStatus(db, store); err != nil {
+		resp.Title = "Failed to update store"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = store
+	return resp.ServerJSON(ctx)
+}
+
+func updateStore(ctx echo.Context) error {
+	storeID := utils.GetStoreID(ctx)
+
+	body, err := validators.ValidateUpdateStore(ctx)
+
+	resp := core.Response{}
+
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.StoreCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+
+	su := data.NewStoreRepository()
+	store, err := su.FindStoreByID(db, storeID)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Store not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.StoreNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if body.Name != nil {
+		store.Name = *body.Name
+	}
+	if body.Address != nil {
+		store.Address = *body.Address
+	}
+	if body.City != nil {
+		store.City = *body.City
+	}
+	if body.Country != nil {
+		store.Country = *body.Country
+	}
+	if body.Postcode != nil {
+		store.Postcode = *body.Postcode
+	}
+	if body.Phone != nil {
+		store.Phone = *body.Phone
+	}
+	if body.Email != nil {
+		store.Email = *body.Email
+	}
+	if body.IsProductCreationEnabled != nil {
+		store.IsProductCreationEnabled = *body.IsProductCreationEnabled
+	}
+	if body.IsOrderCreationEnabled != nil {
+		store.IsOrderCreationEnabled = *body.IsOrderCreationEnabled
+	}
+	if body.IsAutoConfirmEnabled != nil {
+		store.IsAutoConfirmEnabled = *body.IsAutoConfirmEnabled
+	}
+	if body.Description != nil {
+		store.Description = *body.Description
+	}
+	if body.LogoImage != nil {
+		store.LogoImage = *body.LogoImage
+	}
+	if body.CoverImage != nil {
+		store.CoverImage = *body.CoverImage
+	}
+
+	if err := su.UpdateStore(db, store); err != nil {
 		resp.Title = "Failed to update store"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed

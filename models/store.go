@@ -33,6 +33,8 @@ type Store struct {
 	Email                    string      `json:"email" gorm:"column:email;unique;not null"`
 	Phone                    string      `json:"phone" gorm:"column:phone;unique;not null"`
 	Status                   StoreStatus `json:"status" gorm:"column:status;index"`
+	LogoImage                string      `json:"logo_image" gorm:"column:logo_image"`
+	CoverImage               string      `json:"cover_image" gorm:"column:cover_image"`
 	CommissionRate           int64       `json:"commission_rate" gorm:"column:commission_rate;not null;default:0"`
 	IsProductCreationEnabled bool        `json:"is_product_creation_enabled" gorm:"column:is_product_creation_enabled;not null;index"`
 	IsOrderCreationEnabled   bool        `json:"is_order_creation_enabled" gorm:"column:is_order_creation_enabled;not null;index"`

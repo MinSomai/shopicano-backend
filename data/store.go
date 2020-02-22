@@ -18,4 +18,5 @@ type StoreRepository interface {
 	List(db *gorm.DB, from, limit int) ([]models.Store, error)
 	Search(db *gorm.DB, query string, from, limit int) ([]models.Store, error)
 	UpdateStoreStatus(db *gorm.DB, s *models.Store) error
+	UpdateStore(db *gorm.DB, s *models.Store) error
 }

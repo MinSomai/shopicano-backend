@@ -56,6 +56,43 @@ func ValidateCreateStore(ctx echo.Context) (*models.Store, error) {
 	return nil, &ve
 }
 
+type reqStoreUpdate struct {
+	Name                     *string `json:"name"`
+	Address                  *string `json:"address"`
+	City                     *string `json:"city"`
+	Country                  *string `json:"country"`
+	Postcode                 *string `json:"postcode"`
+	Email                    *string `json:"email"`
+	Phone                    *string `json:"phone"`
+	Description              *string `json:"description"`
+	LogoImage                *string `json:"logo_image"`
+	CoverImage               *string `json:"cover_image"`
+	IsProductCreationEnabled *bool   `json:"is_product_creation_enabled"`
+	IsOrderCreationEnabled   *bool   `json:"is_order_creation_enabled"`
+	IsAutoConfirmEnabled     *bool   `json:"is_auto_confirm_enabled"`
+}
+
+func ValidateUpdateStore(ctx echo.Context) (*reqStoreUpdate, error) {
+	pld := reqStoreUpdate{}
+
+	if err := ctx.Bind(&pld); err != nil {
+		return nil, err
+	}
+
+	ok, err := govalidator.ValidateStruct(&pld)
+	if ok {
+		return &pld, nil
+	}
+
+	ve := errors.ValidationError{}
+
+	for k, v := range govalidator.ErrorsByField(err) {
+		ve.Add(k, v)
+	}
+
+	return nil, &ve
+}
+
 func ValidateCreateStoreStaff(ctx echo.Context) (*string, *string, error) {
 	pld := struct {
 		Email        string `json:"email" valid:"required,email"`
