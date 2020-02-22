@@ -32,10 +32,12 @@ func RegisterProductRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 
 	func(g echo.Group) {
 		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
 		g.Use(middlewares.IsStoreManager())
 		g.POST("/", createProduct)
 		g.PATCH("/:product_id/", updateProduct)
 		g.DELETE("/:product_id/", deleteProduct)
+		g.GET("/:product_id/", getProductAsStoreOwner)
 		g.PUT("/:product_id/attributes/", addProductAttribute)
 		g.DELETE("/:product_id/attributes/:attribute_id/", deleteProductAttribute)
 		g.GET("/:product_id/download/", downloadProduct)
@@ -245,12 +247,41 @@ func getProduct(ctx echo.Context) error {
 	var p interface{}
 	var err error
 
-	if utils.IsStoreStaff(ctx) {
-		p, err = pu.GetAsStoreStuff(db, ctx.Get(utils.StoreID).(string), productID)
-	} else {
-		p, err = pu.GetDetails(db, productID)
+	p, err = pu.GetDetails(db, productID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Product not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.ProductNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
 	}
 
+	resp.Status = http.StatusOK
+	resp.Data = p
+	return resp.ServerJSON(ctx)
+}
+
+func getProductAsStoreOwner(ctx echo.Context) error {
+	productID := ctx.Param("product_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+
+	pu := data.NewProductRepository()
+
+	var p interface{}
+	var err error
+
+	p, err = pu.GetAsStoreStuff(db, ctx.Get(utils.StoreID).(string), productID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Product not found"

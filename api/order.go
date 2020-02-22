@@ -8,6 +8,7 @@ import (
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/log"
+	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
 	"github.com/shopicano/shopicano-backend/queue"
@@ -24,28 +25,34 @@ func RegisterOrderRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	ordersPublicPath := publicEndpoints.Group("/orders")
 	ordersPlatformPath := platformEndpoints.Group("/orders")
 
-	ordersPublicPath.POST("/:order_id/pay/", payOrder)
-	ordersPublicPath.GET("/:order_id/pay/", payOrder)
+	func(g echo.Group) {
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
+		g.GET("/", listOrdersAsStoreOwner)
+		g.GET("/:order_id/", getOrderAsStoreOwner)
+	}(*ordersPlatformPath)
 
 	func(g echo.Group) {
-		//g.Use(middlewares.MustBeUserOrStoreStaffAndStoreActive)
+		g.Use(middlewares.JWTAuth())
+		g.POST("/", createOrder)
 		g.GET("/", listOrders)
 		g.GET("/:order_id/", getOrder)
-	}(*ordersPlatformPath)
-
-	func(g echo.Group) {
-		g.POST("/", createOrder)
 		g.POST("/:order_id/nonce/", generatePayNonce)
 		g.POST("/:order_id/review/", createReview)
-	}(*ordersPlatformPath)
-
-	func(g echo.Group) {
 		g.GET("/:order_id/products/:product_id/download/", downloadProductAsUser)
 		g.GET("/:order_id/nonce/", generatePayNonce)
 	}(*ordersPublicPath)
 
 	func(g echo.Group) {
-		//g.Use(middlewares.IsStoreAdmin)
+		g.POST("/:order_id/pay/", payOrder)
+		g.GET("/:order_id/pay/", payOrder)
+	}(*ordersPublicPath)
+
+	func(g echo.Group) {
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreAdmin())
 		g.POST("/:order_id/revert-payment/", revertOrderPayment)
 	}(*ordersPlatformPath)
 }
@@ -558,13 +565,32 @@ func getOrder(ctx echo.Context) error {
 	var err error
 
 	ou := data.NewOrderRepository()
-
-	if utils.IsStoreStaff(ctx) {
-		r, err = ou.GetDetailsAsStoreStuff(db, utils.GetStoreID(ctx), orderID)
-	} else {
-		r, err = ou.GetDetailsAsUser(db, utils.GetUserID(ctx), orderID)
+	r, err = ou.GetDetailsAsUser(db, utils.GetUserID(ctx), orderID)
+	if err != nil {
+		resp.Title = "Order not found"
+		resp.Status = http.StatusNotFound
+		resp.Code = errors.OrderNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
 	}
 
+	resp.Status = http.StatusOK
+	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func getOrderAsStoreOwner(ctx echo.Context) error {
+	orderID := ctx.Param("order_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+
+	var r interface{}
+	var err error
+
+	ou := data.NewOrderRepository()
+	r, err = ou.GetDetailsAsStoreStuff(db, utils.GetStoreID(ctx), orderID)
 	if err != nil {
 		resp.Title = "Order not found"
 		resp.Status = http.StatusNotFound
@@ -597,9 +623,46 @@ func listOrders(ctx echo.Context) error {
 	var r interface{}
 
 	if query == "" {
-		r, err = fetchOrders(ctx, page, limit, !utils.IsStoreStaff(ctx))
+		r, err = fetchOrders(ctx, page, limit, true)
 	} else {
-		r, err = searchOrders(ctx, query, page, limit, !utils.IsStoreStaff(ctx))
+		r, err = searchOrders(ctx, query, page, limit, true)
+	}
+
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func listOrdersAsStoreOwner(ctx echo.Context) error {
+	pageQ := ctx.Request().URL.Query().Get("page")
+	limitQ := ctx.Request().URL.Query().Get("limit")
+	query := ctx.Request().URL.Query().Get("query")
+
+	page, err := strconv.ParseInt(pageQ, 10, 64)
+	if err != nil {
+		page = 1
+	}
+	limit, err := strconv.ParseInt(limitQ, 10, 64)
+	if err != nil {
+		limit = 10
+	}
+
+	resp := core.Response{}
+
+	var r interface{}
+
+	if query == "" {
+		r, err = fetchOrders(ctx, page, limit, false)
+	} else {
+		r, err = searchOrders(ctx, query, page, limit, false)
 	}
 
 	if err != nil {

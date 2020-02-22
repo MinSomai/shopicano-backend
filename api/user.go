@@ -16,12 +16,14 @@ import (
 )
 
 func RegisterUserRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	usersPublicPath := publicEndpoints.Group("/users")
 	usersPlatformPath := platformEndpoints.Group("/users")
 
 	func(g echo.Group) {
+		g.Use(middlewares.JWTAuth())
 		g.PUT("/", update)
 		g.GET("/", get)
-	}(*usersPlatformPath)
+	}(*usersPublicPath)
 
 	func(g echo.Group) {
 		g.Use(middlewares.IsPlatformManager)

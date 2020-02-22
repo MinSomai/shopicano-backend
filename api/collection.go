@@ -6,6 +6,7 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
+	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
@@ -19,17 +20,18 @@ func RegisterCollectionRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	collectionsPlatformPath := platformEndpoints.Group("/collections")
 
 	func(g echo.Group) {
-		//g.Use(middlewares.MightBeStoreStaffAndStoreActive)
 		g.GET("/", listCollections)
+		g.GET("/:collection_id/", getCollection)
 	}(*collectionsPublicPath)
 
 	func(g echo.Group) {
-		// Private endpoints only
-		//g.Use(middlewares.IsStoreStaffAndStoreActive)
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
 		g.POST("/", createCollection)
 		g.DELETE("/:collection_id/", deleteCollection)
 		g.PATCH("/:collection_id/", updateCollection)
-		g.GET("/:collection_id/", getCollection)
+		g.GET("/:collection_id/", getCollectionAsStoreOwner)
 		g.PATCH("/:collection_id/products/", addCollectionProducts)
 		g.DELETE("/:collection_id/products/", removeCollectionProducts)
 	}(*collectionsPlatformPath)
@@ -186,7 +188,7 @@ func updateCollection(ctx echo.Context) error {
 	db := app.DB()
 	cu := data.NewCollectionRepository()
 
-	c, err := cu.Get(db, storeID, collectionID)
+	c, err := cu.GetAsStoreOwner(db, storeID, collectionID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Collection not found"
@@ -233,6 +235,36 @@ func updateCollection(ctx echo.Context) error {
 
 func getCollection(ctx echo.Context) error {
 	collectionID := ctx.Param("collection_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+	cu := data.NewCollectionRepository()
+
+	c, err := cu.Get(db, collectionID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Collection not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.CollectionNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = c
+	return resp.ServerJSON(ctx)
+}
+
+func getCollectionAsStoreOwner(ctx echo.Context) error {
+	collectionID := ctx.Param("collection_id")
 	storeID := ctx.Get(utils.StoreID).(string)
 
 	resp := core.Response{}
@@ -240,7 +272,7 @@ func getCollection(ctx echo.Context) error {
 	db := app.DB()
 	cu := data.NewCollectionRepository()
 
-	c, err := cu.Get(db, storeID, collectionID)
+	c, err := cu.GetAsStoreOwner(db, storeID, collectionID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Collection not found"
@@ -283,7 +315,7 @@ func addCollectionProducts(ctx echo.Context) error {
 	db := app.DB().Begin()
 	cu := data.NewCollectionRepository()
 
-	c, err := cu.Get(db, storeID, collectionID)
+	c, err := cu.GetAsStoreOwner(db, storeID, collectionID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Collection not found"
@@ -357,7 +389,7 @@ func removeCollectionProducts(ctx echo.Context) error {
 	db := app.DB().Begin()
 	cu := data.NewCollectionRepository()
 
-	c, err := cu.Get(db, storeID, collectionID)
+	c, err := cu.GetAsStoreOwner(db, storeID, collectionID)
 	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError

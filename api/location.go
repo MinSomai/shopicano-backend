@@ -21,7 +21,6 @@ func RegisterLocationRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	locationsPlatformPath := platformEndpoints.Group("/locations")
 
 	func(g echo.Group) {
-		//g.Use(middlewares.MustBeUserOrStoreStaffAndStoreActive)
 		g.GET("/", listLocations)
 	}(*locationsPublicPath)
 

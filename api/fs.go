@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/errors"
+	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/services"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/values"
@@ -21,6 +22,9 @@ func RegisterFSRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	fsPublicPath.GET("/:bucket_name/:file_name/", serveAsStream)
 
 	func(g echo.Group) {
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
 		g.POST("/:bucket_name/", upload)
 	}(*fsPlatformPath)
 }

@@ -25,6 +25,7 @@ func RegisterCategoryRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 
 	func(g echo.Group) {
 		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
 		g.Use(middlewares.IsStoreManager())
 		g.POST("/", createCategory)
 		g.DELETE("/:category_id/", deleteCategory)

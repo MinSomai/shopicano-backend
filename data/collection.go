@@ -12,7 +12,8 @@ type CollectionRepository interface {
 	ListAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]models.Collection, error)
 	SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.Collection, error)
 	Delete(db *gorm.DB, storeID, collectionID string) error
-	Get(db *gorm.DB, storeID, collectionID string) (*models.Collection, error)
+	Get(db *gorm.DB, collectionID string) (*models.Collection, error)
+	GetAsStoreOwner(db *gorm.DB, storeID, collectionID string) (*models.Collection, error)
 	Update(db *gorm.DB, c *models.Collection) error
 	AddProducts(db *gorm.DB, cop *models.CollectionOfProduct) error
 	RemoveProducts(db *gorm.DB, cop *models.CollectionOfProduct) error

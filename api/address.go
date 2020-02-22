@@ -6,6 +6,7 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
+	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
@@ -15,16 +16,17 @@ import (
 )
 
 func RegisterAddressRoutes(publicEndpoints, platformEndpoints *echo.Group) {
-	//addressesPublicPath := publicEndpoints.Group("/addresses")
-	addressesPlatformPath := platformEndpoints.Group("/addresses")
+	addressesPublicPath := publicEndpoints.Group("/addresses")
+	//addressesPlatformPath := platformEndpoints.Group("/addresses")
 
 	func(g echo.Group) {
+		g.Use(middlewares.JWTAuth())
 		g.POST("/", createAddress)
 		g.GET("/", listAddresses)
 		g.GET("/:address_id/", getAddress)
 		g.DELETE("/:address_id/", deleteAddress)
 		g.PUT("/:address_id/", updateAddress)
-	}(*addressesPlatformPath)
+	}(*addressesPublicPath)
 }
 
 func createAddress(ctx echo.Context) error {

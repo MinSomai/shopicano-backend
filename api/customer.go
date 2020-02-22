@@ -6,6 +6,7 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
+	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
 	"net/http"
@@ -16,7 +17,9 @@ func RegisterCustomerRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	customersPlatformPath := platformEndpoints.Group("/customers")
 
 	func(g echo.Group) {
-		//g.Use(middlewares.IsStoreStaffAndStoreActive)
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
 		g.GET("/", listCustomers)
 	}(*customersPlatformPath)
 }

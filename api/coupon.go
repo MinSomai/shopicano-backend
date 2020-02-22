@@ -6,6 +6,7 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
+	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
@@ -15,12 +16,13 @@ import (
 )
 
 func RegisterCouponRoutes(publicEndpoints, platformEndpoints *echo.Group) {
-	//couponsPublicPath := publicEndpoints.Group("/coupons")
+	couponsPublicPath := publicEndpoints.Group("/coupons")
 	couponsPlatformPath := platformEndpoints.Group("/coupons")
 
 	func(g echo.Group) {
-		// Private endpoints only
-		//g.Use(middlewares.IsStoreStaffAndStoreActive)
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
 		g.POST("/", createCoupon)
 		g.PATCH("/:coupon_id/", updateCoupon)
 		g.DELETE("/:coupon_id/", deleteCoupon)
@@ -31,9 +33,9 @@ func RegisterCouponRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	}(*couponsPlatformPath)
 
 	func(g echo.Group) {
-		// Private endpoints only
+		g.Use(middlewares.JWTAuth())
 		g.GET("/:coupon_code/check/", checkCouponAvailability)
-	}(*couponsPlatformPath)
+	}(*couponsPublicPath)
 }
 
 func createCoupon(ctx echo.Context) error {
