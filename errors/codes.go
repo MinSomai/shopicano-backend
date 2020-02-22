@@ -68,6 +68,9 @@ const (
 	RestrictedBucket                              ErrorCode = "403009"
 	CouponNotApplicable                           ErrorCode = "403010"
 	UserAlreadyStaff                              ErrorCode = "403011"
+	StoreNotActive                                ErrorCode = "403012"
+	UserNotActive                                 ErrorCode = "403013"
+	UnauthorizedStoreAccess                       ErrorCode = "403014"
 	StoreNotFound                                 ErrorCode = "404001"
 	SettingsNotFound                              ErrorCode = "404002"
 	UserNotFound                                  ErrorCode = "404003"
@@ -87,5 +90,6 @@ const (
 	AttributeNotFound                             ErrorCode = "404017"
 	LoginCredentialsInvalid                       ErrorCode = "401001"
 	VerificationTokenIsInvalid                    ErrorCode = "401002"
-	UserNotActive                                 ErrorCode = "401003"
+	UnauthorizedRequest                           ErrorCode = "401004"
+	InvalidAuthorizationToken                     ErrorCode = "401005"
 )

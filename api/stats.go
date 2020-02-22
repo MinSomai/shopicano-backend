@@ -6,7 +6,6 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
-	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
 	"net/http"
@@ -14,21 +13,23 @@ import (
 	"time"
 )
 
-func RegisterStatsRoutes(g *echo.Group) {
-	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
+func RegisterStatsRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	statsPrivatePath := platformEndpoints.Group("/stats")
+
+	func(g echo.Group) {
+		//g.Use(middlewares.MightBeStoreStaffAndStoreActive)
 		g.GET("/products/", productStats)
 		g.GET("/categories/", categoryStats)
 		//g.GET("/collections/", collectionStats)
 		//g.GET("/stores/", storeStats)
-	}(g)
+	}(*statsPrivatePath)
 
-	func(g *echo.Group) {
-		g.Use(middlewares.IsStoreStaffAndStoreActive)
+	func(g echo.Group) {
+		//g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.GET("/orders/", orderStats)
 		//g.GET("/collections/", collectionStats)
 		//g.GET("/stores/", storeStats)
-	}(g)
+	}(*statsPrivatePath)
 }
 
 func productStats(ctx echo.Context) error {

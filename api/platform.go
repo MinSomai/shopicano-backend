@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func RegisterPlatformRoutes(g *echo.Group) {
+func RegisterPlatformRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	func(g echo.Group) {
 		g.Use(middlewares.IsPlatformManager)
 		g.POST("/shipping-methods/", createShippingMethod)
@@ -27,15 +27,14 @@ func RegisterPlatformRoutes(g *echo.Group) {
 		g.DELETE("/payment-methods/:id/", deletePaymentMethod)
 
 		g.GET("/users/", listUsers)
-	}(*g)
+	}(*platformEndpoints)
 
 	func(g echo.Group) {
-		g.Use(middlewares.AuthUser)
 		g.GET("/shipping-methods/", listShippingMethods)
 		g.GET("/payment-methods/", listPaymentMethods)
 		g.GET("/payment-methods/:id/", getPaymentMethod)
 		g.GET("/shipping-methods/:id/", getShippingMethod)
-	}(*g)
+	}(*publicEndpoints)
 }
 
 func createShippingMethod(ctx echo.Context) error {

@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/shopicano/shopicano-backend/api"
+	"github.com/shopicano/shopicano-backend/middlewares"
 	"net/http"
 )
 
@@ -14,7 +15,7 @@ func GetRouter() http.Handler {
 	router.Pre(middleware.AddTrailingSlash())
 	router.Use(middleware.Logger())
 	router.Use(middleware.Recover())
-	router.Use(EchoInfluxMonitoring(InfluxConfig{}))
+	router.Use(EchoMonitoring())
 
 	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
@@ -27,43 +28,29 @@ func GetRouter() http.Handler {
 	})
 
 	registerV1Routes()
-
 	return router
 }
 
 func registerV1Routes() {
 	v1 := router.Group("/v1")
+	publicEndpoints := v1
+	platformEndpoints := v1.Group("/platform")
 
-	platformGroup := v1.Group("/platform")
-	userGroup := v1.Group("/users")
+	platformEndpoints.Use(middlewares.JWTAuth())
 
-	storeGroup := v1.Group("/stores")
-	categoryGroup := v1.Group("/categories")
-	collectionGroup := v1.Group("/collections")
-	productGroup := v1.Group("/products")
-	couponGroup := v1.Group("/coupons")
-	addressesGroup := v1.Group("/addresses")
-	ordersGroup := v1.Group("/orders")
-	paymentGroup := v1.Group("/payments")
-	customersGroup := v1.Group("/customers")
-	statsGroup := v1.Group("/stats")
-	locationGroup := v1.Group("/locations")
-
-	fsGroup := v1.Group("/fs")
-
-	api.RegisterLegacyRoutes(v1)
-	api.RegisterPlatformRoutes(platformGroup)
-	api.RegisterUserRoutes(userGroup)
-	api.RegisterStoreRoutes(storeGroup)
-	api.RegisterProductRoutes(productGroup)
-	api.RegisterCategoryRoutes(categoryGroup)
-	api.RegisterCollectionRoutes(collectionGroup)
-	api.RegisterFSRoutes(fsGroup)
-	api.RegisterAddressRoutes(addressesGroup)
-	api.RegisterOrderRoutes(ordersGroup)
-	api.RegisterPaymentRoutes(paymentGroup)
-	api.RegisterCustomerRoutes(customersGroup)
-	api.RegisterStatsRoutes(statsGroup)
-	api.RegisterCouponRoutes(couponGroup)
-	api.RegisterLocationRoutes(locationGroup)
+	api.RegisterLegacyRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterPlatformRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterUserRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterStoreRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterProductRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterCategoryRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterCollectionRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterFSRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterAddressRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterOrderRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterPaymentRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterCustomerRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterStatsRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterCouponRoutes(publicEndpoints, platformEndpoints)
+	api.RegisterLocationRoutes(publicEndpoints, platformEndpoints)
 }

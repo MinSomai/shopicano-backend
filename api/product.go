@@ -9,7 +9,6 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
-	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/services"
 	"github.com/shopicano/shopicano-backend/utils"
@@ -21,16 +20,19 @@ import (
 	"time"
 )
 
-func RegisterProductRoutes(g *echo.Group) {
-	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
+func RegisterProductRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	productsPublicPath := publicEndpoints.Group("/products")
+	productsPlatformPath := platformEndpoints.Group("/products")
+
+	func(g echo.Group) {
+		//g.Use(middlewares.MightBeStoreStaffAndStoreActive)
 		g.GET("/", listProducts)
 		g.GET("/:product_id/", getProduct)
-	}(g)
+	}(*productsPublicPath)
 
-	func(g *echo.Group) {
+	func(g echo.Group) {
 		// Private endpoints only
-		g.Use(middlewares.IsStoreStaffAndStoreActive)
+		//g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/", createProduct)
 		g.PATCH("/:product_id/", updateProduct)
 		g.DELETE("/:product_id/", deleteProduct)
@@ -38,7 +40,7 @@ func RegisterProductRoutes(g *echo.Group) {
 		g.DELETE("/:product_id/attributes/:attribute_id/", deleteProductAttribute)
 		g.GET("/:product_id/download/", downloadProduct)
 		g.POST("/:product_id/upload/", saveDownloadableProduct)
-	}(g)
+	}(*productsPlatformPath)
 }
 
 func createProduct(ctx echo.Context) error {

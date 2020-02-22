@@ -14,6 +14,15 @@ const (
 
 type StoreStatus string
 
+func (s *StoreStatus) IsValid() bool {
+	for _, status := range []StoreStatus{StoreRegistered, StoreActive, StoreSuspended, StoreBanned} {
+		if status == *s {
+			return true
+		}
+	}
+	return false
+}
+
 type Store struct {
 	ID                       string      `json:"id" gorm:"column:id;primary_key"`
 	Name                     string      `json:"name" gorm:"column:name;unique;not null"`

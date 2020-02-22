@@ -6,7 +6,6 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
-	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
 	"net/http"
@@ -14,20 +13,23 @@ import (
 	"time"
 )
 
-func RegisterCategoryRoutes(g *echo.Group) {
-	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
-		g.GET("/", listCategories)
-	}(g)
+func RegisterCategoryRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	categoryPublicPath := publicEndpoints.Group("/categories")
+	categoryPlatformPath := platformEndpoints.Group("/categories")
 
-	func(g *echo.Group) {
+	func(g echo.Group) {
+		//g.Use(middlewares.MightBeStoreStaffAndStoreActive)
+		g.GET("/", listCategories)
+	}(*categoryPublicPath)
+
+	func(g echo.Group) {
 		// private endpoints only
-		g.Use(middlewares.IsStoreStaffAndStoreActive)
+		//g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/", createCategory)
 		g.DELETE("/:category_id/", deleteCategory)
 		g.PATCH("/:category_id/", updateCategory)
 		g.GET("/:category_id/", getCategory)
-	}(g)
+	}(*categoryPlatformPath)
 }
 
 func createCategory(ctx echo.Context) error {

@@ -10,10 +10,7 @@ import (
 	"time"
 )
 
-type InfluxConfig struct {
-}
-
-func EchoInfluxMonitoring(cfg InfluxConfig) echo.MiddlewareFunc {
+func EchoMonitoring() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			start := time.Now()

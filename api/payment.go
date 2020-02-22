@@ -8,9 +8,11 @@ import (
 	"net/http"
 )
 
-func RegisterPaymentRoutes(g *echo.Group) {
-	g.GET("/configs/", getPaymentGatewayConfig)
-	g.GET("/confirm/", processPayOrderFor2Checkout)
+func RegisterPaymentRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	paymentsPublicPath := publicEndpoints.Group("/payments")
+
+	paymentsPublicPath.GET("/configs/", getPaymentGatewayConfig)
+	paymentsPublicPath.GET("/confirm/", processPayOrderFor2Checkout)
 }
 
 func getPaymentGatewayConfig(ctx echo.Context) error {

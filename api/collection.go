@@ -6,7 +6,6 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
-	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
 	"github.com/shopicano/shopicano-backend/validators"
@@ -15,22 +14,25 @@ import (
 	"time"
 )
 
-func RegisterCollectionRoutes(g *echo.Group) {
-	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
-		g.GET("/", listCollections)
-	}(g)
+func RegisterCollectionRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	collectionsPublicPath := publicEndpoints.Group("/collections")
+	collectionsPlatformPath := platformEndpoints.Group("/collections")
 
-	func(g *echo.Group) {
+	func(g echo.Group) {
+		//g.Use(middlewares.MightBeStoreStaffAndStoreActive)
+		g.GET("/", listCollections)
+	}(*collectionsPublicPath)
+
+	func(g echo.Group) {
 		// Private endpoints only
-		g.Use(middlewares.IsStoreStaffAndStoreActive)
+		//g.Use(middlewares.IsStoreStaffAndStoreActive)
 		g.POST("/", createCollection)
 		g.DELETE("/:collection_id/", deleteCollection)
 		g.PATCH("/:collection_id/", updateCollection)
 		g.GET("/:collection_id/", getCollection)
 		g.PATCH("/:collection_id/products/", addCollectionProducts)
 		g.DELETE("/:collection_id/products/", removeCollectionProducts)
-	}(g)
+	}(*collectionsPlatformPath)
 }
 
 func createCollection(ctx echo.Context) error {

@@ -111,3 +111,29 @@ func ValidateUpdateStoreStaff(ctx echo.Context) (*string, *string, error) {
 
 	return nil, nil, &ve
 }
+
+func ValidateUpdateStoreStatus(ctx echo.Context) (*models.StoreStatus, *int64, error) {
+	pld := struct {
+		Status         *models.StoreStatus `json:"status"`
+		CommissionRate *int64              `json:"commission_rate"`
+	}{}
+
+	if err := ctx.Bind(&pld); err != nil {
+		return nil, nil, err
+	}
+
+	ve := errors.ValidationError{}
+
+	if pld.Status != nil && !pld.Status.IsValid() {
+		ve.Add("status", "is invalid")
+	}
+	if pld.CommissionRate != nil && (*pld.CommissionRate < 0 || *pld.CommissionRate > 100) {
+		ve.Add("commission_rate", "is invalid")
+	}
+
+	if len(ve) > 0 {
+		return nil, nil, &ve
+	}
+
+	return pld.Status, pld.CommissionRate, nil
+}

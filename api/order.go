@@ -8,7 +8,6 @@ import (
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/log"
-	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
 	"github.com/shopicano/shopicano-backend/queue"
@@ -21,41 +20,34 @@ import (
 	"time"
 )
 
-func RegisterOrderRoutes(g *echo.Group) {
-	g.POST("/:order_id/pay/", payOrder)
-	g.GET("/:order_id/pay/", payOrder)
+func RegisterOrderRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	ordersPublicPath := publicEndpoints.Group("/orders")
+	ordersPlatformPath := platformEndpoints.Group("/orders")
+
+	ordersPublicPath.POST("/:order_id/pay/", payOrder)
+	ordersPublicPath.GET("/:order_id/pay/", payOrder)
 
 	func(g echo.Group) {
-		g.Use(middlewares.MustBeUserOrStoreStaffAndStoreActive)
+		//g.Use(middlewares.MustBeUserOrStoreStaffAndStoreActive)
 		g.GET("/", listOrders)
 		g.GET("/:order_id/", getOrder)
-	}(*g)
+	}(*ordersPlatformPath)
 
 	func(g echo.Group) {
-		g.Use(middlewares.AuthUser)
 		g.POST("/", createOrder)
 		g.POST("/:order_id/nonce/", generatePayNonce)
 		g.POST("/:order_id/review/", createReview)
-	}(*g)
+	}(*ordersPlatformPath)
 
 	func(g echo.Group) {
-		g.Use(middlewares.AuthUserWithQueryToken)
 		g.GET("/:order_id/products/:product_id/download/", downloadProductAsUser)
 		g.GET("/:order_id/nonce/", generatePayNonce)
-	}(*g)
+	}(*ordersPublicPath)
 
 	func(g echo.Group) {
-		g.Use(middlewares.IsStoreAdmin)
+		//g.Use(middlewares.IsStoreAdmin)
 		g.POST("/:order_id/revert-payment/", revertOrderPayment)
-	}(*g)
-
-	func(g echo.Group) {
-		g.Use(middlewares.IsStoreStaffAndStoreActive)
-		g.POST("/internal/", createOrder)
-		g.PATCH("/internal/:order_id/", createOrder)
-		g.PUT("/internal/items/:order_id/", createOrder)
-		g.DELETE("/internal/items/:order_id/", createOrder)
-	}(*g)
+	}(*ordersPlatformPath)
 }
 
 func createOrder(ctx echo.Context) error {

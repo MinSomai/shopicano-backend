@@ -7,7 +7,7 @@ import (
 
 type UserRepository interface {
 	Register(db *gorm.DB, u *models.User) error
-	Login(db *gorm.DB, email, password string) (*models.User, error)
+	Login(db *gorm.DB, email string) (*models.User, error)
 	CreateSession(db *gorm.DB, s *models.Session) error
 	Logout(db *gorm.DB, token string) error
 	RefreshToken(db *gorm.DB, token string) (*models.Session, error)
