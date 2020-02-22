@@ -13,7 +13,8 @@ type CategoryRepository interface {
 	ListAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]models.ResCategorySearchInternal, error)
 	SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.ResCategorySearchInternal, error)
 	Delete(db *gorm.DB, storeID, categoryID string) error
-	Get(db *gorm.DB, storeID, categoryID string) (*models.Category, error)
+	Get(db *gorm.DB, categoryID string) (*models.Category, error)
+	GetAsStoreOwner(db *gorm.DB, storeID, categoryID string) (*models.Category, error)
 	Update(db *gorm.DB, c *models.Category) error
 	Stats(db *gorm.DB, from, limit int) ([]helpers.CategoryStats, error)
 	StatsAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]helpers.CategoryStats, error)

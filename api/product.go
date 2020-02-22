@@ -9,6 +9,7 @@ import (
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
+	"github.com/shopicano/shopicano-backend/middlewares"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/services"
 	"github.com/shopicano/shopicano-backend/utils"
@@ -25,14 +26,13 @@ func RegisterProductRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	productsPlatformPath := platformEndpoints.Group("/products")
 
 	func(g echo.Group) {
-		//g.Use(middlewares.MightBeStoreStaffAndStoreActive)
 		g.GET("/", listProducts)
 		g.GET("/:product_id/", getProduct)
 	}(*productsPublicPath)
 
 	func(g echo.Group) {
-		// Private endpoints only
-		//g.Use(middlewares.IsStoreStaffAndStoreActive)
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreManager())
 		g.POST("/", createProduct)
 		g.PATCH("/:product_id/", updateProduct)
 		g.DELETE("/:product_id/", deleteProduct)

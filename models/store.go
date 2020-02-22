@@ -53,7 +53,7 @@ func (s *Store) ForeignKeys() []string {
 }
 
 type Staff struct {
-	UserID       string `json:"user_id" gorm:"column:user_id;primary_key"`
+	UserID       string `json:"user_id" gorm:"column:user_id;primary_key;unique"`
 	StoreID      string `json:"store_id" gorm:"column:store_id;primary_key"`
 	PermissionID string `json:"permission_id" gorm:"column:permission_id;primary_key"`
 	IsCreator    bool   `json:"is_creator" gorm:"column:is_creator;index"`
