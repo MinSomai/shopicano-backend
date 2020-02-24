@@ -4,6 +4,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
+	"github.com/shopicano/shopicano-backend/config"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
@@ -102,7 +103,7 @@ func extractAndValidateToken(ctx echo.Context) (*utils.Claims, *jwt.Token, error
 	}
 	claims := utils.Claims{}
 	jwtToken, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (i interface{}, err error) {
-		return []byte("123456"), nil
+		return []byte(config.App().JWTKey), nil
 	})
 	if err != nil {
 		return nil, nil, err

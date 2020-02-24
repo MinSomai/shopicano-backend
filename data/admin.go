@@ -20,5 +20,7 @@ type AdminRepository interface {
 	DeletePaymentMethod(db *gorm.DB, ID string) error
 	GetPaymentMethod(db *gorm.DB, ID string) (*models.PaymentMethod, error)
 
-	GetSettings(db *gorm.DB) (*models.SettingsDetails, error)
+	GetSettings(db *gorm.DB) (*models.Settings, error)
+	GetSettingsDetails(db *gorm.DB) (*models.SettingsDetails, error)
+	UpdateSettings(db *gorm.DB, s *models.Settings) error
 }

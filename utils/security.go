@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
+	"github.com/shopicano/shopicano-backend/config"
 	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/models"
 	"golang.org/x/crypto/bcrypt"
@@ -99,5 +100,5 @@ func BuildJWTToken(userID string, scope UserScope) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte("123456"))
+	return token.SignedString([]byte(config.App().JWTKey))
 }

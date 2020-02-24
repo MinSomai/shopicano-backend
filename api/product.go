@@ -38,6 +38,7 @@ func RegisterProductRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.PATCH("/:product_id/", updateProduct)
 		g.DELETE("/:product_id/", deleteProduct)
 		g.GET("/:product_id/", getProductAsStoreOwner)
+		g.GET("/", listProductsAsStoreOwner)
 		g.PUT("/:product_id/attributes/", addProductAttribute)
 		g.DELETE("/:product_id/attributes/:attribute_id/", deleteProductAttribute)
 		g.GET("/:product_id/download/", downloadProduct)
@@ -86,6 +87,7 @@ func createProduct(ctx echo.Context) error {
 		CategoryID:       req.CategoryID,
 		IsPublished:      req.IsPublished,
 		IsDigital:        req.IsDigital,
+		MaxQuantityCount: req.MaxQuantityCount,
 		AdditionalImages: images,
 		SKU:              req.SKU,
 		Unit:             req.Unit,
@@ -166,20 +168,52 @@ func updateProduct(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	p.ID = productID
-	p.Price = req.Price
-	p.ProductCost = req.ProductCost
-	p.Stock = req.Stock
-	p.Name = req.Name
-	p.IsShippable = req.IsShippable
-	p.CategoryID = req.CategoryID
-	p.IsPublished = req.IsPublished
-	p.IsDigital = req.IsDigital
-	p.AdditionalImages = images
-	p.SKU = req.SKU
-	p.Unit = req.Unit
-	p.Image = req.Image
-	p.Description = req.Description
+	if req.Name != nil {
+		p.Name = *req.Name
+	}
+	if req.Price != nil {
+		p.Price = *req.Price
+	}
+	if req.ProductCost != nil {
+		p.ProductCost = *req.ProductCost
+	}
+	if req.IsShippable != nil {
+		p.IsShippable = *req.IsShippable
+	}
+	if req.IsDigital != nil {
+		p.IsDigital = *req.IsDigital
+	}
+	if req.IsPublished != nil {
+		p.IsPublished = *req.IsPublished
+	}
+	if req.Stock != nil {
+		p.Stock = *req.Stock
+	}
+	if req.CategoryID != nil {
+		p.CategoryID = req.CategoryID
+	}
+	if req.Image != nil {
+		p.Image = *req.Image
+	}
+	if len(req.AdditionalImages) > 0 {
+		p.AdditionalImages = images
+	}
+	if req.SKU != nil {
+		p.SKU = *req.SKU
+	}
+	if req.Unit != nil {
+		p.Unit = *req.Unit
+	}
+	if req.Description != nil {
+		p.Description = *req.Description
+	}
+	if req.DigitalDownloadLink != nil {
+		p.DigitalDownloadLink = *req.DigitalDownloadLink
+	}
+	if req.MaxQuantityCount != nil {
+		p.MaxQuantityCount = *req.MaxQuantityCount
+	}
+
 	p.UpdatedAt = time.Now().UTC()
 
 	err = pu.Update(db, p)
@@ -322,9 +356,46 @@ func listProducts(ctx echo.Context) error {
 	var r interface{}
 
 	if query == "" {
-		r, err = fetchProducts(ctx, page, limit, !utils.IsStoreStaff(ctx))
+		r, err = fetchProducts(ctx, page, limit, true)
 	} else {
-		r, err = searchProducts(ctx, query, page, limit, !utils.IsStoreStaff(ctx))
+		r, err = searchProducts(ctx, query, page, limit, true)
+	}
+
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func listProductsAsStoreOwner(ctx echo.Context) error {
+	pageQ := ctx.Request().URL.Query().Get("page")
+	limitQ := ctx.Request().URL.Query().Get("limit")
+	query := ctx.Request().URL.Query().Get("query")
+
+	page, err := strconv.ParseInt(pageQ, 10, 64)
+	if err != nil {
+		page = 1
+	}
+	limit, err := strconv.ParseInt(limitQ, 10, 64)
+	if err != nil {
+		limit = 10
+	}
+
+	resp := core.Response{}
+
+	var r interface{}
+
+	if query == "" {
+		r, err = fetchProducts(ctx, page, limit, false)
+	} else {
+		r, err = searchProducts(ctx, query, page, limit, false)
 	}
 
 	if err != nil {

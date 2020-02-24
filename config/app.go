@@ -21,6 +21,7 @@ type Application struct {
 	BackendUrl    string
 	FrontStoreUrl string
 	DashboardUrl  string
+	JWTKey        string
 }
 
 // app is the default application configuration
@@ -43,5 +44,6 @@ func LoadApp() {
 		BackendUrl:    viper.GetString("app.backend_url"),
 		FrontStoreUrl: viper.GetString("app.front_store_url"),
 		DashboardUrl:  viper.GetString("app.dashboard_url"),
+		JWTKey:        viper.GetString("app.jwt_key"),
 	}
 }

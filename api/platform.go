@@ -30,6 +30,11 @@ func RegisterPlatformRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	}(*platformEndpoints)
 
 	func(g echo.Group) {
+		g.Use(middlewares.IsPlatformAdmin)
+		g.PATCH("/settings/", updateSettings)
+	}(*platformEndpoints)
+
+	func(g echo.Group) {
 		g.GET("/shipping-methods/", listShippingMethods)
 		g.GET("/payment-methods/", listPaymentMethods)
 		g.GET("/payment-methods/:id/", getPaymentMethod)
@@ -446,5 +451,81 @@ func listPaymentMethods(ctx echo.Context) error {
 
 	resp.Status = http.StatusOK
 	resp.Data = v
+	return resp.ServerJSON(ctx)
+}
+
+func updateSettings(ctx echo.Context) error {
+	req, err := validators.ValidateUpdateSettings(ctx)
+
+	resp := core.Response{}
+
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.SettingsUpdateDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB()
+
+	au := data.NewAdminRepository()
+
+	s, err := au.GetSettings(db)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Settings not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.SettingsNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if req.Name != nil {
+		s.Name = *req.Name
+	}
+	if req.TagLine != nil {
+		s.TagLine = *req.TagLine
+	}
+	if req.Status != nil {
+		s.Status = *req.Status
+	}
+	if req.CompanyAddressID != nil {
+		s.CompanyAddressID = *req.CompanyAddressID
+	}
+	if req.IsStoreCreationEnabled != nil {
+		s.IsStoreCreationEnabled = *req.IsStoreCreationEnabled
+	}
+	if req.IsSignUpEnabled != nil {
+		s.IsSignUpEnabled = *req.IsSignUpEnabled
+	}
+	if req.DefaultCommissionRate != nil {
+		s.DefaultCommissionRate = *req.DefaultCommissionRate
+	}
+	if req.EnabledAutoStoreConfirmation != nil {
+		s.EnabledAutoStoreConfirmation = *req.EnabledAutoStoreConfirmation
+	}
+	if req.Website != nil {
+		s.Website = *req.Website
+	}
+
+	err = au.UpdateSettings(db, s)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = s
 	return resp.ServerJSON(ctx)
 }

@@ -72,6 +72,51 @@ func createStore(ctx echo.Context) error {
 	db := app.DB().Begin()
 
 	su := data.NewStoreRepository()
+
+	as, err := su.GetStoreUserProfile(db, utils.GetUserID(ctx))
+	if err != nil && !errors.IsRecordNotFoundError(err) {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if as != nil {
+		resp.Title = "User already a store staff"
+		resp.Status = http.StatusConflict
+		resp.Code = errors.UserAlreadyStaff
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	au := data.NewAdminRepository()
+	settings, err := au.GetSettings(db)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Settings not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.SettingsNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if settings.EnabledAutoStoreConfirmation {
+		s.Status = models.StoreActive
+	}
+	s.CommissionRate = settings.DefaultCommissionRate
+
 	if err := su.CreateStore(db, s); err != nil {
 		db.Rollback()
 

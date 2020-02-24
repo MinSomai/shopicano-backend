@@ -30,7 +30,7 @@ func (pu *ProductRepositoryImpl) Create(db *gorm.DB, p *models.Product) error {
 
 func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 	if err := db.Table(p.TableName()).
-		Select("name, description, is_published, category_id, sku, stock, unit, price, additional_images, image, is_shippable, is_digital, digital_download_link, updated_at").
+		Select("name, description, is_published, category_id, sku, stock, unit, price, product_cost, max_quantity_count, additional_images, image, is_shippable, is_digital, digital_download_link, updated_at").
 		Where("id = ? AND store_id = ?", p.ID, p.StoreID).
 		Updates(map[string]interface{}{
 			"name":                  p.Name,
@@ -46,6 +46,8 @@ func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 			"is_shippable":          p.IsShippable,
 			"is_digital":            p.IsDigital,
 			"digital_download_link": p.DigitalDownloadLink,
+			"product_cost":          p.ProductCost,
+			"max_quantity_count":    p.MaxQuantityCount,
 			"updated_at":            p.UpdatedAt,
 		}).Error; err != nil {
 		return err

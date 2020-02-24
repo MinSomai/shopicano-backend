@@ -246,6 +246,16 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	if hasDigitalProducts && pm.IsOfflinePayment {
+		db.Rollback()
+
+		resp.Title = "Payment method must be online for digital products"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.PaymentMethodMustBeOnlineForDigitalProducts
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	o.IsAllDigitalProducts = isAllDigitalProduct
 
 	if !isAllDigitalProduct && sm == nil {
@@ -775,7 +785,7 @@ func downloadProductAsUser(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if !(o.Status == models.OrderConfirmed && o.PaymentStatus == models.PaymentCompleted) {
+	if !(o.IsAllDigitalProducts && o.PaymentStatus == models.PaymentCompleted) {
 		resp.Title = "Unauthorized to download the product"
 		resp.Status = http.StatusForbidden
 		resp.Code = errors.UserScopeUnauthorized
@@ -804,7 +814,6 @@ func downloadProductAsUser(ctx echo.Context) error {
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
-
 	return resp.ServeStreamFromMinio(ctx, f)
 }
 

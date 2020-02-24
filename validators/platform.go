@@ -4,6 +4,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/errors"
+	"github.com/shopicano/shopicano-backend/models"
 )
 
 type ReqPaymentMethodCreate struct {
@@ -47,6 +48,38 @@ type ReqShippingMethodCreate struct {
 
 func ValidateCreateShippingMethod(ctx echo.Context) (*ReqShippingMethodCreate, error) {
 	pld := ReqShippingMethodCreate{}
+	if err := ctx.Bind(&pld); err != nil {
+		return nil, err
+	}
+
+	ok, err := govalidator.ValidateStruct(&pld)
+	if ok {
+		return &pld, nil
+	}
+
+	ve := errors.ValidationError{}
+
+	for k, v := range govalidator.ErrorsByField(err) {
+		ve.Add(k, v)
+	}
+
+	return nil, &ve
+}
+
+type ReqSettingsUpdate struct {
+	Name                         *string                `json:"name"`
+	Website                      *string                `json:"website"`
+	Status                       *models.PlatformStatus `json:"status"`
+	EnabledAutoStoreConfirmation *bool                  `json:"enabled_auto_store_confirmation"`
+	CompanyAddressID             *string                `json:"company_address_id"`
+	IsSignUpEnabled              *bool                  `json:"is_sign_up_enabled"`
+	IsStoreCreationEnabled       *bool                  `json:"is_store_creation_enabled"`
+	DefaultCommissionRate        *int64                 `json:"default_commission_rate"`
+	TagLine                      *string                `json:"tag_line"`
+}
+
+func ValidateUpdateSettings(ctx echo.Context) (*ReqSettingsUpdate, error) {
+	pld := ReqSettingsUpdate{}
 	if err := ctx.Bind(&pld); err != nil {
 		return nil, err
 	}
