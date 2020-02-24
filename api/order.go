@@ -31,6 +31,7 @@ func RegisterOrderRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.Use(middlewares.IsStoreManager())
 		g.GET("/", listOrdersAsStoreOwner)
 		g.GET("/:order_id/", getOrderAsStoreOwner)
+		g.PATCH("/:order_id/status/", orderUpdateStatus)
 	}(*ordersPlatformPath)
 
 	func(g echo.Group) {
@@ -54,6 +55,7 @@ func RegisterOrderRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.Use(middlewares.IsStoreActive())
 		g.Use(middlewares.IsStoreAdmin())
 		g.POST("/:order_id/revert-payment/", revertOrderPayment)
+		g.PATCH("/:order_id/payment-status/", orderPaymentStatusUpdate)
 	}(*ordersPlatformPath)
 }
 
@@ -504,7 +506,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
+	if err := queue.SendOrderDetailsEmail(o.ID, "Order has been placed"); err != nil {
 		db.Rollback()
 
 		resp.Title = "Failed to queue send order details"
@@ -605,6 +607,182 @@ func getOrderAsStoreOwner(ctx echo.Context) error {
 		resp.Title = "Order not found"
 		resp.Status = http.StatusNotFound
 		resp.Code = errors.OrderNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func orderUpdateStatus(ctx echo.Context) error {
+	orderID := ctx.Param("order_id")
+
+	resp := core.Response{}
+
+	pld, err := validators.ValidateUpdateOrder(ctx)
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.OrderDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+
+	ou := data.NewOrderRepository()
+	r, err := ou.GetAsStoreStuff(db, utils.GetStoreID(ctx), orderID)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Order not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.OrderNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Failed to update order status"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	r.Status = pld.Status
+
+	if err := ou.UpdateStatus(db, r); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to update payment info"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   r.ID,
+		Action:    string(r.Status),
+		Details:   fmt.Sprintf("Order status updated by %s", utils.GetUserID(ctx)),
+		CreatedAt: time.Now().UTC(),
+	}
+	if err := ou.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := queue.SendOrderDetailsEmail(r.ID, "Order status updated"); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to enqueue task"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.FailedToEnqueueTask
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func orderPaymentStatusUpdate(ctx echo.Context) error {
+	orderID := ctx.Param("order_id")
+
+	resp := core.Response{}
+
+	pld, err := validators.ValidateUpdatePaymentStatus(ctx)
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.OrderDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+
+	ou := data.NewOrderRepository()
+	r, err := ou.GetAsStoreStuff(db, utils.GetStoreID(ctx), orderID)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Order not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.OrderNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Failed to update order status"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	r.PaymentStatus = pld.Status
+
+	if err := ou.UpdateStatus(db, r); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to update payment info"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   r.ID,
+		Action:    string(r.PaymentStatus),
+		Details:   fmt.Sprintf("Order payment status updated by %s", utils.GetUserID(ctx)),
+		CreatedAt: time.Now().UTC(),
+	}
+	if err := ou.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := queue.SendOrderDetailsEmail(r.ID, "Order payment status updated"); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to enqueue task"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.FailedToEnqueueTask
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}

@@ -301,6 +301,15 @@ func (os *OrderRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, orde
 	return &order, nil
 }
 
+func (os *OrderRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, orderID string) (*models.Order, error) {
+	order := models.Order{}
+	if err := db.Model(&order).First(&order, "id = ? AND store_id = ?", orderID, storeID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
+	return &order, nil
+}
+
 func (os *OrderRepositoryImpl) GetDetailsAsUser(db *gorm.DB, userID, orderID string) (*models.OrderDetailsViewExternal, error) {
 	order := models.OrderDetailsViewExternal{}
 	if err := db.Model(&order).First(&order, "id = ? AND user_id = ?", orderID, userID).Error; err != nil {

@@ -15,7 +15,7 @@ type ProductDetails struct {
 	IsShippable      bool                   `json:"is_shippable"`
 	IsDigital        bool                   `json:"is_digital"`
 	Price            int                    `json:"price"`
-	ProductCost      int                    `json:"product_cost"`
+	MaxQuantityCount int                    `json:"max_quantity_count"`
 	SKU              string                 `json:"sku"`
 	Stock            int                    `json:"stock"`
 	Unit             string                 `json:"unit"`
@@ -39,6 +39,8 @@ type ProductDetailsInternal struct {
 	IsShippable         bool                   `json:"is_shippable"`
 	IsDigital           bool                   `json:"is_digital"`
 	Price               int                    `json:"price"`
+	ProductCost         int                    `json:"product_cost"`
+	MaxQuantityCount    int                    `json:"max_quantity_count"`
 	SKU                 string                 `json:"sku"`
 	Stock               int                    `json:"stock"`
 	Unit                string                 `json:"unit"`

@@ -161,7 +161,7 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 	store := models.Store{}
 
 	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
-		Select("products.id, s.id AS store_id, s.name AS store_name, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.additional_images, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, s.id AS store_id, s.name AS store_name, products.max_quantity_count AS max_quantity_count, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.additional_images, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS c ON products.category_id = c.id", cat.TableName())).
 		Joins(fmt.Sprintf("LEFT JOIN %s AS s ON products.store_id = s.id", store.TableName())).
 		Where("products.id = ? AND products.is_published = ?", productID, true).
@@ -197,7 +197,7 @@ func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, pr
 	store := models.Store{}
 
 	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
-		Select("products.id, s.id AS store_id, s.name AS store_name, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.additional_images, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, s.id AS store_id, s.name AS store_name, products.max_quantity_count AS max_quantity_count, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.additional_images, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS c ON products.category_id = c.id", cat.TableName())).
 		Joins(fmt.Sprintf("LEFT JOIN %s AS s ON products.store_id = s.id", store.TableName())).
 		Where("products.id = ? AND products.store_id = ?", productID, storeID).

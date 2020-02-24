@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func SendOrderDetailsEmail(orderID string) error {
+func SendOrderDetailsEmail(orderID, subject string) error {
 	now := time.Now().Add(time.Second * 10)
 
 	sig := &tasks.Signature{
@@ -17,6 +17,11 @@ func SendOrderDetailsEmail(orderID string) error {
 				Type:  "string",
 				Value: orderID,
 				Name:  "orderID",
+			},
+			{
+				Type:  "string",
+				Value: subject,
+				Name:  "subject",
 			},
 		},
 		ETA: &now,

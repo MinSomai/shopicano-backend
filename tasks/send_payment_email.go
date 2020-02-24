@@ -74,10 +74,10 @@ func SendPaymentRevertedEmailFn(orderID string) error {
 			*order.ShippingAddress, *order.ShippingCity, *order.ShippingCountry, *order.ShippingPostcode)
 	}
 
-	params["shippingCharge"] = order.ShippingCharge
-	params["paymentProcessingFee"] = order.PaymentProcessingFee
-	params["subTotal"] = order.SubTotal
-	params["grandTotal"] = order.GrandTotal
+	params["shippingCharge"] = fmt.Sprintf("%.2f", float64(order.ShippingCharge)/100)
+	params["paymentProcessingFee"] = fmt.Sprintf("%.2f", float64(order.PaymentProcessingFee)/100)
+	params["subTotal"] = fmt.Sprintf("%.2f", float64(order.SubTotal)/100)
+	params["grandTotal"] = fmt.Sprintf("%.2f", float64(order.GrandTotal)/100)
 	params["isCouponApplied"] = false
 
 	switch order.PaymentGateway {
@@ -115,7 +115,7 @@ func SendPaymentRevertedEmailFn(orderID string) error {
 
 	if order.DiscountedAmount != 0 {
 		params["couponCode"] = order.CouponCode
-		params["discount"] = order.DiscountedAmount
+		params["discount"] = fmt.Sprintf("%.2f", float64(order.DiscountedAmount)/100)
 		params["isCouponApplied"] = true
 	}
 
@@ -125,8 +125,8 @@ func SendPaymentRevertedEmailFn(orderID string) error {
 		items = append(items, map[string]interface{}{
 			"name":     v.Name,
 			"quantity": v.Quantity,
-			"price":    v.Price,
-			"subTotal": v.SubTotal,
+			"price":    fmt.Sprintf("%.2f", float64(v.Price)/100),
+			"subTotal": fmt.Sprintf("%.2f", float64(v.SubTotal)/100),
 		})
 	}
 

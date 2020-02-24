@@ -21,6 +21,24 @@ const (
 type OrderStatus string
 type PaymentStatus string
 
+func (os OrderStatus) IsValid() bool {
+	for _, s := range []OrderStatus{OrderPending, OrderCancelled, OrderConfirmed, OrderShipping, OrderDelivered} {
+		if s == os {
+			return true
+		}
+	}
+	return false
+}
+
+func (ps PaymentStatus) IsValid() bool {
+	for _, s := range []PaymentStatus{PaymentPending, PaymentCompleted, PaymentFailed, PaymentReverted} {
+		if s == ps {
+			return true
+		}
+	}
+	return false
+}
+
 type Order struct {
 	ID                   string        `json:"id" gorm:"column:id;primary_key"`
 	Hash                 string        `json:"hash" gorm:"column:hash;unique_index;not null"`

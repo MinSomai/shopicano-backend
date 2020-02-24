@@ -11,7 +11,7 @@ import (
 	"github.com/shopicano/shopicano-backend/templates"
 )
 
-func SendOrderDetailsEmail(email string, order *models.OrderDetailsView) error {
+func SendOrderDetailsEmail(email, subject string, order *models.OrderDetailsView) error {
 	params := map[string]interface{}{}
 	params["greetings"] = fmt.Sprintf("Hi %s,", order.UserName)
 	params["intros"] = "Thank you for purchasing from our platform."
@@ -25,10 +25,10 @@ func SendOrderDetailsEmail(email string, order *models.OrderDetailsView) error {
 			*order.ShippingAddress, *order.ShippingCity, *order.ShippingCountry, *order.ShippingPostcode)
 	}
 
-	params["shippingCharge"] = order.ShippingCharge
-	params["paymentProcessingFee"] = order.PaymentProcessingFee
-	params["subTotal"] = order.SubTotal
-	params["grandTotal"] = order.GrandTotal
+	params["shippingCharge"] = fmt.Sprintf("%.2f", float64(order.ShippingCharge)/100)
+	params["paymentProcessingFee"] = fmt.Sprintf("%.2f", float64(order.PaymentProcessingFee)/100)
+	params["subTotal"] = fmt.Sprintf("%.2f", float64(order.SubTotal)/100)
+	params["grandTotal"] = fmt.Sprintf("%.2f", float64(order.GrandTotal)/100)
 	params["isCouponApplied"] = false
 
 	switch order.PaymentGateway {
@@ -66,7 +66,7 @@ func SendOrderDetailsEmail(email string, order *models.OrderDetailsView) error {
 
 	if order.DiscountedAmount != 0 {
 		params["couponCode"] = order.CouponCode
-		params["discount"] = order.DiscountedAmount
+		params["discount"] = fmt.Sprintf("%.2f", float64(order.DiscountedAmount)/100)
 		params["isCouponApplied"] = true
 	}
 
@@ -76,8 +76,8 @@ func SendOrderDetailsEmail(email string, order *models.OrderDetailsView) error {
 		items = append(items, map[string]interface{}{
 			"name":     v.Name,
 			"quantity": v.Quantity,
-			"price":    v.Price,
-			"subTotal": v.SubTotal,
+			"price":    fmt.Sprintf("%.2f", float64(v.Price)/100),
+			"subTotal": fmt.Sprintf("%.2f", float64(v.SubTotal)/100),
 		})
 	}
 
@@ -92,7 +92,7 @@ func SendOrderDetailsEmail(email string, order *models.OrderDetailsView) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", fmt.Sprintf("%s", config.EmailService().FromEmailAddress))
 	m.SetHeader("To", email)
-	m.SetHeader("Subject", "Order has been placed")
+	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", body)
 
 	if err := EmailDialer().DialAndSend(m); err != nil {
