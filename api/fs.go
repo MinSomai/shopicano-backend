@@ -15,11 +15,18 @@ import (
 	"strings"
 )
 
-func RegisterFSRoutes(g *echo.Group) {
-	g.GET("/:bucket_name/:file_name/", serveAsStream)
+func RegisterFSRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	fsPublicPath := publicEndpoints.Group("/fs")
+	fsPlatformPath := platformEndpoints.Group("/fs")
 
-	g.Use(middlewares.AuthUser)
-	g.POST("/:bucket_name/", upload)
+	fsPublicPath.GET("/:bucket_name/:file_name/", serveAsStream)
+
+	func(g echo.Group) {
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
+		g.POST("/:bucket_name/", upload)
+	}(*fsPlatformPath)
 }
 
 func serveAsStream(ctx echo.Context) error {

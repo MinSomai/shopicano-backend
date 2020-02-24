@@ -15,22 +15,25 @@ import (
 	"time"
 )
 
-func RegisterUserRoutes(g *echo.Group) {
+func RegisterUserRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	usersPublicPath := publicEndpoints.Group("/users")
+	usersPlatformPath := platformEndpoints.Group("/users")
+
 	func(g echo.Group) {
-		g.Use(middlewares.AuthUser)
+		g.Use(middlewares.JWTAuth())
 		g.PUT("/", update)
 		g.GET("/", get)
-	}(*g)
+	}(*usersPublicPath)
 
 	func(g echo.Group) {
 		g.Use(middlewares.IsPlatformManager)
 		g.PATCH("/:user_id/status/", updateStatus)
-	}(*g)
+	}(*usersPlatformPath)
 
 	func(g echo.Group) {
 		g.Use(middlewares.IsPlatformAdmin)
 		g.PATCH("/:user_id/permission/", updatePermission)
-	}(*g)
+	}(*usersPlatformPath)
 }
 
 func update(ctx echo.Context) error {

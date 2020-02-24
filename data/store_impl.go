@@ -42,9 +42,11 @@ func (su *StoreRepositoryImpl) AddStoreStuff(db *gorm.DB, st *models.Staff) erro
 func (su *StoreRepositoryImpl) UpdateStoreStuffPermission(db *gorm.DB, staff *models.Staff) error {
 	st := models.Staff{}
 
-	if err := db.Table(st.TableName()).Select("permission_id").Update(map[string]interface{}{
-		"permission_id": staff.PermissionID,
-	}).Where("store_id = ? AND user_id = ? AND is_creator = ?", staff.StoreID, staff.UserID, false).Error; err != nil {
+	if err := db.Table(st.TableName()).Select("permission_id").
+		Where("store_id = ? AND user_id = ? AND is_creator = ?", staff.StoreID, staff.UserID, false).
+		Update(map[string]interface{}{
+			"permission_id": staff.PermissionID,
+		}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -104,4 +106,67 @@ func (su *StoreRepositoryImpl) SearchStaffs(db *gorm.DB, storeID, query string, 
 		return nil, err
 	}
 	return staffs, nil
+}
+
+func (su *StoreRepositoryImpl) List(db *gorm.DB, from, limit int) ([]models.Store, error) {
+	var stores []models.Store
+	store := models.Store{}
+	if err := db.Table(store.TableName()).
+		Offset(from).
+		Limit(limit).
+		Find(&stores).Error; err != nil {
+		return nil, err
+	}
+	return stores, nil
+}
+
+func (su *StoreRepositoryImpl) Search(db *gorm.DB, query string, from, limit int) ([]models.Store, error) {
+	var stores []models.Store
+	store := models.Store{}
+	if err := db.Table(store.TableName()).
+		Where("name LIKE ?", "%"+query+"%").
+		Offset(from).
+		Limit(limit).
+		Find(&stores).Error; err != nil {
+		return nil, err
+	}
+	return stores, nil
+}
+
+func (su *StoreRepositoryImpl) UpdateStoreStatus(db *gorm.DB, s *models.Store) error {
+	if err := db.Table(s.TableName()).
+		Select("status, commission_rate").
+		Where("id = ?", s.ID).
+		Update(map[string]interface{}{
+			"status":          s.Status,
+			"commission_rate": s.CommissionRate,
+		}).
+		Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (su *StoreRepositoryImpl) UpdateStore(db *gorm.DB, s *models.Store) error {
+	if err := db.Table(s.TableName()).
+		Select("name, address, city, country, postcode, phone, logo_image, cover_image, is_product_creation_enabled, is_order_creation_enabled, is_auto_confirm_enabled, description").
+		Where("id = ?", s.ID).
+		Update(map[string]interface{}{
+			"name":                        s.Name,
+			"address":                     s.Address,
+			"city":                        s.City,
+			"country":                     s.Country,
+			"postcode":                    s.Postcode,
+			"phone":                       s.Phone,
+			"logo_image":                  s.LogoImage,
+			"cover_image":                 s.CoverImage,
+			"is_product_creation_enabled": s.IsProductCreationEnabled,
+			"is_order_creation_enabled":   s.IsOrderCreationEnabled,
+			"is_auto_confirm_enabled":     s.IsAutoConfirmEnabled,
+			"description":                 s.Description,
+		}).
+		Error; err != nil {
+		return err
+	}
+	return nil
 }

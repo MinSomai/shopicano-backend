@@ -134,16 +134,47 @@ func (au *AdminRepositoryImpl) GetPaymentMethod(db *gorm.DB, ID string) (*models
 	return &m, nil
 }
 
-func (au *AdminRepositoryImpl) GetSettings(db *gorm.DB) (*models.SettingsDetails, error) {
+func (au *AdminRepositoryImpl) GetSettingsDetails(db *gorm.DB) (*models.SettingsDetails, error) {
 	settings := models.Settings{}
 	settingsDetails := models.SettingsDetails{}
 	a := models.Address{}
 	if err := db.Table(fmt.Sprintf("%s AS s", settings.TableName())).
 		Where("s.id = ?", "1").
-		Select("s.id AS id, s.name AS name, s.website AS website, s.is_active AS is_active, a.address AS address, a.city AS city, a.country AS country, a.postcode AS postcode, a.email AS email, a.phone AS phone, s.is_sign_up_enabled AS is_sign_up_enabled, s.is_store_creation_enabled AS is_store_creation_enabled, s.default_commission_rate AS default_commission_rate, s.tag_line AS tag_line, s.created_at AS created_at, s.updated_at AS updated_at").
+		Select("s.id AS id, s.name AS name, s.website AS website, s.status AS status, a.address AS address, a.city AS city, a.country AS country, a.postcode AS postcode, a.email AS email, a.phone AS phone, s.is_sign_up_enabled AS is_sign_up_enabled, s.enabled_auto_store_confirmation AS enabled_auto_store_confirmation, s.is_store_creation_enabled AS is_store_creation_enabled, s.default_commission_rate AS default_commission_rate, s.tag_line AS tag_line, s.created_at AS created_at, s.updated_at AS updated_at").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS a ON s.company_address_id = a.id", a.TableName())).
 		Find(&settingsDetails).Error; err != nil {
 		return nil, err
 	}
 	return &settingsDetails, nil
+}
+
+func (au *AdminRepositoryImpl) GetSettings(db *gorm.DB) (*models.Settings, error) {
+	settings := models.Settings{}
+	if err := db.Table(settings.TableName()).
+		Where("id = ?", "1").
+		Find(&settings).Error; err != nil {
+		return nil, err
+	}
+	return &settings, nil
+}
+
+func (au *AdminRepositoryImpl) UpdateSettings(db *gorm.DB, s *models.Settings) error {
+	if err := db.Table(s.TableName()).
+		Select("name, status, website, company_address_id, default_commission_rate, enabled_auto_store_confirmation, tag_line, is_sign_up_enabled, is_store_creation_enabled, updated_at").
+		Where("id = ?", "1").
+		Update(map[string]interface{}{
+			"name":                            s.Name,
+			"status":                          s.Status,
+			"website":                         s.Website,
+			"company_address_id":              s.CompanyAddressID,
+			"default_commission_rate":         s.DefaultCommissionRate,
+			"enabled_auto_store_confirmation": s.EnabledAutoStoreConfirmation,
+			"tag_line":                        s.TagLine,
+			"is_sign_up_enabled":              s.IsSignUpEnabled,
+			"is_store_creation_enabled":       s.IsStoreCreationEnabled,
+			"updated_at":                      s.UpdatedAt,
+		}).Error; err != nil {
+		return err
+	}
+	return nil
 }

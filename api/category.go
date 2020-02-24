@@ -14,20 +14,25 @@ import (
 	"time"
 )
 
-func RegisterCategoryRoutes(g *echo.Group) {
-	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
-		g.GET("/", listCategories)
-	}(g)
+func RegisterCategoryRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	categoryPublicPath := publicEndpoints.Group("/categories")
+	categoryPlatformPath := platformEndpoints.Group("/categories")
 
-	func(g *echo.Group) {
-		// private endpoints only
-		g.Use(middlewares.IsStoreStaffAndStoreActive)
+	func(g echo.Group) {
+		g.GET("/", listCategories)
+		g.GET("/:category_id/", getCategory)
+	}(*categoryPublicPath)
+
+	func(g echo.Group) {
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
 		g.POST("/", createCategory)
 		g.DELETE("/:category_id/", deleteCategory)
 		g.PATCH("/:category_id/", updateCategory)
-		g.GET("/:category_id/", getCategory)
-	}(g)
+		g.GET("/:category_id/", getCategoryAsOwner)
+		g.GET("/", listCategoriesAsStoreOwner)
+	}(*categoryPlatformPath)
 }
 
 func createCategory(ctx echo.Context) error {
@@ -93,9 +98,48 @@ func listCategories(ctx echo.Context) error {
 	var categories interface{}
 
 	if query == "" {
-		categories, err = fetchCategories(ctx, page, limit, !utils.IsStoreStaff(ctx))
+		categories, err = fetchCategories(ctx, page, limit, true)
 	} else {
-		categories, err = searchCategories(ctx, query, page, limit, !utils.IsStoreStaff(ctx))
+		categories, err = searchCategories(ctx, query, page, limit, true)
+	}
+
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = categories
+	return resp.ServerJSON(ctx)
+}
+
+func listCategoriesAsStoreOwner(ctx echo.Context) error {
+	pageQ := ctx.Request().URL.Query().Get("page")
+	limitQ := ctx.Request().URL.Query().Get("limit")
+	query := ctx.Request().URL.Query().Get("query")
+
+	var err error
+
+	page, err := strconv.ParseInt(pageQ, 10, 64)
+	if err != nil {
+		page = 1
+	}
+	limit, err := strconv.ParseInt(limitQ, 10, 64)
+	if err != nil {
+		limit = 10
+	}
+
+	resp := core.Response{}
+
+	var categories interface{}
+
+	if query == "" {
+		categories, err = fetchCategories(ctx, page, limit, false)
+	} else {
+		categories, err = searchCategories(ctx, query, page, limit, false)
 	}
 
 	if err != nil {
@@ -181,7 +225,7 @@ func updateCategory(ctx echo.Context) error {
 	db := app.DB()
 	cu := data.NewCategoryRepository()
 
-	c, err := cu.Get(db, storeID, categoryID)
+	c, err := cu.GetAsStoreOwner(db, storeID, categoryID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Category not found"
@@ -228,6 +272,36 @@ func updateCategory(ctx echo.Context) error {
 
 func getCategory(ctx echo.Context) error {
 	categoryID := ctx.Param("category_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+	cu := data.NewCategoryRepository()
+
+	c, err := cu.Get(db, categoryID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Category not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.CategoryNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = c
+	return resp.ServerJSON(ctx)
+}
+
+func getCategoryAsOwner(ctx echo.Context) error {
+	categoryID := ctx.Param("category_id")
 	storeID := ctx.Get(utils.StoreID).(string)
 
 	resp := core.Response{}
@@ -235,7 +309,7 @@ func getCategory(ctx echo.Context) error {
 	db := app.DB()
 	cu := data.NewCategoryRepository()
 
-	c, err := cu.Get(db, storeID, categoryID)
+	c, err := cu.GetAsStoreOwner(db, storeID, categoryID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Category not found"

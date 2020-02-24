@@ -1,249 +1,99 @@
 package middlewares
 
 import (
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
+	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
 	"net/http"
 )
 
-var IsStoreStaffAndStoreActive = func(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		resp := core.Response{}
+func HasStore() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			resp := core.Response{}
 
-		token, err := utils.ParseBearerToken(ctx)
-		if err != nil {
-			resp.Status = http.StatusUnauthorized
-			resp.Title = "Access token missing"
-			return resp.ServerJSON(ctx)
-		}
+			db := app.DB()
 
-		db := app.DB()
+			su := data.NewStoreRepository()
+			store, err := su.GetStoreUserProfile(db, ctx.Get(utils.UserID).(string))
+			if err != nil {
+				log.Log().Errorln(err)
+				if errors.IsRecordNotFoundError(err) {
+					resp.Status = http.StatusNotFound
+					resp.Code = errors.StoreNotFound
+					resp.Title = "Store not found"
+					return resp.ServerJSON(ctx)
+				}
 
-		uc := data.NewUserRepository()
-		userID, _, err := uc.GetPermission(db, token)
-		if err != nil {
-			resp.Status = http.StatusUnauthorized
-			resp.Title = "Unauthorized request"
-			return resp.ServerJSON(ctx)
-		}
-
-		su := data.NewStoreRepository()
-		store, err := su.GetStoreUserProfile(db, userID)
-
-		if err != nil {
-			log.Log().Errorln(err)
-			if err == gorm.ErrRecordNotFound {
-				resp.Status = http.StatusNotFound
-				resp.Title = "Store not found"
+				resp.Status = http.StatusInternalServerError
+				resp.Code = errors.DatabaseQueryFailed
+				resp.Title = "Database query failed"
+				resp.Errors = err
 				return resp.ServerJSON(ctx)
 			}
-			resp.Status = http.StatusInternalServerError
-			resp.Title = "Database query failed"
-			return resp.ServerJSON(ctx)
-		}
 
-		if store.Status != models.StoreActive {
-			resp.Status = http.StatusForbidden
-			resp.Title = "Store isn't active"
-			return resp.ServerJSON(ctx)
-		}
+			log.Log().Infoln(store.StorePermission)
+			log.Log().Infoln(store.Status)
 
-		ctx.Set(utils.StoreID, store.ID)
-		ctx.Set(utils.UserID, store.UserID)
-		ctx.Set(utils.StorePermission, store.StorePermission)
-		return next(ctx)
+			ctx.Set(utils.StoreID, store.ID)
+			ctx.Set(utils.StorePermission, store.StorePermission)
+			ctx.Set(utils.StoreStatus, store.Status)
+			return next(ctx)
+		}
 	}
 }
 
-var MightBeStoreStaffAndStoreActive = func(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		resp := core.Response{}
+func IsStoreActive() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			resp := core.Response{}
 
-		token, err := utils.ParseBearerToken(ctx)
-		if err != nil {
-			return next(ctx)
-		}
-
-		db := app.DB()
-
-		uc := data.NewUserRepository()
-		userID, u, err := uc.GetPermission(db, token)
-		if err != nil {
-			return next(ctx)
-		}
-
-		su := data.NewStoreRepository()
-		store, err := su.GetStoreUserProfile(db, userID)
-
-		if err != nil {
-			log.Log().Errorln(err)
-			if err == gorm.ErrRecordNotFound {
-				ctx.Set(utils.UserID, userID)
-				ctx.Set(utils.UserPermission, *u)
-				return next(ctx)
-			}
-
-			resp.Status = http.StatusInternalServerError
-			resp.Title = "Database query failed"
-			return resp.ServerJSON(ctx)
-		}
-
-		if store.Status != models.StoreActive {
-			resp.Status = http.StatusForbidden
-			resp.Title = "Store isn't active"
-			return resp.ServerJSON(ctx)
-		}
-
-		ctx.Set(utils.StoreID, store.ID)
-		ctx.Set(utils.UserID, store.UserID)
-		ctx.Set(utils.StorePermission, store.StorePermission)
-		return next(ctx)
-	}
-}
-
-var MustBeUserOrStoreStaffAndStoreActive = func(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		resp := core.Response{}
-
-		token, err := utils.ParseBearerToken(ctx)
-		if err != nil {
-			resp.Status = http.StatusUnauthorized
-			resp.Title = "Access token missing"
-			return resp.ServerJSON(ctx)
-		}
-
-		db := app.DB()
-
-		uc := data.NewUserRepository()
-		userID, u, err := uc.GetPermission(db, token)
-		if err != nil {
-			log.Log().Errorln(err)
-			resp.Status = http.StatusUnauthorized
-			resp.Title = "Unauthorized request"
-			return resp.ServerJSON(ctx)
-		}
-
-		ctx.Set(utils.UserID, userID)
-		ctx.Set(utils.UserPermission, *u)
-
-		su := data.NewStoreRepository()
-		store, err := su.GetStoreUserProfile(db, userID)
-
-		if err != nil {
-			log.Log().Errorln(err)
-			if err == gorm.ErrRecordNotFound {
-				return next(ctx)
-			}
-
-			resp.Status = http.StatusInternalServerError
-			resp.Title = "Database query failed"
-			return resp.ServerJSON(ctx)
-		}
-
-		if store.Status != models.StoreActive {
-			return next(ctx)
-		}
-
-		ctx.Set(utils.StoreID, store.ID)
-		ctx.Set(utils.StorePermission, store.StorePermission)
-		return next(ctx)
-	}
-}
-
-var IsStoreStaff = func(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		resp := core.Response{}
-
-		token, err := utils.ParseBearerToken(ctx)
-		if err != nil {
-			resp.Status = http.StatusUnauthorized
-			resp.Title = "Access token missing"
-			return resp.ServerJSON(ctx)
-		}
-
-		db := app.DB()
-
-		uc := data.NewUserRepository()
-		userID, _, err := uc.GetPermission(db, token)
-		if err != nil {
-			resp.Status = http.StatusUnauthorized
-			resp.Title = "Unauthorized request"
-			return resp.ServerJSON(ctx)
-		}
-
-		su := data.NewStoreRepository()
-		store, err := su.GetStoreUserProfile(db, userID)
-
-		if err != nil {
-			log.Log().Errorln(err)
-			if err == gorm.ErrRecordNotFound {
-				resp.Status = http.StatusNotFound
-				resp.Title = "Store not found"
+			if utils.GetStoreStatus(ctx) != models.StoreActive {
+				resp.Status = http.StatusForbidden
+				resp.Code = errors.StoreNotActive
+				resp.Title = "Store not active"
 				return resp.ServerJSON(ctx)
 			}
-			resp.Status = http.StatusInternalServerError
-			resp.Title = "Database query failed"
-			return resp.ServerJSON(ctx)
+			return next(ctx)
 		}
-
-		ctx.Set(utils.StoreID, store.ID)
-		ctx.Set(utils.UserID, store.UserID)
-		ctx.Set(utils.StorePermission, store.StorePermission)
-		return next(ctx)
 	}
 }
 
-var IsStoreAdmin = func(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		resp := core.Response{}
+func IsStoreManager() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			resp := core.Response{}
 
-		token, err := utils.ParseBearerToken(ctx)
-		if err != nil {
-			resp.Status = http.StatusUnauthorized
-			resp.Title = "Access token missing"
-			return resp.ServerJSON(ctx)
-		}
+			log.Log().Infoln(utils.GetStorePermission(ctx))
 
-		db := app.DB()
-
-		uc := data.NewUserRepository()
-		userID, _, err := uc.GetPermission(db, token)
-		if err != nil {
-			resp.Status = http.StatusUnauthorized
-			resp.Title = "Unauthorized request"
-			return resp.ServerJSON(ctx)
-		}
-
-		su := data.NewStoreRepository()
-		store, err := su.GetStoreUserProfile(db, userID)
-
-		if err != nil {
-			log.Log().Errorln(err)
-			if err == gorm.ErrRecordNotFound {
-				resp.Status = http.StatusNotFound
-				resp.Title = "Store not found"
+			if !(utils.GetStorePermission(ctx) == models.AdminPerm || utils.GetStorePermission(ctx) == models.ManagerPerm) {
+				resp.Status = http.StatusForbidden
+				resp.Code = errors.UnauthorizedStoreAccess
+				resp.Title = "Unauthorized to access store as manager"
 				return resp.ServerJSON(ctx)
 			}
-			resp.Status = http.StatusInternalServerError
-			resp.Title = "Database query failed"
-			return resp.ServerJSON(ctx)
+			return next(ctx)
 		}
+	}
+}
 
-		if store.StorePermission != models.AdminPerm {
-			resp.Status = http.StatusForbidden
-			resp.Title = "Unauthorized request"
-			return resp.ServerJSON(ctx)
+func IsStoreAdmin() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			resp := core.Response{}
+
+			if utils.GetStorePermission(ctx) != models.AdminPerm {
+				resp.Status = http.StatusForbidden
+				resp.Code = errors.UnauthorizedStoreAccess
+				resp.Title = "Unauthorized to access store as admin"
+				return resp.ServerJSON(ctx)
+			}
+			return next(ctx)
 		}
-
-		ctx.Set(utils.StoreID, store.ID)
-		ctx.Set(utils.UserID, store.UserID)
-		ctx.Set(utils.StorePermission, store.StorePermission)
-		return next(ctx)
 	}
 }

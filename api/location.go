@@ -16,17 +16,19 @@ import (
 	"strings"
 )
 
-func RegisterLocationRoutes(g *echo.Group) {
+func RegisterLocationRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	locationsPublicPath := publicEndpoints.Group("/locations")
+	locationsPlatformPath := platformEndpoints.Group("/locations")
+
 	func(g echo.Group) {
-		g.Use(middlewares.MustBeUserOrStoreStaffAndStoreActive)
 		g.GET("/", listLocations)
-	}(*g)
+	}(*locationsPublicPath)
 
 	func(g echo.Group) {
 		g.Use(middlewares.IsPlatformManager)
 		g.PATCH("/:location_id/", updateLocation)
 		g.PATCH("/", enableLocation)
-	}(*g)
+	}(*locationsPlatformPath)
 }
 
 func listLocations(ctx echo.Context) error {

@@ -13,11 +13,15 @@ import (
 	"strconv"
 )
 
-func RegisterCustomerRoutes(g *echo.Group) {
-	func(g *echo.Group) {
-		g.Use(middlewares.IsStoreStaffAndStoreActive)
+func RegisterCustomerRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	customersPlatformPath := platformEndpoints.Group("/customers")
+
+	func(g echo.Group) {
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
 		g.GET("/", listCustomers)
-	}(g)
+	}(*customersPlatformPath)
 }
 
 func listCustomers(ctx echo.Context) error {

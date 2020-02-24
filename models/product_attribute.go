@@ -2,10 +2,21 @@ package models
 
 import "fmt"
 
+type ProductKV struct {
+	ID    string `json:"id"`
+	Value string `json:"value"`
+}
+
+type OrderItemAttributeKV struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type ProductAttribute struct {
+	ID        string `json:"id" gorm:"column:id;unique_index;not null"`
 	ProductID string `json:"-" gorm:"column:product_id;primary_key"`
 	Key       string `json:"key" gorm:"column:key;primary_key"`
-	Value     string `json:"value" gorm:"column:value"`
+	Value     string `json:"value" gorm:"column:value;primary_key"`
 }
 
 func (pa *ProductAttribute) TableName() string {

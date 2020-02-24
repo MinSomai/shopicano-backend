@@ -15,15 +15,18 @@ import (
 	"time"
 )
 
-func RegisterAddressRoutes(g *echo.Group) {
+func RegisterAddressRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	addressesPublicPath := publicEndpoints.Group("/addresses")
+	//addressesPlatformPath := platformEndpoints.Group("/addresses")
+
 	func(g echo.Group) {
-		g.Use(middlewares.AuthUser)
+		g.Use(middlewares.JWTAuth())
 		g.POST("/", createAddress)
 		g.GET("/", listAddresses)
 		g.GET("/:address_id/", getAddress)
 		g.DELETE("/:address_id/", deleteAddress)
 		g.PUT("/:address_id/", updateAddress)
-	}(*g)
+	}(*addressesPublicPath)
 }
 
 func createAddress(ctx echo.Context) error {

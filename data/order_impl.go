@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/shopicano/shopicano-backend/errors"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	"time"
@@ -80,6 +81,21 @@ func (os *OrderRepositoryImpl) AddOrderedItem(db *gorm.DB, oi *models.OrderedIte
 		return err
 	}
 	return nil
+}
+
+func (os *OrderRepositoryImpl) AddOrderedItemAttribute(db *gorm.DB, attr *models.OrderedItemAttribute) error {
+	if err := db.Table(attr.TableName()).Create(attr).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (os *OrderRepositoryImpl) GetOrderedItemAttribute(db *gorm.DB, orderedItemID string) (*models.OrderedItemAttribute, error) {
+	oi := models.OrderedItemAttribute{}
+	if err := db.Table(oi.TableName()).Find(&oi, "ordered_item_id = ?", orderedItemID).Error; err != nil {
+		return nil, err
+	}
+	return &oi, nil
 }
 
 func (os *OrderRepositoryImpl) GetOrderedItem(db *gorm.DB, orderID, productID string) (*models.OrderedItem, error) {
@@ -263,7 +279,34 @@ func (os *OrderRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, orde
 		return nil, err
 	}
 
+	for i, it := range items {
+		attribute := models.OrderedItemAttribute{}
+		var attributes []models.OrderedItemAttribute
+		if err := db.Table(attribute.TableName()).Find(&attributes, "ordered_item_id = ?", it.ID).Error; err != nil {
+			if errors.IsRecordNotFoundError(err) {
+				continue
+			}
+			return nil, err
+		}
+
+		for _, attr := range attributes {
+			items[i].Attributes = append(items[i].Attributes, models.OrderItemAttributeKV{
+				Key:   attr.AttributeKey,
+				Value: attr.AttributeValue,
+			})
+		}
+	}
+
 	order.Items = items
+	return &order, nil
+}
+
+func (os *OrderRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, orderID string) (*models.Order, error) {
+	order := models.Order{}
+	if err := db.Model(&order).First(&order, "id = ? AND store_id = ?", orderID, storeID).Error; err != nil {
+		log.Log().Errorln(err)
+		return nil, err
+	}
 	return &order, nil
 }
 
@@ -280,6 +323,24 @@ func (os *OrderRepositoryImpl) GetDetailsAsUser(db *gorm.DB, userID, orderID str
 	if err := db.Model(oiv).Find(&items, "order_id = ?", orderID).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
+	}
+
+	for i, it := range items {
+		attribute := models.OrderedItemAttribute{}
+		var attributes []models.OrderedItemAttribute
+		if err := db.Table(attribute.TableName()).Find(&attributes, "ordered_item_id = ?", it.ID).Error; err != nil {
+			if errors.IsRecordNotFoundError(err) {
+				continue
+			}
+			return nil, err
+		}
+
+		for _, attr := range attributes {
+			items[i].Attributes = append(items[i].Attributes, models.OrderItemAttributeKV{
+				Key:   attr.AttributeKey,
+				Value: attr.AttributeValue,
+			})
+		}
 	}
 
 	order.Items = items

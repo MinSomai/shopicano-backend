@@ -10,28 +10,32 @@ import (
 	"time"
 )
 
-func ValidateLogin(ctx echo.Context) (string, string, error) {
-	ul := struct {
-		Email    string `json:"email" valid:"required,stringlength(3|100)"`
-		Password string `json:"password"`
-	}{}
+type reqLogin struct {
+	Email    string          `json:"email" valid:"required,stringlength(3|100)"`
+	Password string          `json:"password" valid:"required"`
+	Scope    utils.UserScope `json:"scope"`
+}
 
-	if err := ctx.Bind(&ul); err != nil {
-		return "", "", err
+func ValidateLogin(ctx echo.Context) (*reqLogin, error) {
+	body := reqLogin{}
+	if err := ctx.Bind(&body); err != nil {
+		return nil, err
 	}
 
-	ok, err := govalidator.ValidateStruct(&ul)
-	if ok {
-		return ul.Email, ul.Password, nil
-	}
+	ok, err := govalidator.ValidateStruct(&body)
 
 	ve := errors.ValidationError{}
-
-	for k, v := range govalidator.ErrorsByField(err) {
-		ve.Add(k, v)
+	if !ok {
+		for k, v := range govalidator.ErrorsByField(err) {
+			ve.Add(k, v)
+		}
 	}
 
-	return "", "", &ve
+	if len(ve) > 0 {
+		return nil, &ve
+	}
+
+	return &body, nil
 }
 
 func ValidateRegister(ctx echo.Context) (*models.User, error) {

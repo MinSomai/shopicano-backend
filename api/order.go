@@ -21,41 +21,42 @@ import (
 	"time"
 )
 
-func RegisterOrderRoutes(g *echo.Group) {
-	g.POST("/:order_id/pay/", payOrder)
-	g.GET("/:order_id/pay/", payOrder)
+func RegisterOrderRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	ordersPublicPath := publicEndpoints.Group("/orders")
+	ordersPlatformPath := platformEndpoints.Group("/orders")
 
 	func(g echo.Group) {
-		g.Use(middlewares.MustBeUserOrStoreStaffAndStoreActive)
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
+		g.GET("/", listOrdersAsStoreOwner)
+		g.GET("/:order_id/", getOrderAsStoreOwner)
+		g.PATCH("/:order_id/status/", orderUpdateStatus)
+	}(*ordersPlatformPath)
+
+	func(g echo.Group) {
+		g.Use(middlewares.JWTAuth())
+		g.POST("/", createOrder)
 		g.GET("/", listOrders)
 		g.GET("/:order_id/", getOrder)
-	}(*g)
-
-	func(g echo.Group) {
-		g.Use(middlewares.AuthUser)
-		g.POST("/", createOrder)
 		g.POST("/:order_id/nonce/", generatePayNonce)
 		g.POST("/:order_id/review/", createReview)
-	}(*g)
-
-	func(g echo.Group) {
-		g.Use(middlewares.AuthUserWithQueryToken)
 		g.GET("/:order_id/products/:product_id/download/", downloadProductAsUser)
 		g.GET("/:order_id/nonce/", generatePayNonce)
-	}(*g)
+	}(*ordersPublicPath)
 
 	func(g echo.Group) {
-		g.Use(middlewares.IsStoreAdmin)
+		g.POST("/:order_id/pay/", payOrder)
+		g.GET("/:order_id/pay/", payOrder)
+	}(*ordersPublicPath)
+
+	func(g echo.Group) {
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreAdmin())
 		g.POST("/:order_id/revert-payment/", revertOrderPayment)
-	}(*g)
-
-	func(g echo.Group) {
-		g.Use(middlewares.IsStoreStaffAndStoreActive)
-		g.POST("/internal/", createOrder)
-		g.PATCH("/internal/:order_id/", createOrder)
-		g.PUT("/internal/items/:order_id/", createOrder)
-		g.DELETE("/internal/items/:order_id/", createOrder)
-	}(*g)
+		g.PATCH("/:order_id/payment-status/", orderPaymentStatusUpdate)
+	}(*ordersPlatformPath)
 }
 
 func createOrder(ctx echo.Context) error {
@@ -110,11 +111,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			return resp.ServerJSON(ctx)
 		}
 
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+		return serveDatabaseQueryFailed(ctx, err)
 	}
 
 	var sm *models.ShippingMethod
@@ -132,11 +129,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 				return resp.ServerJSON(ctx)
 			}
 
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}
 
@@ -146,31 +139,63 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	isAllDigitalProduct := true
 
 	var availableItems []*models.OrderedItem
+	var productAttributes []*models.OrderedItemAttribute
 
 	var storeID *string
 
 	for _, v := range pld.Items {
+		orderedItemID := utils.NewUUID()
+
 		item, err := pu.GetForOrder(db, v.ID, v.Quantity)
 		if err != nil {
 			db.Rollback()
 
 			if errors.IsRecordNotFoundError(err) {
-				resp.Title = "Product unavailable"
+				resp.Title = fmt.Sprintf("Product %s is unavailable", v.ID)
 				resp.Status = http.StatusNotFound
 				resp.Code = errors.ProductUnavailable
 				resp.Errors = err
 				return resp.ServerJSON(ctx)
 			}
 
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 
 		if item.IsDigital {
 			v.Quantity = 1
+		} else {
+			if v.Quantity > item.MaxQuantityCount {
+				db.Rollback()
+
+				resp.Title = fmt.Sprintf("Exceed max order quantity for item %s", item.Name)
+				resp.Status = http.StatusBadRequest
+				resp.Code = errors.ExceedMaxProductQuantity
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+		}
+
+		for _, a := range v.Attributes {
+			attr, err := pu.GetAttribute(db, v.ID, a)
+			if err != nil {
+				db.Rollback()
+
+				if errors.IsRecordNotFoundError(err) {
+					resp.Title = "Attribute not found"
+					resp.Status = http.StatusNotFound
+					resp.Code = errors.AttributeNotFound
+					resp.Errors = err
+					return resp.ServerJSON(ctx)
+				}
+
+				return serveDatabaseQueryFailed(ctx, err)
+			}
+
+			productAttributes = append(productAttributes, &models.OrderedItemAttribute{
+				OrderedItemID:  orderedItemID,
+				AttributeKey:   attr.Key,
+				AttributeValue: attr.Value,
+			})
 		}
 
 		if storeID == nil {
@@ -199,6 +224,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 
 		oi := &models.OrderedItem{
+			ID:          orderedItemID,
 			OrderID:     o.ID,
 			ProductID:   item.ID,
 			Quantity:    v.Quantity,
@@ -218,6 +244,16 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		resp.Title = "Cart must have all digital or all non-digital products"
 		resp.Status = http.StatusBadRequest
 		resp.Code = errors.CartMustHaveAllDigitalOrAllNonDigitalProducts
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if hasDigitalProducts && pm.IsOfflinePayment {
+		db.Rollback()
+
+		resp.Title = "Payment method must be online for digital products"
+		resp.Status = http.StatusBadRequest
+		resp.Code = errors.PaymentMethodMustBeOnlineForDigitalProducts
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
@@ -254,12 +290,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 				resp.Errors = err
 				return resp.ServerJSON(ctx)
 			}
-
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 
 		if !coupon.IsValid() {
@@ -276,12 +307,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			ok, err := cu.HasUser(db, *storeID, coupon.ID, pld.UserID)
 			if err != nil {
 				db.Rollback()
-
-				resp.Title = "Database query failed"
-				resp.Status = http.StatusInternalServerError
-				resp.Code = errors.DatabaseQueryFailed
-				resp.Errors = err
-				return resp.ServerJSON(ctx)
+				return serveDatabaseQueryFailed(ctx, err)
 			}
 
 			if !ok {
@@ -295,7 +321,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			}
 		}
 
-		previousUsage, err := cu.GetUsage(db, coupon.ID, o.UserID)
+		previousUsage, err := cu.GetUsage(db, coupon.ID, o.UserID) // TODO : Cross check
 		if err != nil {
 			db.Rollback()
 
@@ -354,11 +380,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			return resp.ServerJSON(ctx)
 		}
 
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+		return serveDatabaseQueryFailed(ctx, err)
 	}
 
 	if couponID != nil {
@@ -369,24 +391,30 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 		if err := cu.AddUsage(db, &couponUsage); err != nil {
 			db.Rollback()
-
-			resp.Title = "Failed to add coupon usage"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}
 
 	for _, v := range availableItems {
 		if err := ou.AddOrderedItem(db, v); err != nil {
 			db.Rollback()
+			return serveDatabaseQueryFailed(ctx, err)
+		}
+	}
 
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+	for _, v := range productAttributes {
+		if err := ou.AddOrderedItemAttribute(db, v); err != nil {
+			db.Rollback()
+
+			msg, ok := errors.IsDuplicateKeyError(err)
+			if ok {
+				resp.Title = msg
+				resp.Status = http.StatusConflict
+				resp.Code = errors.ProductAttributeAlreadyExists
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}
 
@@ -399,12 +427,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	}
 	if err := ou.CreateLog(db, &ol); err != nil {
 		db.Rollback()
-
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+		return serveDatabaseQueryFailed(ctx, err)
 	}
 
 	if isAllDigitalProduct {
@@ -423,12 +446,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 				resp.Errors = err
 				return resp.ServerJSON(ctx)
 			}
-
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 
 		ol := models.OrderLog{
@@ -440,12 +458,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 		if err := ou.CreateLog(db, &ol); err != nil {
 			db.Rollback()
-
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}
 
@@ -466,11 +479,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 				return resp.ServerJSON(ctx)
 			}
 
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 
 		ol := models.OrderLog{
@@ -482,12 +491,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 		if err := ou.CreateLog(db, &ol); err != nil {
 			db.Rollback()
-
-			resp.Title = "Database query failed"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
+			return serveDatabaseQueryFailed(ctx, err)
 		}
 	}
 
@@ -502,7 +506,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if err := queue.SendOrderDetailsEmail(o.ID); err != nil {
+	if err := queue.SendOrderDetailsEmail(o.ID, "Order has been placed"); err != nil {
 		db.Rollback()
 
 		resp.Title = "Failed to queue send order details"
@@ -513,11 +517,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	}
 
 	if err := db.Commit().Error; err != nil {
-		resp.Title = "Database query failed"
-		resp.Status = http.StatusInternalServerError
-		resp.Code = errors.DatabaseQueryFailed
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
+		return serveDatabaseQueryFailed(ctx, err)
 	}
 
 	resp.Status = http.StatusCreated
@@ -577,17 +577,212 @@ func getOrder(ctx echo.Context) error {
 	var err error
 
 	ou := data.NewOrderRepository()
-
-	if utils.IsStoreStaff(ctx) {
-		r, err = ou.GetDetailsAsStoreStuff(db, utils.GetStoreID(ctx), orderID)
-	} else {
-		r, err = ou.GetDetailsAsUser(db, utils.GetUserID(ctx), orderID)
-	}
-
+	r, err = ou.GetDetailsAsUser(db, utils.GetUserID(ctx), orderID)
 	if err != nil {
 		resp.Title = "Order not found"
 		resp.Status = http.StatusNotFound
 		resp.Code = errors.OrderNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func getOrderAsStoreOwner(ctx echo.Context) error {
+	orderID := ctx.Param("order_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+
+	var r interface{}
+	var err error
+
+	ou := data.NewOrderRepository()
+	r, err = ou.GetDetailsAsStoreStuff(db, utils.GetStoreID(ctx), orderID)
+	if err != nil {
+		resp.Title = "Order not found"
+		resp.Status = http.StatusNotFound
+		resp.Code = errors.OrderNotFound
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func orderUpdateStatus(ctx echo.Context) error {
+	orderID := ctx.Param("order_id")
+
+	resp := core.Response{}
+
+	pld, err := validators.ValidateUpdateOrder(ctx)
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.OrderDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+
+	ou := data.NewOrderRepository()
+	r, err := ou.GetAsStoreStuff(db, utils.GetStoreID(ctx), orderID)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Order not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.OrderNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Failed to update order status"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	r.Status = pld.Status
+
+	if err := ou.UpdateStatus(db, r); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to update payment info"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   r.ID,
+		Action:    string(r.Status),
+		Details:   fmt.Sprintf("Order status updated by %s", utils.GetUserID(ctx)),
+		CreatedAt: time.Now().UTC(),
+	}
+	if err := ou.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := queue.SendOrderDetailsEmail(r.ID, "Order status updated"); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to enqueue task"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.FailedToEnqueueTask
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func orderPaymentStatusUpdate(ctx echo.Context) error {
+	orderID := ctx.Param("order_id")
+
+	resp := core.Response{}
+
+	pld, err := validators.ValidateUpdatePaymentStatus(ctx)
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.OrderDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+
+	ou := data.NewOrderRepository()
+	r, err := ou.GetAsStoreStuff(db, utils.GetStoreID(ctx), orderID)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Order not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.OrderNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Failed to update order status"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	r.PaymentStatus = pld.Status
+
+	if err := ou.UpdateStatus(db, r); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to update payment info"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   r.ID,
+		Action:    string(r.PaymentStatus),
+		Details:   fmt.Sprintf("Order payment status updated by %s", utils.GetUserID(ctx)),
+		CreatedAt: time.Now().UTC(),
+	}
+	if err := ou.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := queue.SendOrderDetailsEmail(r.ID, "Order payment status updated"); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to enqueue task"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.FailedToEnqueueTask
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
@@ -616,9 +811,46 @@ func listOrders(ctx echo.Context) error {
 	var r interface{}
 
 	if query == "" {
-		r, err = fetchOrders(ctx, page, limit, !utils.IsStoreStaff(ctx))
+		r, err = fetchOrders(ctx, page, limit, true)
 	} else {
-		r, err = searchOrders(ctx, query, page, limit, !utils.IsStoreStaff(ctx))
+		r, err = searchOrders(ctx, query, page, limit, true)
+	}
+
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func listOrdersAsStoreOwner(ctx echo.Context) error {
+	pageQ := ctx.Request().URL.Query().Get("page")
+	limitQ := ctx.Request().URL.Query().Get("limit")
+	query := ctx.Request().URL.Query().Get("query")
+
+	page, err := strconv.ParseInt(pageQ, 10, 64)
+	if err != nil {
+		page = 1
+	}
+	limit, err := strconv.ParseInt(limitQ, 10, 64)
+	if err != nil {
+		limit = 10
+	}
+
+	resp := core.Response{}
+
+	var r interface{}
+
+	if query == "" {
+		r, err = fetchOrders(ctx, page, limit, false)
+	} else {
+		r, err = searchOrders(ctx, query, page, limit, false)
 	}
 
 	if err != nil {
@@ -731,7 +963,7 @@ func downloadProductAsUser(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if !(o.Status == models.OrderConfirmed && o.PaymentStatus == models.PaymentCompleted) {
+	if !(o.IsAllDigitalProducts && o.PaymentStatus == models.PaymentCompleted) {
 		resp.Title = "Unauthorized to download the product"
 		resp.Status = http.StatusForbidden
 		resp.Code = errors.UserScopeUnauthorized
@@ -760,6 +992,14 @@ func downloadProductAsUser(ctx echo.Context) error {
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
-
 	return resp.ServeStreamFromMinio(ctx, f)
+}
+
+func serveDatabaseQueryFailed(ctx echo.Context, err error) error {
+	resp := core.Response{}
+	resp.Title = "Database query failed"
+	resp.Status = http.StatusInternalServerError
+	resp.Code = errors.DatabaseQueryFailed
+	resp.Errors = err
+	return resp.ServerJSON(ctx)
 }

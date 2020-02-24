@@ -43,7 +43,7 @@ func (spg *stripePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*Pa
 
 	lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
 		Name:     stripe.String(fmt.Sprintf("Payment for Order #%s", orderDetails.Hash)),
-		Amount:   stripe.Int64(int64(orderDetails.GrandTotal * 100)),
+		Amount:   stripe.Int64(orderDetails.GrandTotal),
 		Currency: stripe.String("usd"),
 		Quantity: stripe.Int64(int64(1)),
 	})
@@ -111,8 +111,6 @@ func (spg *stripePaymentGateway) ValidateTransaction(orderDetails *models.OrderD
 		capturedAmount += c.Amount
 	}
 
-	capturedAmount /= 100
-
 	log.Log().Infoln("Captured : ", capturedAmount)
 	log.Log().Infoln("Grand Total : ", orderDetails.GrandTotal)
 
@@ -147,7 +145,7 @@ func (spg *stripePaymentGateway) VoidTransaction(orderDetails *models.OrderDetai
 			reason = stripe.RefundReasonFraudulent
 		}
 
-		refundAmount := (orderDetails.GrandTotal - orderDetails.PaymentProcessingFee) * 100
+		refundAmount := orderDetails.GrandTotal - orderDetails.PaymentProcessingFee
 		_, err := spg.client.Refunds.New(&stripe.RefundParams{
 			Amount:               stripe.Int64(refundAmount),
 			Reason:               stripe.String(string(reason)),

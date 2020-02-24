@@ -98,7 +98,17 @@ func (cu *CategoryRepositoryImpl) Delete(db *gorm.DB, storeID, categoryID string
 	return nil
 }
 
-func (cu *CategoryRepositoryImpl) Get(db *gorm.DB, storeID, categoryID string) (*models.Category, error) {
+func (cu *CategoryRepositoryImpl) Get(db *gorm.DB, categoryID string) (*models.Category, error) {
+	col := models.Category{}
+	if err := db.Table(col.TableName()).
+		Where("id = ? AND is_published = ?", categoryID, true).
+		First(&col).Error; err != nil {
+		return nil, err
+	}
+	return &col, nil
+}
+
+func (cu *CategoryRepositoryImpl) GetAsStoreOwner(db *gorm.DB, storeID, categoryID string) (*models.Category, error) {
 	col := models.Category{}
 	if err := db.Table(col.TableName()).
 		Where("store_id = ? AND id = ?", storeID, categoryID).

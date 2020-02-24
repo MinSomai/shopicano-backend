@@ -14,6 +14,15 @@ const (
 
 type StoreStatus string
 
+func (s *StoreStatus) IsValid() bool {
+	for _, status := range []StoreStatus{StoreRegistered, StoreActive, StoreSuspended, StoreBanned} {
+		if status == *s {
+			return true
+		}
+	}
+	return false
+}
+
 type Store struct {
 	ID                       string      `json:"id" gorm:"column:id;primary_key"`
 	Name                     string      `json:"name" gorm:"column:name;unique;not null"`
@@ -24,6 +33,8 @@ type Store struct {
 	Email                    string      `json:"email" gorm:"column:email;unique;not null"`
 	Phone                    string      `json:"phone" gorm:"column:phone;unique;not null"`
 	Status                   StoreStatus `json:"status" gorm:"column:status;index"`
+	LogoImage                string      `json:"logo_image" gorm:"column:logo_image"`
+	CoverImage               string      `json:"cover_image" gorm:"column:cover_image"`
 	CommissionRate           int64       `json:"commission_rate" gorm:"column:commission_rate;not null;default:0"`
 	IsProductCreationEnabled bool        `json:"is_product_creation_enabled" gorm:"column:is_product_creation_enabled;not null;index"`
 	IsOrderCreationEnabled   bool        `json:"is_order_creation_enabled" gorm:"column:is_order_creation_enabled;not null;index"`
@@ -42,7 +53,7 @@ func (s *Store) ForeignKeys() []string {
 }
 
 type Staff struct {
-	UserID       string `json:"user_id" gorm:"column:user_id;primary_key"`
+	UserID       string `json:"user_id" gorm:"column:user_id;primary_key;unique"`
 	StoreID      string `json:"store_id" gorm:"column:store_id;primary_key"`
 	PermissionID string `json:"permission_id" gorm:"column:permission_id;primary_key"`
 	IsCreator    bool   `json:"is_creator" gorm:"column:is_creator;index"`

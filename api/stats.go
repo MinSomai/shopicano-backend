@@ -14,21 +14,23 @@ import (
 	"time"
 )
 
-func RegisterStatsRoutes(g *echo.Group) {
-	func(g *echo.Group) {
-		g.Use(middlewares.MightBeStoreStaffAndStoreActive)
+func RegisterStatsRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	statsPublicPath := publicEndpoints.Group("/stats")
+	statsPlatformPath := platformEndpoints.Group("/stats")
+
+	func(g echo.Group) {
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
+		g.GET("/products/", productStatsAsStoreOwner)
+		g.GET("/categories/", categoryStatsAsStoreOwner)
+		g.GET("/orders/", orderStats)
+	}(*statsPlatformPath)
+
+	func(g echo.Group) {
 		g.GET("/products/", productStats)
 		g.GET("/categories/", categoryStats)
-		//g.GET("/collections/", collectionStats)
-		//g.GET("/stores/", storeStats)
-	}(g)
-
-	func(g *echo.Group) {
-		g.Use(middlewares.IsStoreStaffAndStoreActive)
-		g.GET("/orders/", orderStats)
-		//g.GET("/collections/", collectionStats)
-		//g.GET("/stores/", storeStats)
-	}(g)
+	}(*statsPublicPath)
 }
 
 func productStats(ctx echo.Context) error {
@@ -40,13 +42,30 @@ func productStats(ctx echo.Context) error {
 	var res interface{}
 	var err error
 
-	isPublic := !utils.IsStoreStaff(ctx)
-	if isPublic {
-		res, err = pu.Stats(db, 0, 25)
-	} else {
-		res, err = pu.StatsAsStoreStaff(db, utils.GetStoreID(ctx), 0, 25)
+	res, err = pu.Stats(db, 0, 25)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
 	}
 
+	resp.Status = http.StatusOK
+	resp.Data = res
+	return resp.ServerJSON(ctx)
+}
+
+func productStatsAsStoreOwner(ctx echo.Context) error {
+	resp := core.Response{}
+
+	db := app.DB()
+	pu := data.NewProductRepository()
+
+	var res interface{}
+	var err error
+
+	res, err = pu.StatsAsStoreStaff(db, utils.GetStoreID(ctx), 0, 25)
 	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
@@ -69,13 +88,30 @@ func categoryStats(ctx echo.Context) error {
 	var res interface{}
 	var err error
 
-	isPublic := !utils.IsStoreStaff(ctx)
-	if isPublic {
-		res, err = cu.Stats(db, 0, 25)
-	} else {
-		res, err = cu.StatsAsStoreStuff(db, utils.GetStoreID(ctx), 0, 25)
+	res, err = cu.Stats(db, 0, 25)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
 	}
 
+	resp.Status = http.StatusOK
+	resp.Data = res
+	return resp.ServerJSON(ctx)
+}
+
+func categoryStatsAsStoreOwner(ctx echo.Context) error {
+	resp := core.Response{}
+
+	db := app.DB()
+	cu := data.NewCategoryRepository()
+
+	var res interface{}
+	var err error
+
+	res, err = cu.StatsAsStoreStuff(db, utils.GetStoreID(ctx), 0, 25)
 	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError

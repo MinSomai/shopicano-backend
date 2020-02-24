@@ -7,6 +7,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/RichardKnop/machinery v1.7.2
+	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/aokoli/goutils v1.1.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
 	github.com/braintree-go/braintree-go v0.22.0
@@ -15,9 +16,14 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/creack/pty v1.1.9 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/emirpasic/gods v1.12.0
+	github.com/gin-contrib/gzip v0.0.1 // indirect
+	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
 	github.com/go-ini/ini v1.48.0 // indirect
+	github.com/go-openapi/jsonreference v0.19.3 // indirect
+	github.com/go-openapi/spec v0.19.4 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/gojek/heimdall v5.0.2+incompatible
 	github.com/gojektech/heimdall v5.0.2+incompatible // indirect
@@ -32,6 +38,7 @@ require (
 	github.com/jaytaylor/html2text v0.0.0-20190408195923-01ec452cbe43 // indirect
 	github.com/jinzhu/gorm v1.9.11
 	github.com/jonboulle/clockwork v0.1.0 // indirect
+	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/labstack/echo/v4 v4.1.11
@@ -48,8 +55,10 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/steinfletcher/apitest v1.4.0
-	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stripe/stripe-go v68.3.0+incompatible
+	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14 // indirect
+	github.com/swaggo/gin-swagger v1.1.0 // indirect
+	github.com/swaggo/swag v1.6.2 // indirect
 	github.com/teris-io/shortid v0.0.0-20171029131806-771a37caa5cf
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/ugorji/go v1.1.2-0.20180831062425-e253f1f20942

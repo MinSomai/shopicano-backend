@@ -15,4 +15,8 @@ type StoreRepository interface {
 	UpdateStoreStuffPermission(db *gorm.DB, staff *models.Staff) error
 	DeleteStoreStuffPermission(db *gorm.DB, storeID, userID string) error
 	IsAlreadyStaff(db *gorm.DB, userID string) (bool, error)
+	List(db *gorm.DB, from, limit int) ([]models.Store, error)
+	Search(db *gorm.DB, query string, from, limit int) ([]models.Store, error)
+	UpdateStoreStatus(db *gorm.DB, s *models.Store) error
+	UpdateStore(db *gorm.DB, s *models.Store) error
 }

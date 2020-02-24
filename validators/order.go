@@ -4,11 +4,13 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/errors"
+	"github.com/shopicano/shopicano-backend/models"
 )
 
 type ReqOrderItem struct {
-	ID       string `json:"id" valid:"required"`
-	Quantity int    `json:"quantity" valid:"range(1|10000000)"`
+	ID         string   `json:"id" valid:"required"`
+	Quantity   int      `json:"quantity" valid:"range(1|10000000)"`
+	Attributes []string `json:"attributes"`
 }
 
 type ReqOrderCreate struct {
@@ -39,4 +41,50 @@ func ValidateCreateOrder(ctx echo.Context) (*ReqOrderCreate, error) {
 	}
 
 	return nil, &ve
+}
+
+type ReqOrderUpdate struct {
+	Status models.OrderStatus `json:"status"`
+}
+
+func ValidateUpdateOrder(ctx echo.Context) (*ReqOrderUpdate, error) {
+	pld := ReqOrderUpdate{}
+	if err := ctx.Bind(&pld); err != nil {
+		return nil, err
+	}
+
+	ve := errors.ValidationError{}
+
+	if !pld.Status.IsValid() {
+		ve.Add("status", "is invalid")
+	}
+
+	if len(ve) > 0 {
+		return nil, &ve
+	}
+
+	return &pld, nil
+}
+
+type ReqPaymentStatusUpdate struct {
+	Status models.PaymentStatus `json:"status"`
+}
+
+func ValidateUpdatePaymentStatus(ctx echo.Context) (*ReqPaymentStatusUpdate, error) {
+	pld := ReqPaymentStatusUpdate{}
+	if err := ctx.Bind(&pld); err != nil {
+		return nil, err
+	}
+
+	ve := errors.ValidationError{}
+
+	if !pld.Status.IsValid() {
+		ve.Add("status", "is invalid")
+	}
+
+	if len(ve) > 0 {
+		return nil, &ve
+	}
+
+	return &pld, nil
 }

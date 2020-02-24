@@ -15,10 +15,14 @@ import (
 	"time"
 )
 
-func RegisterCouponRoutes(g *echo.Group) {
+func RegisterCouponRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	couponsPublicPath := publicEndpoints.Group("/coupons")
+	couponsPlatformPath := platformEndpoints.Group("/coupons")
+
 	func(g echo.Group) {
-		// Private endpoints only
-		g.Use(middlewares.IsStoreStaffAndStoreActive)
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreActive())
+		g.Use(middlewares.IsStoreManager())
 		g.POST("/", createCoupon)
 		g.PATCH("/:coupon_id/", updateCoupon)
 		g.DELETE("/:coupon_id/", deleteCoupon)
@@ -26,13 +30,12 @@ func RegisterCouponRoutes(g *echo.Group) {
 		g.GET("/", listCoupons)
 		g.PATCH("/:coupon_id/users/", addCouponUsers)
 		g.DELETE("/:coupon_id/users/", removeCouponUsers)
-	}(*g)
+	}(*couponsPlatformPath)
 
 	func(g echo.Group) {
-		// Private endpoints only
-		g.Use(middlewares.AuthUser)
+		g.Use(middlewares.JWTAuth())
 		g.GET("/:coupon_code/check/", checkCouponAvailability)
-	}(*g)
+	}(*couponsPublicPath)
 }
 
 func createCoupon(ctx echo.Context) error {

@@ -250,7 +250,7 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 		return resp.ServerJSON(ctx)
 	}
 
-	paymentCompletedCallback := fmt.Sprintf("%s/#/ordertrack/%s", config.App().FrontStoreUrl, o.ID)
+	paymentCompletedCallback := fmt.Sprintf("%s/#/order-history/%s", config.App().FrontStoreUrl, o.ID)
 	return ctx.Redirect(http.StatusPermanentRedirect, paymentCompletedCallback)
 }
 
@@ -358,7 +358,7 @@ func processPayOrderFor2Checkout(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	paymentCompletedCallback := fmt.Sprintf("%s/#/ordertrack/%s", config.App().FrontStoreUrl, orderID)
+	paymentCompletedCallback := fmt.Sprintf("%s/#/order-history/%s", config.App().FrontStoreUrl, orderID)
 	return ctx.Redirect(http.StatusPermanentRedirect, paymentCompletedCallback)
 }
 
@@ -461,8 +461,11 @@ func generate2CheckoutPayUrl(ctx echo.Context, o *models.OrderDetailsView) error
 	}
 
 	url := res.Result
-	log.Log().Infoln(url)
-	return ctx.Redirect(http.StatusPermanentRedirect, url)
+	resp.Status = http.StatusOK
+	resp.Data = map[string]interface{}{
+		"url": url,
+	}
+	return resp.ServerJSON(ctx)
 }
 
 func serveInvalidPaymentRequest(ctx echo.Context) error {

@@ -15,25 +15,43 @@ import (
 	"strconv"
 )
 
-func RegisterStoreRoutes(g *echo.Group) {
-	func(g echo.Group) {
-		g.Use(middlewares.IsStoreStaff)
-		g.GET("/", getStore)
-	}(*g)
+func RegisterStoreRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	storesPublicPath := publicEndpoints.Group("/stores")
+	storesPlatformPath := platformEndpoints.Group("/stores")
 
 	func(g echo.Group) {
-		g.Use(middlewares.IsStoreAdmin)
+		g.GET("/:store_id/", getStore)
+	}(*storesPublicPath)
+
+	func(g echo.Group) {
+		g.Use(middlewares.JWTAuth())
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreManager())
+		g.GET("/", getStoreForOwner)
+		g.PATCH("/", updateStore)
+	}(*storesPublicPath)
+
+	func(g echo.Group) {
+		g.Use(middlewares.JWTAuth())
+		g.Use(middlewares.HasStore())
+		g.Use(middlewares.IsStoreAdmin())
 		g.POST("/:store_id/staffs/", addStoreStaff)
 		g.PATCH("/:store_id/staffs/", updateStoreStaffPermission)
 		g.DELETE("/:store_id/staffs/:user_id/", deleteStoreStaff)
 		g.GET("/:store_id/staffs/", listStaffs)
-	}(*g)
+	}(*storesPublicPath)
 
 	func(g echo.Group) {
 		g.Use(middlewares.IsStoreCreationEnabled)
-		g.Use(middlewares.AuthUser)
+		g.Use(middlewares.JWTAuth())
 		g.POST("/", createStore)
-	}(*g)
+	}(*storesPublicPath)
+
+	func(g echo.Group) {
+		g.Use(middlewares.IsPlatformManager)
+		g.GET("/", listStores)
+		g.PATCH("/:store_id/", updateStoreAsPlatformOwner)
+	}(*storesPlatformPath)
 }
 
 func createStore(ctx echo.Context) error {
@@ -54,6 +72,51 @@ func createStore(ctx echo.Context) error {
 	db := app.DB().Begin()
 
 	su := data.NewStoreRepository()
+
+	as, err := su.GetStoreUserProfile(db, utils.GetUserID(ctx))
+	if err != nil && !errors.IsRecordNotFoundError(err) {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if as != nil {
+		resp.Title = "User already a store staff"
+		resp.Status = http.StatusConflict
+		resp.Code = errors.UserAlreadyStaff
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	au := data.NewAdminRepository()
+	settings, err := au.GetSettings(db)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Settings not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.SettingsNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if settings.EnabledAutoStoreConfirmation {
+		s.Status = models.StoreActive
+	}
+	s.CommissionRate = settings.DefaultCommissionRate
+
 	if err := su.CreateStore(db, s); err != nil {
 		db.Rollback()
 
@@ -113,6 +176,37 @@ func createStore(ctx echo.Context) error {
 }
 
 func getStore(ctx echo.Context) error {
+	resp := core.Response{}
+
+	storeID := ctx.Param("store_id")
+
+	db := app.DB()
+
+	su := data.NewStoreRepository()
+	store, err := su.FindStoreByID(db, storeID)
+	if err != nil {
+		ok := errors.IsRecordNotFoundError(err)
+		if ok {
+			resp.Title = "Store not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.StoreNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = store
+	return resp.ServerJSON(ctx)
+}
+
+func getStoreForOwner(ctx echo.Context) error {
 	resp := core.Response{}
 
 	db := app.DB()
@@ -374,5 +468,210 @@ func listStaffs(ctx echo.Context) error {
 
 	resp.Status = http.StatusOK
 	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func listStores(ctx echo.Context) error {
+	pageQ := ctx.Request().URL.Query().Get("page")
+	limitQ := ctx.Request().URL.Query().Get("limit")
+	query := ctx.Request().URL.Query().Get("query")
+
+	page, err := strconv.ParseInt(pageQ, 10, 64)
+	if err != nil {
+		page = 1
+	}
+	limit, err := strconv.ParseInt(limitQ, 10, 64)
+	if err != nil {
+		limit = 10
+	}
+
+	from := (page - 1) * limit
+
+	resp := core.Response{}
+
+	db := app.DB()
+	su := data.NewStoreRepository()
+
+	var r interface{}
+
+	if query == "" {
+		r, err = su.List(db, int(from), int(limit))
+	} else {
+		r, err = su.Search(db, query, int(from), int(limit))
+	}
+
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = r
+	return resp.ServerJSON(ctx)
+}
+
+func updateStoreAsPlatformOwner(ctx echo.Context) error {
+	storeID := ctx.Param("store_id")
+
+	status, commissionRate, err := validators.ValidateUpdateStoreStatus(ctx)
+
+	resp := core.Response{}
+
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.StoreCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+
+	su := data.NewStoreRepository()
+	store, err := su.FindStoreByID(db, storeID)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Store not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.StoreNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if status != nil {
+		store.Status = *status
+	}
+	if commissionRate != nil {
+		store.CommissionRate = *commissionRate
+	}
+
+	if err := su.UpdateStoreStatus(db, store); err != nil {
+		resp.Title = "Failed to update store"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = store
+	return resp.ServerJSON(ctx)
+}
+
+func updateStore(ctx echo.Context) error {
+	storeID := utils.GetStoreID(ctx)
+
+	body, err := validators.ValidateUpdateStore(ctx)
+
+	resp := core.Response{}
+
+	if err != nil {
+		resp.Title = "Invalid data"
+		resp.Status = http.StatusUnprocessableEntity
+		resp.Code = errors.StoreCreationDataInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	db := app.DB().Begin()
+
+	su := data.NewStoreRepository()
+	store, err := su.FindStoreByID(db, storeID)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Store not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.StoreNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if body.Name != nil {
+		store.Name = *body.Name
+	}
+	if body.Address != nil {
+		store.Address = *body.Address
+	}
+	if body.City != nil {
+		store.City = *body.City
+	}
+	if body.Country != nil {
+		store.Country = *body.Country
+	}
+	if body.Postcode != nil {
+		store.Postcode = *body.Postcode
+	}
+	if body.Phone != nil {
+		store.Phone = *body.Phone
+	}
+	if body.Email != nil {
+		store.Email = *body.Email
+	}
+	if body.IsProductCreationEnabled != nil {
+		store.IsProductCreationEnabled = *body.IsProductCreationEnabled
+	}
+	if body.IsOrderCreationEnabled != nil {
+		store.IsOrderCreationEnabled = *body.IsOrderCreationEnabled
+	}
+	if body.IsAutoConfirmEnabled != nil {
+		store.IsAutoConfirmEnabled = *body.IsAutoConfirmEnabled
+	}
+	if body.Description != nil {
+		store.Description = *body.Description
+	}
+	if body.LogoImage != nil {
+		store.LogoImage = *body.LogoImage
+	}
+	if body.CoverImage != nil {
+		store.CoverImage = *body.CoverImage
+	}
+
+	if err := su.UpdateStore(db, store); err != nil {
+		resp.Title = "Failed to update store"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = store
 	return resp.ServerJSON(ctx)
 }

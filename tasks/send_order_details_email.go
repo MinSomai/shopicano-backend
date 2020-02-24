@@ -13,7 +13,7 @@ const (
 	SendOrderDetailsEmailTaskName = "send_order_details_email"
 )
 
-func SendOrderDetailsEmailFn(orderID string) error {
+func SendOrderDetailsEmailFn(orderID, subject string) error {
 	db := app.DB()
 
 	orderDao := data.NewOrderRepository()
@@ -30,7 +30,7 @@ func SendOrderDetailsEmailFn(orderID string) error {
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}
 
-	if err := services.SendOrderDetailsEmail(u.Email, o); err != nil {
+	if err := services.SendOrderDetailsEmail(u.Email, subject, o); err != nil {
 		log.Log().Errorln(err)
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}

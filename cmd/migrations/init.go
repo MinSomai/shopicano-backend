@@ -110,7 +110,7 @@ func initCmd(cmd *cobra.Command, args []string) {
 		ID:                     "1",
 		Name:                   "Shopicano Marketplace",
 		Website:                "http://shopicano.com",
-		IsActive:               true,
+		Status:                 models.Active,
 		CompanyAddressID:       a.ID,
 		DefaultCommissionRate:  0,
 		IsSignUpEnabled:        false,

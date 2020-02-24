@@ -68,9 +68,13 @@ func (tco *twoCheckoutPaymentGateway) Pay(orderDetails *models.OrderDetailsView)
 	payload += fmt.Sprintf("phone=%s&", orderDetails.BillingPhone)
 	payload += fmt.Sprintf("email=%s&", orderDetails.BillingEmail)
 
+	grandTotal := float64(orderDetails.GrandTotal) / 100
+
+	log.Log().Infoln("Grand Total : ", grandTotal)
+
 	payload += fmt.Sprintf("li_0_type=%s&", "product")
 	payload += fmt.Sprintf("li_0_name=%s&", fmt.Sprintf("Payment for Order %s", orderDetails.Hash))
-	payload += fmt.Sprintf("li_0_price=%s&", fmt.Sprintf("%.2f", float64(orderDetails.GrandTotal)))
+	payload += fmt.Sprintf("li_0_price=%s&", fmt.Sprintf("%.2f", grandTotal))
 	payload += fmt.Sprintf("li_0_quantity=%s&", fmt.Sprintf("%d", 1))
 	payload += fmt.Sprintf("li_0_tangible=%s&", "N")
 
@@ -135,7 +139,7 @@ func (tco *twoCheckoutPaymentGateway) ValidateTransaction(orderDetails *models.O
 		return errors.New("invalid transaction")
 	}
 
-	capturedAmount := float64(0)
+	capturedAmount := int64(0)
 	orderID := ""
 
 	for _, in := range body.Sale.Invoices {
@@ -147,7 +151,7 @@ func (tco *twoCheckoutPaymentGateway) ValidateTransaction(orderDetails *models.O
 		}
 
 		am, _ := strconv.ParseFloat(in.USDTotal, 64)
-		capturedAmount += am
+		capturedAmount += int64(am * 100)
 		orderID = in.VendorOrderID
 	}
 
@@ -155,7 +159,10 @@ func (tco *twoCheckoutPaymentGateway) ValidateTransaction(orderDetails *models.O
 		return errors.New("transaction isn't valid for the order")
 	}
 
-	if capturedAmount != float64(orderDetails.GrandTotal) {
+	log.Log().Infoln("Amount : ", orderDetails.GrandTotal)
+	log.Log().Infoln("Target : ", capturedAmount)
+
+	if capturedAmount != orderDetails.GrandTotal {
 		return errors.New("invalid transaction amount")
 	}
 
@@ -180,10 +187,11 @@ func (tco *twoCheckoutPaymentGateway) VoidTransaction(orderDetails *models.Order
 	comment := params["reason"].(string)
 	comment = url2.QueryEscape(comment)
 	refundAmount := orderDetails.GrandTotal - orderDetails.PaymentProcessingFee
+	amountToAdjust := float64(refundAmount) / 100
 
 	url := "https://sandbox.2checkout.com/api/sales/refund_invoice?" +
 		fmt.Sprintf("invoice_id=%s", *orderDetails.TransactionID) +
-		fmt.Sprintf("&amount=%.2f", float64(refundAmount)) +
+		fmt.Sprintf("&amount=%.2f", amountToAdjust) +
 		"&currency=usd" +
 		fmt.Sprintf("&category=%d", category) +
 		fmt.Sprintf("&comment=%s", comment)

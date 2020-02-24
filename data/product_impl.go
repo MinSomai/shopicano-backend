@@ -30,7 +30,7 @@ func (pu *ProductRepositoryImpl) Create(db *gorm.DB, p *models.Product) error {
 
 func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 	if err := db.Table(p.TableName()).
-		Select("name, description, is_published, category_id, sku, stock, unit, price, additional_images, image, is_shippable, is_digital, digital_download_link, updated_at").
+		Select("name, description, is_published, category_id, sku, stock, unit, price, product_cost, max_quantity_count, additional_images, image, is_shippable, is_digital, digital_download_link, updated_at").
 		Where("id = ? AND store_id = ?", p.ID, p.StoreID).
 		Updates(map[string]interface{}{
 			"name":                  p.Name,
@@ -46,6 +46,8 @@ func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 			"is_shippable":          p.IsShippable,
 			"is_digital":            p.IsDigital,
 			"digital_download_link": p.DigitalDownloadLink,
+			"product_cost":          p.ProductCost,
+			"max_quantity_count":    p.MaxQuantityCount,
 			"updated_at":            p.UpdatedAt,
 		}).Error; err != nil {
 		return err
@@ -159,7 +161,7 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 	store := models.Store{}
 
 	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
-		Select("products.id, s.id AS store_id, s.name AS store_name, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.additional_images, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, s.id AS store_id, s.name AS store_name, products.max_quantity_count AS max_quantity_count, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.additional_images, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS c ON products.category_id = c.id", cat.TableName())).
 		Joins(fmt.Sprintf("LEFT JOIN %s AS s ON products.store_id = s.id", store.TableName())).
 		Where("products.id = ? AND products.is_published = ?", productID, true).
@@ -178,17 +180,13 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 		return nil, err
 	}
 
-	a := models.ProductAttribute{}
-	var attributes []models.ProductAttribute
-	if err := db.Table(fmt.Sprintf("%s AS pa", a.TableName())).
-		Select("pa.key AS key, pa.value AS value").
-		Where("pa.product_id = ?", productID).
-		Scan(&attributes).Error; err != nil {
+	attributes, err := pu.ListAttributes(db, ps.ID)
+	if err != nil {
 		return nil, err
 	}
+	ps.Attributes = attributes
 
 	ps.Collections = collections
-	ps.Attributes = attributes
 	return &ps, nil
 }
 
@@ -199,7 +197,7 @@ func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, pr
 	store := models.Store{}
 
 	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
-		Select("products.id, s.id AS store_id, s.name AS store_name, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.additional_images, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, s.id AS store_id, s.name AS store_name, products.max_quantity_count AS max_quantity_count, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.additional_images, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS c ON products.category_id = c.id", cat.TableName())).
 		Joins(fmt.Sprintf("LEFT JOIN %s AS s ON products.store_id = s.id", store.TableName())).
 		Where("products.id = ? AND products.store_id = ?", productID, storeID).
@@ -219,12 +217,8 @@ func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, pr
 		return nil, err
 	}
 
-	a := models.ProductAttribute{}
-	var attributes []models.ProductAttribute
-	if err := db.Table(fmt.Sprintf("%s AS pa", a.TableName())).
-		Select("pa.key AS key, pa.value AS value").
-		Where("pa.product_id = ?", productID).
-		Scan(&attributes).Error; err != nil {
+	attributes, err := pu.ListAttributes(db, ps.ID)
+	if err != nil {
 		return nil, err
 	}
 	ps.Attributes = attributes
@@ -310,10 +304,50 @@ func (pu *ProductRepositoryImpl) AddAttribute(db *gorm.DB, v *models.ProductAttr
 	return nil
 }
 
-func (pu *ProductRepositoryImpl) RemoveAttribute(db *gorm.DB, productID, attributeKey string) error {
+func (pu *ProductRepositoryImpl) RemoveAttribute(db *gorm.DB, productID, attributeID string) error {
 	v := models.ProductAttribute{}
-	if err := db.Table(v.TableName()).Delete(&v, "product_id = ? AND key = ?", productID, attributeKey).Error; err != nil {
+	if err := db.Table(v.TableName()).Delete(&v, "product_id = ? AND id = ?", productID, attributeID).Error; err != nil {
 		return err
 	}
 	return nil
+}
+
+func (pu *ProductRepositoryImpl) ListAttributes(db *gorm.DB, productID string) (map[string][]models.ProductKV, error) {
+	v := models.ProductAttribute{}
+
+	var attributes []models.ProductAttribute
+
+	if err := db.Table(v.TableName()).Find(&attributes, "product_id = ?", productID).Error; err != nil {
+		return nil, err
+	}
+
+	sortedAttributes := map[string][]models.ProductKV{}
+
+	for _, a := range attributes {
+		if _, ok := sortedAttributes[a.Key]; ok {
+			sortedAttributes[a.Key] = append(sortedAttributes[a.Key], models.ProductKV{
+				ID:    a.ID,
+				Value: a.Value,
+			})
+		} else {
+			sortedAttributes[a.Key] = []models.ProductKV{
+				{
+					ID:    a.ID,
+					Value: a.Value,
+				},
+			}
+		}
+	}
+
+	return sortedAttributes, nil
+}
+
+func (pu *ProductRepositoryImpl) GetAttribute(db *gorm.DB, productID, ID string) (*models.ProductAttribute, error) {
+	v := models.ProductAttribute{}
+
+	if err := db.Table(v.TableName()).Find(&v, "product_id = ? AND id = ?", productID, ID).Error; err != nil {
+		return nil, err
+	}
+
+	return &v, nil
 }

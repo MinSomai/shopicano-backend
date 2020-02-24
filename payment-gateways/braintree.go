@@ -52,17 +52,30 @@ func (bt *brainTreePaymentGateway) GetName() string {
 func (bt *brainTreePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error) {
 	var items []*braintree.TransactionLineItemRequest
 
+	grandTotalU := orderDetails.GrandTotal / 100
+	grandTotalS := int(orderDetails.GrandTotal % 100)
+
+	log.Log().Infoln("Grand Total U : ", grandTotalU)
+	log.Log().Infoln("Grand Total S : ", grandTotalS)
+
+	d := braintree.NewDecimal(0, 0)
+	if err := d.UnmarshalText([]byte(fmt.Sprintf("%d.%d", grandTotalU, grandTotalS))); err != nil {
+		return nil, err
+	}
+
+	log.Log().Infoln(d.String())
+
 	items = append(items, &braintree.TransactionLineItemRequest{
 		Name:        fmt.Sprintf("Payment for Order #%s", orderDetails.Hash),
-		UnitAmount:  braintree.NewDecimal(int64(orderDetails.GrandTotal), 0),
+		UnitAmount:  d,
 		Quantity:    braintree.NewDecimal(int64(1), 0),
-		TotalAmount: braintree.NewDecimal(int64(orderDetails.GrandTotal), 0),
+		TotalAmount: d,
 		Kind:        braintree.TransactionLineItemKindDebit,
 	})
 
 	resp, err := bt.client.Transaction().Create(context.Background(), &braintree.TransactionRequest{
 		PaymentMethodNonce: *orderDetails.Nonce,
-		Amount:             braintree.NewDecimal(int64(orderDetails.GrandTotal), 0),
+		Amount:             d,
 		LineItems:          items,
 		BillingAddress: &braintree.Address{
 			StreetAddress: fmt.Sprintf("%s", orderDetails.BillingAddress),
@@ -114,7 +127,11 @@ func (bt *brainTreePaymentGateway) ValidateTransaction(orderDetails *models.Orde
 		return err
 	}
 
-	if transaction.Status != braintree.TransactionStatusSettled {
+	log.Log().Infoln(transaction.Status)
+	log.Log().Infoln(transaction.Amount)
+	log.Log().Infoln(transaction.ServiceFeeAmount)
+
+	if transaction.Status != braintree.TransactionStatusSettled && transaction.Status != braintree.TransactionStatusSubmittedForSettlement {
 		return errors.New("transaction isn't settled yet")
 	}
 
@@ -135,9 +152,19 @@ func (bt *brainTreePaymentGateway) VoidTransaction(orderDetails *models.OrderDet
 	}
 
 	refundedAmount := orderDetails.GrandTotal - orderDetails.PaymentProcessingFee
+	grandTotalU := refundedAmount / 100
+	grandTotalS := int(refundedAmount % 100)
+
+	log.Log().Infoln("Grand Total U : ", grandTotalU)
+	log.Log().Infoln("Grand Total S : ", grandTotalS)
+
+	d := braintree.NewDecimal(0, 0)
+	if err := d.UnmarshalText([]byte(fmt.Sprintf("%d.%d", grandTotalU, grandTotalS))); err != nil {
+		return err
+	}
 
 	if _, err := bt.client.Transaction().
-		Refund(context.Background(), *orderDetails.TransactionID, braintree.NewDecimal(refundedAmount, 0)); err != nil {
+		Refund(context.Background(), *orderDetails.TransactionID, d); err != nil {
 		log.Log().Errorln(err)
 		return err
 	}

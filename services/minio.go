@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"github.com/minio/minio-go"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/config"
@@ -11,7 +12,8 @@ func UploadToMinio(fileName, contentType string, reader io.Reader, size int64) e
 	conn := app.Minio()
 	cfg := config.Minio()
 	_, errP := conn.PutObject(cfg.Bucket, fileName, reader, size, minio.PutObjectOptions{
-		ContentType: contentType,
+		ContentType:        contentType,
+		ContentDisposition: fmt.Sprintf("attachment; filename=\"%s\"", fileName),
 	})
 	if errP != nil {
 		return errP

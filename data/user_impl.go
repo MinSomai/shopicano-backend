@@ -27,15 +27,11 @@ func (uu *UserRepositoryImpl) Register(db *gorm.DB, u *models.User) error {
 	return nil
 }
 
-func (uu *UserRepositoryImpl) Login(db *gorm.DB, email, password string) (*models.User, error) {
+func (uu *UserRepositoryImpl) Login(db *gorm.DB, email string) (*models.User, error) {
 	u := models.User{}
 
-	if err := db.Model(&u).Where("email = ?", email).First(&u).Error; err != nil {
+	if err := db.Model(&u).Where("email = ?", email).Find(&u).Error; err != nil {
 		return nil, err
-	}
-
-	if err := utils.CheckPassword(u.Password, password); err != nil {
-		return nil, gorm.ErrRecordNotFound
 	}
 
 	return &u, nil

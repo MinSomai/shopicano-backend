@@ -18,22 +18,22 @@ import (
 	"time"
 )
 
-func RegisterLegacyRoutes(g *echo.Group) {
-	g.POST("/login/", login)
-	g.GET("/logout/", logout)
-	g.GET("/refresh-token/", refreshToken)
-	g.GET("/email-verification/", emailVerification)
-	g.GET("/reset-password/", resetPasswordRequest)
-	g.POST("/reset-password/", resetPasswordUpdate)
+func RegisterLegacyRoutes(publicEndpoints, platformEndpoints *echo.Group) {
+	publicEndpoints.POST("/login/", login)
+	publicEndpoints.GET("/logout/", logout)
+	publicEndpoints.GET("/refresh-token/", refreshToken)
+	publicEndpoints.GET("/email-verification/", emailVerification)
+	publicEndpoints.GET("/reset-password/", resetPasswordRequest)
+	publicEndpoints.POST("/reset-password/", resetPasswordUpdate)
 
 	func(g echo.Group) {
 		g.Use(middlewares.IsSignUpEnabled)
 		g.POST("/register/", register)
-	}(*g)
+	}(*publicEndpoints)
 }
 
 func login(ctx echo.Context) error {
-	e, p, err := validators.ValidateLogin(ctx)
+	pld, err := validators.ValidateLogin(ctx)
 
 	resp := core.Response{}
 
@@ -49,16 +49,16 @@ func login(ctx echo.Context) error {
 	db := app.DB().Begin()
 
 	uc := data.NewUserRepository()
-	u, err := uc.Login(db, e, p)
+	u, err := uc.Login(db, pld.Email)
 
 	if err != nil {
 		db.Rollback()
 		log.Log().Errorln(err)
 
 		if errors.IsRecordNotFoundError(err) {
-			resp.Title = "Invalid login credentials"
-			resp.Status = http.StatusUnauthorized
-			resp.Code = errors.LoginCredentialsInvalid
+			resp.Title = "User not registered"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.UserNotFound
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
@@ -70,27 +70,31 @@ func login(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	if err := utils.CheckPassword(u.Password, pld.Password); err != nil {
+		db.Rollback()
+
+		resp.Title = "Invalid login credentials"
+		resp.Status = http.StatusUnauthorized
+		resp.Code = errors.LoginCredentialsInvalid
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	if u.Status != models.UserActive {
 		db.Rollback()
 
-		resp.Title = "User isn't active"
+		resp.Title = "Please activate your account by verifying email"
 		resp.Status = http.StatusForbidden
 		resp.Code = errors.UserNotActive
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
 
-	s := models.Session{
-		ID:           utils.NewUUID(),
-		UserID:       u.ID,
-		AccessToken:  utils.NewToken(),
-		RefreshToken: utils.NewToken(),
-		CreatedAt:    time.Now().UTC(),
-		ExpireOn:     time.Now().Add(time.Hour * 48).Unix(),
-	}
-
-	if err := uc.CreateSession(db, &s); err != nil {
+	_, permission, err := uc.GetPermissionByUserID(db, u.ID)
+	if err != nil {
 		db.Rollback()
+
+		log.Log().Errorln(err)
 
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
@@ -99,11 +103,37 @@ func login(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	_, permission, err := uc.GetPermissionByUserID(db, s.UserID)
+	scope := utils.FrontStore
+	switch pld.Scope {
+	case utils.Platform:
+		scope = utils.Platform
+	case utils.BackStore:
+		scope = utils.BackStore
+	}
+
+	signedToken, err := utils.BuildJWTToken(u.ID, scope)
 	if err != nil {
 		db.Rollback()
-
 		log.Log().Errorln(err)
+
+		resp.Title = "Failed to sign auth token"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.UserLoginFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	s := models.Session{
+		ID:           utils.NewUUID(),
+		UserID:       u.ID,
+		AccessToken:  signedToken,
+		RefreshToken: utils.NewToken(),
+		CreatedAt:    time.Now().UTC(),
+		ExpireOn:     time.Now().Add(time.Hour * 48).Unix(),
+	}
+
+	if err := uc.CreateSession(db, &s); err != nil {
+		db.Rollback()
 
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
