@@ -119,7 +119,7 @@ func SendPaymentConfirmationEmail(email string, order *models.OrderDetailsView) 
 	params["shippingCharge"] = fmt.Sprintf("%.2f", float64(order.ShippingCharge)/100)
 	params["paymentProcessingFee"] = fmt.Sprintf("%.2f", float64(order.PaymentProcessingFee)/100)
 	params["subTotal"] = fmt.Sprintf("%.2f", float64(order.SubTotal)/100)
-	params["grandTotal"] = fmt.Sprintf("%.2f", float64(order.GrandTotal))
+	params["grandTotal"] = fmt.Sprintf("%.2f", float64(order.GrandTotal)/100)
 	params["isCouponApplied"] = false
 
 	switch order.PaymentGateway {
