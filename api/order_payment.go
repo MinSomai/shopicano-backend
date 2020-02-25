@@ -652,6 +652,8 @@ func revertOrderPayment(ctx echo.Context) error {
 		return revertOrderPaymentForAny(ctx, m)
 	case payment_gateways.TwoCheckoutPaymentGatewayName:
 		return revertOrderPaymentForAny(ctx, m)
+	case payment_gateways.SSLCommerzPaymentGatewayName:
+		return revertOrderPaymentForAny(ctx, m)
 	}
 	return serveInvalidPaymentRequest(ctx)
 }
