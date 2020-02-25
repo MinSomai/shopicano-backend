@@ -18,6 +18,7 @@ const (
 )
 
 type twoCheckoutPaymentGateway struct {
+	Host            string
 	SuccessCallback string
 	FailureCallback string
 	PublicKey       string
@@ -35,6 +36,7 @@ func NewTwoCheckoutPaymentGateway(cfg map[string]interface{}) (*twoCheckoutPayme
 	secretKey := cfg["secret_key"].(string)
 	username := cfg["username"].(string)
 	password := cfg["password"].(string)
+	host := cfg["host"].(string)
 
 	return &twoCheckoutPaymentGateway{
 		SuccessCallback: cfg["success_callback"].(string),
@@ -45,6 +47,7 @@ func NewTwoCheckoutPaymentGateway(cfg map[string]interface{}) (*twoCheckoutPayme
 		SecretKey:       secretKey,
 		Username:        username,
 		Password:        password,
+		Host:            host,
 	}, nil
 }
 
@@ -53,7 +56,7 @@ func (tco *twoCheckoutPaymentGateway) GetName() string {
 }
 
 func (tco *twoCheckoutPaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error) {
-	url := "https://sandbox.2checkout.com/checkout/purchase"
+	url := fmt.Sprintf("%s/checkout/purchase", tco.Host)
 
 	payload := fmt.Sprintf("sid=%s&", tco.MerchantCode)
 	payload += fmt.Sprintf("mode=%s&", "2CO")
@@ -114,7 +117,7 @@ func (tco *twoCheckoutPaymentGateway) ValidateTransaction(orderDetails *models.O
 		return errors.New("invalid transactionID")
 	}
 
-	url := fmt.Sprintf("https://sandbox.2checkout.com/api/sales/detail_sale?invoice_id=%s", *orderDetails.TransactionID)
+	url := fmt.Sprintf("%s/api/sales/detail_sale?invoice_id=%s", tco.Host, *orderDetails.TransactionID)
 	req := gohttp.NewRequest().
 		BasicAuth(tco.Username, tco.Password).
 		Headers(map[string]string{
@@ -189,7 +192,7 @@ func (tco *twoCheckoutPaymentGateway) VoidTransaction(orderDetails *models.Order
 	refundAmount := orderDetails.GrandTotal - orderDetails.PaymentProcessingFee
 	amountToAdjust := float64(refundAmount) / 100
 
-	url := "https://sandbox.2checkout.com/api/sales/refund_invoice?" +
+	url := fmt.Sprintf("%s/api/sales/refund_invoice?", tco.Host) +
 		fmt.Sprintf("invoice_id=%s", *orderDetails.TransactionID) +
 		fmt.Sprintf("&amount=%.2f", amountToAdjust) +
 		"&currency=usd" +
@@ -224,4 +227,8 @@ func (tco *twoCheckoutPaymentGateway) VoidTransaction(orderDetails *models.Order
 	}
 
 	return nil
+}
+
+func (tco *twoCheckoutPaymentGateway) DisplayName() string {
+	return "2Checkout"
 }

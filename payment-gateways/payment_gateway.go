@@ -13,6 +13,7 @@ type PaymentGateway interface {
 	Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error)
 	ValidateTransaction(orderDetails *models.OrderDetailsView) error
 	VoidTransaction(orderDetails *models.OrderDetailsView, params map[string]interface{}) error
+	DisplayName() string
 }
 
 type PaymentGatewayResponse struct {
@@ -24,25 +25,11 @@ type PaymentGatewayResponse struct {
 var activePaymentGateway PaymentGateway
 
 func SetActivePaymentGateway(cfg config.PaymentGatewayCfg) error {
-	if cfg.Name == StripePaymentGatewayName {
-		stripe, err := NewStripePaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
-		if err != nil {
-			return err
-		}
-		activePaymentGateway = stripe
-	} else if cfg.Name == BrainTreePaymentGatewayName {
-		bt, err := NewBrainTreePaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
-		if err != nil {
-			return err
-		}
-		activePaymentGateway = bt
-	} else if cfg.Name == TwoCheckoutPaymentGatewayName {
-		tco, err := NewTwoCheckoutPaymentGateway(cfg.Configs[cfg.Name].(map[string]interface{}))
-		if err != nil {
-			return err
-		}
-		activePaymentGateway = tco
+	gateway, err := GetPaymentGatewayByName(cfg.Name)
+	if err != nil {
+		return err
 	}
+	activePaymentGateway = gateway
 	return nil
 }
 
@@ -70,6 +57,12 @@ func GetPaymentGatewayByName(name string) (PaymentGateway, error) {
 			return nil, err
 		}
 		return tco, nil
+	} else if name == SSLCommerzPaymentGatewayName {
+		ssl, err := NewSSLCommerzPaymentGateway(cfg.Configs[SSLCommerzPaymentGatewayName].(map[string]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		return ssl, nil
 	}
 	return nil, errors.New("payment gateway not found")
 }

@@ -32,8 +32,14 @@ func NewBrainTreePaymentGateway(cfg map[string]interface{}) (*brainTreePaymentGa
 	publicKey := cfg["public_key"].(string)
 	privateKey := cfg["private_key"].(string)
 	merchantID := cfg["merchant_id"].(string)
+	mode := cfg["mode"].(string)
 
-	c := braintree.New(braintree.Sandbox, merchantID, publicKey, privateKey)
+	gatewayMode := braintree.Sandbox
+	if mode == "live" {
+		gatewayMode = braintree.Production
+	}
+
+	c := braintree.New(gatewayMode, merchantID, publicKey, privateKey)
 
 	return &brainTreePaymentGateway{
 		client:          c,
@@ -169,4 +175,8 @@ func (bt *brainTreePaymentGateway) VoidTransaction(orderDetails *models.OrderDet
 		return err
 	}
 	return nil
+}
+
+func (bt *brainTreePaymentGateway) DisplayName() string {
+	return "BrainTree"
 }

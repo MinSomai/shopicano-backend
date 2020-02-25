@@ -80,13 +80,11 @@ func SendPaymentRevertedEmailFn(orderID string) error {
 	params["grandTotal"] = fmt.Sprintf("%.2f", float64(order.GrandTotal)/100)
 	params["isCouponApplied"] = false
 
-	switch order.PaymentGateway {
-	case payment_gateways.BrainTreePaymentGatewayName:
-		params["paymentGateway"] = "Brain Tree"
-	case payment_gateways.TwoCheckoutPaymentGatewayName:
-		params["paymentGateway"] = "2Checkout"
-	case payment_gateways.StripePaymentGatewayName:
-		params["paymentGateway"] = "Stripe"
+	pg, err := payment_gateways.GetPaymentGatewayByName(order.PaymentGateway)
+	if err != nil {
+		params["paymentGateway"] = "None"
+	} else {
+		params["paymentGateway"] = pg.DisplayName()
 	}
 
 	switch order.Status {
