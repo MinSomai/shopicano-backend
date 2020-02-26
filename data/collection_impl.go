@@ -89,8 +89,8 @@ func (cu *CollectionRepositoryImpl) Delete(db *gorm.DB, storeID, collectionID st
 func (cu *CollectionRepositoryImpl) Get(db *gorm.DB, collectionID string) (*models.Collection, error) {
 	col := models.Collection{}
 	if err := db.Table(col.TableName()).
-		Where("store_id = ? AND id = ? AND is_published = ?", collectionID, true).
-		First(&col).Error; err != nil {
+		Where("id = ? AND is_published = ?", collectionID, true).
+		Find(&col).Error; err != nil {
 		return nil, err
 	}
 	return &col, nil

@@ -22,6 +22,7 @@ func RegisterCollectionRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	func(g echo.Group) {
 		g.GET("/", listCollections)
 		g.GET("/:collection_id/", getCollection)
+		g.GET("/:collection_id/products/", listProductsByCollection)
 	}(*collectionsPublicPath)
 
 	func(g echo.Group) {
@@ -422,5 +423,58 @@ func removeCollectionProducts(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusNoContent
+	return resp.ServerJSON(ctx)
+}
+
+func listProductsByCollection(ctx echo.Context) error {
+	collectionID := ctx.Param("collection_id")
+
+	resp := core.Response{}
+
+	db := app.DB()
+	cu := data.NewCollectionRepository()
+	pu := data.NewProductRepository()
+
+	c, err := cu.Get(db, collectionID)
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Collection not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.CollectionNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	pageQ := ctx.Request().URL.Query().Get("page")
+	limitQ := ctx.Request().URL.Query().Get("limit")
+
+	page, err := strconv.ParseInt(pageQ, 10, 64)
+	if err != nil {
+		page = 1
+	}
+	limit, err := strconv.ParseInt(limitQ, 10, 64)
+	if err != nil {
+		limit = 10
+	}
+
+	from := (page * limit) - limit
+	products, err := pu.ListByCollection(db, c.ID, int(from), int(limit))
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	resp.Status = http.StatusOK
+	resp.Data = products
 	return resp.ServerJSON(ctx)
 }
