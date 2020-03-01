@@ -52,6 +52,18 @@ func (s *Store) ForeignKeys() []string {
 	return []string{}
 }
 
+func (s *Store) CalculateCommission(value int64) int64 {
+	if value == 0 {
+		return 0
+	}
+	if s.CommissionRate == 0 {
+		return 0
+	}
+
+	commission := (value * s.CommissionRate) / 100
+	return commission
+}
+
 type Staff struct {
 	UserID       string `json:"user_id" gorm:"column:user_id;primary_key;unique"`
 	StoreID      string `json:"store_id" gorm:"column:store_id;primary_key"`

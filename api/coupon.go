@@ -406,11 +406,11 @@ func checkCouponAvailability(ctx echo.Context) error {
 
 	switch coupon.DiscountType {
 	case models.TotalDiscount:
-		result["discount_amount"] = coupon.CalculateDiscount(int(orderAmount) + int(shippingCost))
+		result["discount_amount"] = coupon.CalculateDiscount(orderAmount + shippingCost)
 	case models.ShippingDiscount:
-		result["discount_amount"] = coupon.CalculateDiscount(int(shippingCost))
+		result["discount_amount"] = coupon.CalculateDiscount(shippingCost)
 	case models.ProductDiscount:
-		result["discount_amount"] = coupon.CalculateDiscount(int(orderAmount))
+		result["discount_amount"] = coupon.CalculateDiscount(orderAmount)
 	default:
 		result["discount_amount"] = 0
 	}

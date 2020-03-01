@@ -12,7 +12,7 @@ type OrderDetailsViewExternal struct {
 	Nonce                   *string                   `json:"nonce,omitempty"`
 	TransactionID           *string                   `json:"transaction_id,omitempty"`
 	GrandTotal              int64                     `json:"grand_total"`
-	DiscountedAmount        int                       `json:"discounted_amount"`
+	DiscountedAmount        int64                     `json:"discounted_amount"`
 	CouponCode              string                    `json:"coupon_code"`
 	Status                  OrderStatus               `json:"status"`
 	PaymentStatus           PaymentStatus             `json:"payment_status"`
@@ -70,6 +70,6 @@ type OrderedItemDetailsInternal struct {
 	ProductID   string `json:"product_id"`
 	ProductName string `json:"product_name"`
 	Quantity    int    `json:"quantity"`
-	Price       int    `json:"price"`
-	SubTotal    int    `json:"sub_total"`
+	Price       int64  `json:"price"`
+	SubTotal    int64  `json:"sub_total"`
 }

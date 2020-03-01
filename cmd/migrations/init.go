@@ -3,6 +3,7 @@ package migration
 import (
 	"github.com/jaswdr/faker"
 	"github.com/shopicano/shopicano-backend/app"
+	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	"github.com/shopicano/shopicano-backend/utils"
@@ -123,6 +124,16 @@ func initCmd(cmd *cobra.Command, args []string) {
 		tx.Rollback()
 		log.Log().Errorln(err)
 		return
+	}
+
+	var flatTables []core.FlatTable
+	flatTables = append(flatTables, &models.Location{})
+	for _, ft := range flatTables {
+		if err := ft.Populate(tx); err != nil {
+			tx.Rollback()
+			log.Log().Errorln(err)
+			return
+		}
 	}
 
 	if err := tx.Commit().Error; err != nil {

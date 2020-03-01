@@ -7,9 +7,9 @@ type OrderedItem struct {
 	OrderID     string `json:"order_id" gorm:"column:order_id"`
 	ProductID   string `json:"product_id" gorm:"column:product_id"`
 	Quantity    int    `json:"quantity" gorm:"column:quantity"`
-	Price       int    `json:"price" gorm:"column:price"`
-	ProductCost int    `json:"product_cost" gorm:"column:product_cost"`
-	SubTotal    int    `json:"sub_total" gorm:"column:sub_total"`
+	Price       int64  `json:"price" gorm:"column:price"`
+	ProductCost int64  `json:"product_cost" gorm:"column:product_cost"`
+	SubTotal    int64  `json:"sub_total" gorm:"column:sub_total"`
 }
 
 func (op *OrderedItem) TableName() string {

@@ -8,9 +8,9 @@ import (
 type PaymentMethod struct {
 	ID               string    `json:"id" sql:"id" gorm:"primary_key"`
 	Name             string    `json:"name" sql:"name" gorm:"unique;not null"`
-	ProcessingFee    int       `json:"processing_fee" gorm:"processing_fee"`
-	MinProcessingFee int       `json:"min_processing_fee" gorm:"min_processing_fee"`
-	MaxProcessingFee int       `json:"max_processing_fee" sql:"max_processing_fee"`
+	ProcessingFee    int64     `json:"processing_fee" gorm:"processing_fee"`
+	MinProcessingFee int64     `json:"min_processing_fee" gorm:"min_processing_fee"`
+	MaxProcessingFee int64     `json:"max_processing_fee" sql:"max_processing_fee"`
 	IsPublished      bool      `json:"is_published" sql:"is_published" gorm:"index"`
 	IsOfflinePayment bool      `json:"is_offline_payment" sql:"is_offline_payment" gorm:"is_offline_payment"`
 	IsFlat           bool      `json:"is_flat" gorm:"column:is_flat"`
@@ -22,7 +22,7 @@ func (pm *PaymentMethod) TableName() string {
 	return "payment_methods"
 }
 
-func (pm *PaymentMethod) CalculateProcessingFee(bill int) int {
+func (pm *PaymentMethod) CalculateProcessingFee(bill int64) int64 {
 	if pm.IsOfflinePayment {
 		return 0
 	}

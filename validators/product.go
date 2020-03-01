@@ -17,9 +17,9 @@ type ReqProductCreate struct {
 	SKU              string   `json:"sku" valid:"required,stringlength(1|100)"`
 	Stock            int      `json:"stock" valid:"range(0|100000)"`
 	Unit             string   `json:"unit" valid:"required,stringlength(1|20)"`
-	Price            int      `json:"price" valid:"range(0|10000000)"`
+	Price            int64    `json:"price" valid:"range(0|10000000)"`
 	MaxQuantityCount int      `json:"max_quantity_count" valid:"range(0,10000)"`
-	ProductCost      int      `json:"product_cost" valid:"range(0|10000000)"`
+	ProductCost      int64    `json:"product_cost" valid:"range(0|10000000)"`
 	AdditionalImages []string `json:"additional_images"`
 }
 
@@ -55,8 +55,8 @@ type ReqProductUpdate struct {
 	SKU                 *string  `json:"sku" valid:"required,stringlength(1|100)"`
 	Stock               *int     `json:"stock" valid:"range(0|100000)"`
 	Unit                *string  `json:"unit" valid:"required,stringlength(1|20)"`
-	Price               *int     `json:"price" valid:"range(0|10000000)"`
-	ProductCost         *int     `json:"product_cost" valid:"range(0|10000000)"`
+	Price               *int64   `json:"price" valid:"range(0|10000000)"`
+	ProductCost         *int64   `json:"product_cost" valid:"range(0|10000000)"`
 	MaxQuantityCount    *int     `json:"max_quantity_count" valid:"range(0,10000)"`
 	DigitalDownloadLink *string  `json:"digital_download_link" valid:"stringlength(1|1000000)"`
 	AdditionalImages    []string `json:"additional_images"`

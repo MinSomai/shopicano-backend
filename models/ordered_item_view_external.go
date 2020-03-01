@@ -6,8 +6,8 @@ type OrderedItemViewExternal struct {
 	ProductID        string                 `json:"product_id"`
 	Name             string                 `json:"name"`
 	Quantity         int                    `json:"quantity"`
-	Price            int                    `json:"price"`
-	SubTotal         int                    `json:"sub_total"`
+	Price            int64                  `json:"price"`
+	SubTotal         int64                  `json:"sub_total"`
 	Description      string                 `json:"description"`
 	SKU              string                 `json:"sku"`
 	AdditionalImages string                 `json:"additional_images"`

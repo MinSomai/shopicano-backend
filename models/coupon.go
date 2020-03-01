@@ -19,12 +19,12 @@ type Coupon struct {
 	StoreID        string     `json:"store_id" gorm:"column:store_id;index;not null"`
 	Code           string     `json:"code" gorm:"column:code;unique_index"`
 	IsActive       bool       `json:"is_active" gorm:"column:is_active;index"`
-	DiscountAmount int        `json:"discount_amount" gorm:"column:discount_amount"`
+	DiscountAmount int64      `json:"discount_amount" gorm:"column:discount_amount"`
 	IsFlatDiscount bool       `json:"is_flat_discount" gorm:"column:is_flat_discount"`
 	IsUserSpecific bool       `json:"is_user_specific" gorm:"column:is_user_specific"`
-	MaxDiscount    int        `json:"max_discount" gorm:"column:max_discount"`
+	MaxDiscount    int64      `json:"max_discount" gorm:"column:max_discount"`
 	MaxUsage       int        `json:"max_usage" gorm:"column:max_usage"`
-	MinOrderValue  int        `json:"min_order_value" gorm:"column:min_order_value"`
+	MinOrderValue  int64      `json:"min_order_value" gorm:"column:min_order_value"`
 	DiscountType   CouponType `json:"discount_type" gorm:"column:discount_type;index"`
 	StartAt        time.Time  `json:"start_at" gorm:"column:start_at;index"`
 	EndAt          time.Time  `json:"end_at" gorm:"column:end_at;index"`
@@ -52,7 +52,7 @@ func (c *Coupon) IsValid() bool {
 	return c.IsActive && (now.After(c.StartAt) && now.Before(c.EndAt))
 }
 
-func (c *Coupon) CalculateDiscount(value int) int {
+func (c *Coupon) CalculateDiscount(value int64) int64 {
 	if value == 0 {
 		return 0
 	}
