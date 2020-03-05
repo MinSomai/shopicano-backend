@@ -67,6 +67,8 @@ func payOrder(ctx echo.Context) error {
 		return processPayOrderForStripe(ctx, m)
 	case payment_gateways.SSLCommerzPaymentGatewayName:
 		return processPayOrderForSSL(ctx, m)
+	case payment_gateways.PaddlePaymentGatewayName:
+		return processPayOrderForPaddle(ctx, m)
 	}
 	return serveInvalidPaymentRequest(ctx)
 }
@@ -369,15 +371,6 @@ func processPayOrderForSSL(ctx echo.Context, m *models.OrderDetailsView) error {
 
 	db := app.DB().Begin()
 
-	if m.PaymentStatus == models.PaymentCompleted {
-		db.Rollback()
-
-		resp.Title = "Order already paid"
-		resp.Status = http.StatusConflict
-		resp.Code = errors.PaymentAlreadyProcessed
-		return resp.ServerJSON(ctx)
-	}
-
 	if m.PaymentGateway != payment_gateways.SSLCommerzPaymentGatewayName {
 		db.Rollback()
 		return serveInvalidPaymentRequest(ctx)
@@ -451,6 +444,95 @@ func processPayOrderForSSL(ctx echo.Context, m *models.OrderDetailsView) error {
 	return ctx.Redirect(http.StatusPermanentRedirect, paymentCompletedCallback)
 }
 
+func processPayOrderForPaddle(ctx echo.Context, m *models.OrderDetailsView) error {
+	resp := core.Response{}
+
+	db := app.DB().Begin()
+
+	if m.PaymentGateway != payment_gateways.PaddlePaymentGatewayName {
+		db.Rollback()
+		return serveInvalidPaymentRequest(ctx)
+	}
+
+	pg, err := payment_gateways.GetPaymentGatewayByName(m.PaymentGateway)
+	if err != nil {
+		db.Rollback()
+
+		return serveInvalidPaymentRequest(ctx)
+	}
+
+	if err := ctx.Request().ParseForm(); err != nil {
+		db.Rollback()
+
+		resp.Status = http.StatusBadRequest
+		resp.Title = "Failed to parse request body"
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	transactionID := ctx.Request().FormValue("p_order_id")
+	m.TransactionID = &transactionID
+
+	if err := pg.ValidateTransaction(m); err != nil {
+		log.Log().Errorln(err)
+
+		m.PaymentStatus = models.PaymentFailed
+	} else {
+		m.PaymentStatus = models.PaymentCompleted
+	}
+
+	or := data.NewOrderRepository()
+
+	if err := or.UpdatePaymentInfo(db, m); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to update payment info"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	ol := models.OrderLog{
+		ID:        utils.NewUUID(),
+		OrderID:   m.ID,
+		Action:    string(m.PaymentStatus),
+		Details:   fmt.Sprintf("Payment has been updated using %s", pg.DisplayName()),
+		CreatedAt: time.Now(),
+	}
+	if err := or.CreateLog(db, &ol); err != nil {
+		db.Rollback()
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if m.PaymentStatus == models.PaymentCompleted {
+		if err := queue.SendPaymentConfirmationEmail(m.ID); err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to enqueue task"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.FailedToEnqueueTask
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	return ctx.JSON(http.StatusOK, nil)
+}
+
 // generatePayNonce create payment reference / nonce
 func generatePayNonce(ctx echo.Context) error {
 	orderID := ctx.Param("order_id")
@@ -484,6 +566,8 @@ func generatePayNonce(ctx echo.Context) error {
 		return generate2CheckoutPayUrl(ctx, m)
 	case payment_gateways.SSLCommerzPaymentGatewayName:
 		return generateSSLPayUrl(ctx, m)
+	case payment_gateways.PaddlePaymentGatewayName:
+		return generatePaddlePayUrl(ctx, m)
 	}
 	return serveInvalidPaymentRequest(ctx)
 }
@@ -597,6 +681,37 @@ func generateSSLPayUrl(ctx echo.Context, o *models.OrderDetailsView) error {
 	}
 
 	url := res.Nonce
+	resp.Status = http.StatusOK
+	resp.Data = map[string]interface{}{
+		"url": url,
+	}
+	return resp.ServerJSON(ctx)
+}
+
+func generatePaddlePayUrl(ctx echo.Context, o *models.OrderDetailsView) error {
+	resp := core.Response{}
+
+	pg, err := payment_gateways.GetPaymentGatewayByName(o.PaymentGateway)
+	if err != nil {
+		resp.Title = "Invalid payment gateway"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.PaymentProcessingFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	res, err := pg.Pay(o)
+	if err != nil {
+		log.Log().Infoln(err)
+
+		resp.Title = "Failed to process payment"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.PaymentProcessingFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	url := res.Result
 	resp.Status = http.StatusOK
 	resp.Data = map[string]interface{}{
 		"url": url,

@@ -63,6 +63,12 @@ func GetPaymentGatewayByName(name string) (PaymentGateway, error) {
 			return nil, err
 		}
 		return ssl, nil
+	} else if name == PaddlePaymentGatewayName {
+		pd, err := NewPaddlePaymentGateway(cfg.Configs[PaddlePaymentGatewayName].(map[string]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		return pd, nil
 	}
 	return nil, errors.New("payment gateway not found")
 }
