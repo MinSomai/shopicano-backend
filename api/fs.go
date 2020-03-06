@@ -22,9 +22,7 @@ func RegisterFSRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	fsPublicPath.GET("/:bucket_name/:file_name/", serveAsStream)
 
 	func(g echo.Group) {
-		g.Use(middlewares.HasStore())
-		g.Use(middlewares.IsStoreActive())
-		g.Use(middlewares.IsStoreManager())
+		g.Use(middlewares.JWTAuth())
 		g.POST("/:bucket_name/", upload)
 	}(*fsPlatformPath)
 }
