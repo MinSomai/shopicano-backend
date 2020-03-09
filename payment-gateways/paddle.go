@@ -50,6 +50,8 @@ func (pd *paddlePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*Pay
 
 	grandTotal := float64(orderDetails.GrandTotal) / 100
 
+	paymentCompletedCallback := fmt.Sprintf("%s%s%s", config.App().FrontStoreUrl, config.PathMappingCfg()["after_payment_completed"], orderDetails.ID)
+
 	params := map[string]string{
 		"vendor_auth_code":  pd.VendorAuthCode,
 		"vendor_id":         pd.VendorID,
@@ -62,7 +64,7 @@ func (pd *paddlePaymentGateway) Pay(orderDetails *models.OrderDetailsView) (*Pay
 		//"customer_country":  "BD",
 		"customer_postcode": orderDetails.BillingPostcode,
 		"passthrough":       orderDetails.ID,
-		"return_url":        fmt.Sprintf("%s/#/order-history/%s", config.App().FrontStoreUrl, orderDetails.ID),
+		"return_url":        paymentCompletedCallback,
 	}
 
 	resp, err := gohttp.NewRequest().FormData(params).Headers(map[string]string{

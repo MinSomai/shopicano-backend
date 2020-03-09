@@ -254,7 +254,7 @@ func processPayOrderForStripe(ctx echo.Context, o *models.OrderDetailsView) erro
 		return resp.ServerJSON(ctx)
 	}
 
-	paymentCompletedCallback := fmt.Sprintf("%s/#/order-history/%s", config.App().FrontStoreUrl, o.ID)
+	paymentCompletedCallback := fmt.Sprintf("%s%s%s", config.App().FrontStoreUrl, config.PathMappingCfg()["after_payment_completed"], o.ID)
 	return ctx.Redirect(http.StatusPermanentRedirect, paymentCompletedCallback)
 }
 
@@ -362,7 +362,7 @@ func processPayOrderFor2Checkout(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	paymentCompletedCallback := fmt.Sprintf("%s/#/order-history/%s", config.App().FrontStoreUrl, orderID)
+	paymentCompletedCallback := fmt.Sprintf("%s%s%s", config.App().FrontStoreUrl, config.PathMappingCfg()["after_payment_completed"], m.ID)
 	return ctx.Redirect(http.StatusPermanentRedirect, paymentCompletedCallback)
 }
 
@@ -440,7 +440,7 @@ func processPayOrderForSSL(ctx echo.Context, m *models.OrderDetailsView) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	paymentCompletedCallback := fmt.Sprintf("%s/#/order-history/%s", config.App().FrontStoreUrl, m.ID)
+	paymentCompletedCallback := fmt.Sprintf("%s%s%s", config.App().FrontStoreUrl, config.PathMappingCfg()["after_payment_completed"], m.ID)
 	return ctx.Redirect(http.StatusPermanentRedirect, paymentCompletedCallback)
 }
 
