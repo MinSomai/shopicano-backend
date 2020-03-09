@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/config"
@@ -381,7 +382,8 @@ func emailVerification(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	return ctx.Redirect(http.StatusPermanentRedirect, config.App().FrontStoreUrl)
+	url := fmt.Sprintf("%s%s", config.App().FrontStoreUrl, config.PathMappingCfg()["after_account_verification"])
+	return ctx.Redirect(http.StatusPermanentRedirect, url)
 }
 
 func resetPasswordRequest(ctx echo.Context) error {

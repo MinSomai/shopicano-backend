@@ -53,9 +53,10 @@ func SendResetPasswordEmailFn(userID string) error {
 	}
 
 	content, err := templates.GenerateResetPasswordEmailHTML(map[string]interface{}{
-		"resetPasswordUrl": fmt.Sprintf("%s/#/reset-password?token=%s&email=%s", config.App().FrontStoreUrl, *u.ResetPasswordToken, u.Email),
-		"platformName":     settings.Name,
-		"platformWebsite":  settings.Website,
+		"resetPasswordUrl": fmt.Sprintf("%s%s?token=%s&email=%s",
+			config.App().FrontStoreUrl, config.PathMappingCfg()["after_password_reset_requested"], *u.ResetPasswordToken, u.Email),
+		"platformName":    settings.Name,
+		"platformWebsite": settings.Website,
 	})
 	if err != nil {
 		db.Rollback()
