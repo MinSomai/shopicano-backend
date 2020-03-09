@@ -76,8 +76,37 @@ func update(ctx echo.Context) error {
 		u.Phone = req.Phone
 	}
 
-	if req.Password != nil {
-		pass, err := utils.GeneratePassword(*req.Password)
+	if req.NewPassword != nil {
+		if req.CurrentPassword == nil {
+			db.Rollback()
+
+			resp.Title = "Current password is required"
+			resp.Status = http.StatusBadRequest
+			resp.Code = errors.InvalidRequest
+			return resp.ServerJSON(ctx)
+		}
+
+		if req.NewPassword != req.NewPasswordAgain {
+			db.Rollback()
+
+			resp.Title = "New password and new password again mismatched"
+			resp.Status = http.StatusBadRequest
+			resp.Code = errors.InvalidRequest
+			return resp.ServerJSON(ctx)
+		}
+
+		if err := utils.CheckPassword(u.Password, *req.CurrentPassword); err != nil {
+			db.Rollback()
+			log.Log().Errorln(err)
+
+			resp.Title = "Current password mismatched"
+			resp.Status = http.StatusForbidden
+			resp.Code = errors.UnauthorizedRequest
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		pass, err := utils.GeneratePassword(*req.NewPassword)
 		if err != nil {
 			db.Rollback()
 			log.Log().Errorln(err)
