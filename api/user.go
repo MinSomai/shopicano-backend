@@ -86,7 +86,16 @@ func update(ctx echo.Context) error {
 			return resp.ServerJSON(ctx)
 		}
 
-		if req.NewPassword != req.NewPasswordAgain {
+		if len(*req.NewPassword) < 8 {
+			db.Rollback()
+
+			resp.Title = "New password must be at least 8 characters long"
+			resp.Status = http.StatusBadRequest
+			resp.Code = errors.InvalidRequest
+			return resp.ServerJSON(ctx)
+		}
+
+		if req.NewPasswordAgain == nil || *req.NewPassword != *req.NewPasswordAgain {
 			db.Rollback()
 
 			resp.Title = "New password and new password again mismatched"
