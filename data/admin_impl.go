@@ -6,26 +6,26 @@ import (
 	"github.com/shopicano/shopicano-backend/models"
 )
 
-type AdminRepositoryImpl struct {
+type PlatformRepositoryImpl struct {
 }
 
-var adminRepository AdminRepository
+var platformRepository PlatformRepository
 
-func NewAdminRepository() AdminRepository {
-	if adminRepository == nil {
-		adminRepository = &AdminRepositoryImpl{}
+func NewPlatformRepository() PlatformRepository {
+	if platformRepository == nil {
+		platformRepository = &PlatformRepositoryImpl{}
 	}
-	return adminRepository
+	return platformRepository
 }
 
-func (au *AdminRepositoryImpl) CreateShippingMethod(db *gorm.DB, sm *models.ShippingMethod) error {
+func (au *PlatformRepositoryImpl) CreateShippingMethod(db *gorm.DB, sm *models.ShippingMethod) error {
 	if err := db.Table(sm.TableName()).Create(sm).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (au *AdminRepositoryImpl) UpdateShippingMethod(db *gorm.DB, sm *models.ShippingMethod) error {
+func (au *PlatformRepositoryImpl) UpdateShippingMethod(db *gorm.DB, sm *models.ShippingMethod) error {
 	if err := db.Table(sm.TableName()).
 		Where("id = ?", sm.ID).Save(sm).Error; err != nil {
 		return err
@@ -33,7 +33,7 @@ func (au *AdminRepositoryImpl) UpdateShippingMethod(db *gorm.DB, sm *models.Ship
 	return nil
 }
 
-func (au *AdminRepositoryImpl) ListShippingMethods(db *gorm.DB, from, limit int) ([]models.ShippingMethod, error) {
+func (au *PlatformRepositoryImpl) ListShippingMethods(db *gorm.DB, from, limit int) ([]models.ShippingMethod, error) {
 	var data []models.ShippingMethod
 	m := models.ShippingMethod{}
 	if err := db.Table(m.TableName()).
@@ -44,7 +44,7 @@ func (au *AdminRepositoryImpl) ListShippingMethods(db *gorm.DB, from, limit int)
 	return data, nil
 }
 
-func (au *AdminRepositoryImpl) ListActiveShippingMethods(db *gorm.DB, from, limit int) ([]models.ShippingMethod, error) {
+func (au *PlatformRepositoryImpl) ListActiveShippingMethods(db *gorm.DB, from, limit int) ([]models.ShippingMethod, error) {
 	var data []models.ShippingMethod
 	m := models.ShippingMethod{}
 	if err := db.Table(m.TableName()).
@@ -56,7 +56,7 @@ func (au *AdminRepositoryImpl) ListActiveShippingMethods(db *gorm.DB, from, limi
 	return data, nil
 }
 
-func (au *AdminRepositoryImpl) DeleteShippingMethod(db *gorm.DB, ID string) error {
+func (au *PlatformRepositoryImpl) DeleteShippingMethod(db *gorm.DB, ID string) error {
 	m := models.ShippingMethod{}
 	if err := db.Table(m.TableName()).
 		Where("id = ?", ID).
@@ -66,7 +66,7 @@ func (au *AdminRepositoryImpl) DeleteShippingMethod(db *gorm.DB, ID string) erro
 	return nil
 }
 
-func (au *AdminRepositoryImpl) GetShippingMethod(db *gorm.DB, ID string) (*models.ShippingMethod, error) {
+func (au *PlatformRepositoryImpl) GetShippingMethod(db *gorm.DB, ID string) (*models.ShippingMethod, error) {
 	m := models.ShippingMethod{}
 	if err := db.Table(m.TableName()).
 		Where("id = ?", ID).
@@ -76,14 +76,14 @@ func (au *AdminRepositoryImpl) GetShippingMethod(db *gorm.DB, ID string) (*model
 	return &m, nil
 }
 
-func (au *AdminRepositoryImpl) CreatePaymentMethod(db *gorm.DB, pm *models.PaymentMethod) error {
+func (au *PlatformRepositoryImpl) CreatePaymentMethod(db *gorm.DB, pm *models.PaymentMethod) error {
 	if err := db.Table(pm.TableName()).Create(pm).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (au *AdminRepositoryImpl) UpdatePaymentMethod(db *gorm.DB, pm *models.PaymentMethod) error {
+func (au *PlatformRepositoryImpl) UpdatePaymentMethod(db *gorm.DB, pm *models.PaymentMethod) error {
 	if err := db.Table(pm.TableName()).
 		Where("id = ?", pm.ID).Save(pm).Error; err != nil {
 		return err
@@ -91,7 +91,7 @@ func (au *AdminRepositoryImpl) UpdatePaymentMethod(db *gorm.DB, pm *models.Payme
 	return nil
 }
 
-func (au *AdminRepositoryImpl) ListPaymentMethods(db *gorm.DB, from, limit int) ([]models.PaymentMethod, error) {
+func (au *PlatformRepositoryImpl) ListPaymentMethods(db *gorm.DB, from, limit int) ([]models.PaymentMethod, error) {
 	var data []models.PaymentMethod
 	m := models.PaymentMethod{}
 	if err := db.Table(m.TableName()).
@@ -102,7 +102,7 @@ func (au *AdminRepositoryImpl) ListPaymentMethods(db *gorm.DB, from, limit int) 
 	return data, nil
 }
 
-func (au *AdminRepositoryImpl) ListActivePaymentMethods(db *gorm.DB, from, limit int) ([]models.PaymentMethod, error) {
+func (au *PlatformRepositoryImpl) ListActivePaymentMethods(db *gorm.DB, from, limit int) ([]models.PaymentMethod, error) {
 	var data []models.PaymentMethod
 	m := models.PaymentMethod{}
 	if err := db.Table(m.TableName()).
@@ -114,7 +114,7 @@ func (au *AdminRepositoryImpl) ListActivePaymentMethods(db *gorm.DB, from, limit
 	return data, nil
 }
 
-func (au *AdminRepositoryImpl) DeletePaymentMethod(db *gorm.DB, ID string) error {
+func (au *PlatformRepositoryImpl) DeletePaymentMethod(db *gorm.DB, ID string) error {
 	m := models.PaymentMethod{}
 	if err := db.Table(m.TableName()).
 		Where("id = ?", ID).
@@ -124,7 +124,7 @@ func (au *AdminRepositoryImpl) DeletePaymentMethod(db *gorm.DB, ID string) error
 	return nil
 }
 
-func (au *AdminRepositoryImpl) GetPaymentMethod(db *gorm.DB, ID string) (*models.PaymentMethod, error) {
+func (au *PlatformRepositoryImpl) GetPaymentMethod(db *gorm.DB, ID string) (*models.PaymentMethod, error) {
 	m := models.PaymentMethod{}
 	if err := db.Table(m.TableName()).
 		Where("id = ?", ID).
@@ -134,7 +134,7 @@ func (au *AdminRepositoryImpl) GetPaymentMethod(db *gorm.DB, ID string) (*models
 	return &m, nil
 }
 
-func (au *AdminRepositoryImpl) GetSettingsDetails(db *gorm.DB) (*models.SettingsDetails, error) {
+func (au *PlatformRepositoryImpl) GetSettingsDetails(db *gorm.DB) (*models.SettingsDetails, error) {
 	settings := models.Settings{}
 	settingsDetails := models.SettingsDetails{}
 	a := models.Address{}
@@ -148,7 +148,7 @@ func (au *AdminRepositoryImpl) GetSettingsDetails(db *gorm.DB) (*models.Settings
 	return &settingsDetails, nil
 }
 
-func (au *AdminRepositoryImpl) GetSettings(db *gorm.DB) (*models.Settings, error) {
+func (au *PlatformRepositoryImpl) GetSettings(db *gorm.DB) (*models.Settings, error) {
 	settings := models.Settings{}
 	if err := db.Table(settings.TableName()).
 		Where("id = ?", "1").
@@ -158,7 +158,7 @@ func (au *AdminRepositoryImpl) GetSettings(db *gorm.DB) (*models.Settings, error
 	return &settings, nil
 }
 
-func (au *AdminRepositoryImpl) UpdateSettings(db *gorm.DB, s *models.Settings) error {
+func (au *PlatformRepositoryImpl) UpdateSettings(db *gorm.DB, s *models.Settings) error {
 	if err := db.Table(s.TableName()).
 		Select("name, status, website, company_address_id, default_commission_rate, enabled_auto_store_confirmation, tag_line, is_sign_up_enabled, is_store_creation_enabled, updated_at").
 		Where("id = ?", "1").

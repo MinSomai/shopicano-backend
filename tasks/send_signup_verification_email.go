@@ -20,7 +20,7 @@ const (
 func SendSignUpVerificationEmailFn(userID string) error {
 	db := app.DB().Begin()
 
-	adminDao := data.NewAdminRepository()
+	adminDao := data.NewPlatformRepository()
 	settings, err := adminDao.GetSettings(db)
 	if err != nil {
 		db.Rollback()

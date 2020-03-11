@@ -96,7 +96,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 
 	pu := data.NewProductRepository()
 	ou := data.NewOrderRepository()
-	au := data.NewAdminRepository()
+	au := data.NewPlatformRepository()
 	cu := data.NewCouponRepository()
 
 	pm, err := au.GetPaymentMethod(db, o.PaymentMethodID)

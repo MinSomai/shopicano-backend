@@ -21,7 +21,7 @@ const (
 func SendResetPasswordEmailFn(userID string) error {
 	db := app.DB().Begin()
 
-	adminDao := data.NewAdminRepository()
+	adminDao := data.NewPlatformRepository()
 	settings, err := adminDao.GetSettings(db)
 	if err != nil {
 		db.Rollback()
@@ -81,7 +81,7 @@ func SendResetPasswordEmailFn(userID string) error {
 func SendResetPasswordConfirmationEmailFn(userID string) error {
 	db := app.DB()
 
-	adminDao := data.NewAdminRepository()
+	adminDao := data.NewPlatformRepository()
 	settings, err := adminDao.GetSettings(db)
 	if err != nil {
 		db.Rollback()
