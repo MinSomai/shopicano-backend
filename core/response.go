@@ -28,7 +28,7 @@ func (r *Response) ServeStreamFromMinio(ctx echo.Context, object *minio.Object) 
 	s, _ := object.Stat()
 
 	fileName := fmt.Sprintf("%s.%s", s.ETag, s.Key[strings.LastIndex(s.Key, ".")+1:])
-	ctx.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+	ctx.Response().Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", fileName))
 	ctx.Response().Header().Set("Content-Type", s.ContentType)
 
 	if _, err := io.Copy(ctx.Response().Writer, object); err != nil {

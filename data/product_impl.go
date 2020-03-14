@@ -104,6 +104,7 @@ func (pu *ProductRepositoryImpl) Search(db *gorm.DB, query string, from, limit i
 		Joins("LEFT JOIN collections AS col ON cop.collection_id = col.id").
 		Joins("LEFT JOIN stores AS s ON products.store_id = s.id").
 		Where("products.is_published = ? AND (LOWER(products.name) LIKE ? OR LOWER(c.name) LIKE ? OR LOWER(col.name) LIKE ?)", true, "%"+strings.ToLower(query)+"%", "%"+strings.ToLower(query)+"%", "%"+strings.ToLower(query)+"%").
+		Group("products.id, products.name, products.sku, products.unit, products.store_id, s.name, products.stock, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id, c.name, products.image, products.created_at, products.updated_at").
 		Offset(from).Limit(limit).
 		Order("created_at DESC").Find(&ps).Error; err != nil {
 		return nil, err
