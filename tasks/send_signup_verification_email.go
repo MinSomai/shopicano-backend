@@ -20,7 +20,7 @@ const (
 func SendSignUpVerificationEmailFn(userID string) error {
 	db := app.DB().Begin()
 
-	adminDao := data.NewAdminRepository()
+	adminDao := data.NewPlatformRepository()
 	settings, err := adminDao.GetSettings(db)
 	if err != nil {
 		db.Rollback()
@@ -48,14 +48,15 @@ func SendSignUpVerificationEmailFn(userID string) error {
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}
 
-	verificationUrl := fmt.Sprintf("%s/v1/email-verification?uid=%s&token=%s",
-		config.App().BackendUrl, userID, *u.VerificationToken)
+	verificationUrl := fmt.Sprintf("%s%s&email=%s&token=%s",
+		config.App().FrontStoreUrl, config.PathMappingCfg()["after_account_verification"], u.Email, *u.VerificationToken)
 
 	params := map[string]interface{}{
 		"platformName":    settings.Name,
 		"platformWebsite": settings.Website,
 		"verificationUrl": verificationUrl,
 		"userName":        u.Name,
+		"assetsUrl":       fmt.Sprintf("%s/assets/", settings.Website),
 	}
 
 	body, err := templates.GenerateActivateAccountEmailHTML(params)

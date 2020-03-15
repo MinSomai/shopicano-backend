@@ -100,8 +100,11 @@ func (pu *ProductRepositoryImpl) Search(db *gorm.DB, query string, from, limit i
 	if err := db.Table(p.TableName()).
 		Select("products.id, products.name, products.sku, products.unit, products.store_id, s.name AS store_name, products.stock, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins("LEFT JOIN categories AS c ON products.category_id = c.id").
+		Joins("LEFT JOIN collection_of_products AS cop ON products.id = cop.product_id").
+		Joins("LEFT JOIN collections AS col ON cop.collection_id = col.id").
 		Joins("LEFT JOIN stores AS s ON products.store_id = s.id").
-		Where("products.is_published = ? AND (LOWER(products.name) LIKE ? OR LOWER(c.name) LIKE ?)", true, "%"+strings.ToLower(query)+"%", "%"+strings.ToLower(query)+"%").
+		Where("products.is_published = ? AND (LOWER(products.name) LIKE ? OR LOWER(c.name) LIKE ? OR LOWER(col.name) LIKE ?)", true, "%"+strings.ToLower(query)+"%", "%"+strings.ToLower(query)+"%", "%"+strings.ToLower(query)+"%").
+		Group("products.id, products.name, products.sku, products.unit, products.store_id, s.name, products.stock, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id, c.name, products.image, products.created_at, products.updated_at").
 		Offset(from).Limit(limit).
 		Order("created_at DESC").Find(&ps).Error; err != nil {
 		return nil, err
@@ -350,4 +353,20 @@ func (pu *ProductRepositoryImpl) GetAttribute(db *gorm.DB, productID, ID string)
 	}
 
 	return &v, nil
+}
+
+func (pu *ProductRepositoryImpl) ListByCollection(db *gorm.DB, collectionID string, from, limit int) ([]models.ProductDetails, error) {
+	var ps []models.ProductDetails
+	p := models.Product{}
+	if err := db.Table(p.TableName()).
+		Select("products.id, products.stock, products.sku, products.unit, products.store_id, s.name AS store_name, products.name, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Joins("LEFT JOIN categories AS c ON products.category_id = c.id").
+		Joins("LEFT JOIN stores AS s ON products.store_id = s.id").
+		Joins("LEFT JOIN collection_of_products AS cop ON cop.product_id = products.id").
+		Where("products.is_published = ? AND cop.collection_id = ?", true, collectionID).
+		Offset(from).Limit(limit).
+		Order("products.created_at DESC").Find(&ps).Error; err != nil {
+		return nil, err
+	}
+	return ps, nil
 }

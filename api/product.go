@@ -315,7 +315,7 @@ func getProductAsStoreOwner(ctx echo.Context) error {
 	var p interface{}
 	var err error
 
-	p, err = pu.GetAsStoreStuff(db, ctx.Get(utils.StoreID).(string), productID)
+	p, err = pu.GetDetailsAsStoreStuff(db, ctx.Get(utils.StoreID).(string), productID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Product not found"
@@ -432,7 +432,7 @@ func searchProducts(ctx echo.Context, query string, page int64, limit int64, isP
 	if isPublic {
 		return pu.Search(db, query, int(from), int(limit))
 	}
-	return pu.SearchAsStoreStuff(db, query, ctx.Get(utils.StoreID).(string), int(from), int(limit))
+	return pu.SearchAsStoreStuff(db, ctx.Get(utils.StoreID).(string), query, int(from), int(limit))
 }
 
 func addProductAttribute(ctx echo.Context) error {

@@ -48,16 +48,19 @@ type Order struct {
 	BillingAddressID     string        `json:"billing_address_id" gorm:"column:billing_address_id;not null"`
 	PaymentMethodID      string        `json:"payment_method_id" gorm:"column:payment_method_id;not null"`
 	ShippingMethodID     *string       `json:"shipping_method_id;omitempty" gorm:"column:shipping_method_id"`
-	ShippingCharge       int           `json:"shipping_charge" gomr:"column:shipping_charge"`
-	PaymentProcessingFee int           `json:"payment_processing_fee" gorm:"column:payment_processing_fee"`
-	SubTotal             int           `json:"sub_total" gorm:"column:sub_total"`
+	ShippingCharge       int64         `json:"shipping_charge" gomr:"column:shipping_charge"`
+	PaymentProcessingFee int64         `json:"payment_processing_fee" gorm:"column:payment_processing_fee"`
+	SubTotal             int64         `json:"sub_total" gorm:"column:sub_total"`
 	IsAllDigitalProducts bool          `json:"is_all_digital_products" gorm:"column:is_all_digital_products;index"`
 	PaymentGateway       *string       `json:"payment_gateway" gorm:"column:payment_gateway"`
 	Nonce                *string       `json:"nonce" gomr:"column:nonce"`
 	TransactionID        *string       `json:"transaction_id" gorm:"column:transaction_id;unique_index"`
-	OriginalGrandTotal   int           `json:"original_grand_total" gorm:"column:original_grand_total"`
-	GrandTotal           int           `json:"grand_total" gorm:"column:grand_total"`
-	DiscountedAmount     int           `json:"discounted_amount" gorm:"column:discounted_amount"`
+	OriginalGrandTotal   int64         `json:"original_grand_total" gorm:"column:original_grand_total;not null;default:0"`
+	SellerEarnings       int64         `json:"seller_earnings" gorm:"seller_earnings;index;not nul;default:0"`
+	PlatformEarnings     int64         `json:"platform_earnings" gorm:"platform_earnings;index;not null;default:0"`
+	ActualEarnings       int64         `json:"actual_earnings" gorm:"actual_earnings;index;not null;default:0"`
+	GrandTotal           int64         `json:"grand_total" gorm:"column:grand_total;not nul;default:0"`
+	DiscountedAmount     int64         `json:"discounted_amount" gorm:"column:discounted_amount"`
 	Status               OrderStatus   `json:"status" gorm:"column:status"`
 	PaymentStatus        PaymentStatus `json:"payment_status" gorm:"column:payment_status"`
 	CreatedAt            time.Time     `json:"created_at" gorm:"column:created_at;index;not null"`

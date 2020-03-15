@@ -11,9 +11,9 @@ type ReqPaymentMethodCreate struct {
 	Name             string `json:"name" valid:"required"`
 	IsPublished      bool   `json:"is_published"`
 	IsFlat           bool   `json:"is_flat"`
-	ProcessingFee    int    `json:"processing_fee"`
-	MinProcessingFee int    `json:"min_processing_fee"`
-	MaxProcessingFee int    `json:"max_processing_fee"`
+	ProcessingFee    int64  `json:"processing_fee"`
+	MinProcessingFee int64  `json:"min_processing_fee"`
+	MaxProcessingFee int64  `json:"max_processing_fee"`
 	IsOfflinePayment bool   `json:"is_offline_payment"`
 }
 
@@ -40,7 +40,7 @@ func ValidateCreatePaymentMethod(ctx echo.Context) (*ReqPaymentMethodCreate, err
 type ReqShippingMethodCreate struct {
 	Name                    string `json:"name" valid:"required"`
 	ApproximateDeliveryTime int    `json:"approximate_delivery_time" valid:"required"`
-	DeliveryCharge          int    `json:"delivery_charge" valid:"required"`
+	DeliveryCharge          int64  `json:"delivery_charge" valid:"required"`
 	IsPublished             bool   `json:"is_published"`
 	IsFlat                  bool   `json:"is_flat"`
 	WeightUnit              string `json:"weight_unit" valid:"required"`

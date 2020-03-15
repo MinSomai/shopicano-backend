@@ -11,12 +11,12 @@ import (
 type ReqCreateCoupon struct {
 	Code           string            `json:"code" valid:"required,stringlength(1|100)"`
 	IsActive       bool              `json:"is_active"`
-	DiscountAmount int               `json:"discount_amount" valid:"required,range(1|100000000)"`
+	DiscountAmount int64             `json:"discount_amount" valid:"required,range(1|100000000)"`
 	IsFlatDiscount bool              `json:"is_flat_discount"`
 	IsUserSpecific bool              `json:"is_user_specific"`
-	MaxDiscount    int               `json:"max_discount" valid:"range(0|100000000)"`
+	MaxDiscount    int64             `json:"max_discount" valid:"range(0|100000000)"`
 	MaxUsage       int               `json:"max_usage" valid:"required,range(1|100000000)"`
-	MinOrderValue  int               `json:"min_order_value" valid:"range(0|100000000)"`
+	MinOrderValue  int64             `json:"min_order_value" valid:"range(0|100000000)"`
 	DiscountType   models.CouponType `json:"discount_type" valid:"required"`
 	StartAt        string            `json:"start_at" valid:"required"`
 	EndAt          string            `json:"end_at" valid:"required"`
@@ -61,12 +61,12 @@ func ValidateCreateCoupon(ctx echo.Context) (*ReqCreateCoupon, error) {
 type ReqUpdateCoupon struct {
 	Code           *string            `json:"code"`
 	IsActive       *bool              `json:"is_active"`
-	DiscountAmount *int               `json:"discount_amount"`
+	DiscountAmount *int64             `json:"discount_amount"`
 	IsFlatDiscount *bool              `json:"is_flat_discount"`
 	IsUserSpecific *bool              `json:"is_user_specific"`
-	MaxDiscount    *int               `json:"max_discount"`
+	MaxDiscount    *int64             `json:"max_discount"`
 	MaxUsage       *int               `json:"max_usage"`
-	MinOrderValue  *int               `json:"min_order_value"`
+	MinOrderValue  *int64             `json:"min_order_value"`
 	DiscountType   *models.CouponType `json:"discount_type"`
 	StartAt        *string            `json:"start_at"`
 	EndAt          *string            `json:"end_at"`

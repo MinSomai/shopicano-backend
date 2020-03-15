@@ -13,7 +13,7 @@ type OrderDetails struct {
 	Nonce                   string        `json:"nonce"`
 	TransactionID           string        `json:"transaction_id"`
 	GrandTotal              int64         `json:"grand_total"`
-	DiscountedAmount        int           `json:"discounted_amount"`
+	DiscountedAmount        int64         `json:"discounted_amount"`
 	CouponCode              string        `json:"coupon_code"`
 	Status                  OrderStatus   `json:"status"`
 	PaymentStatus           PaymentStatus `json:"payment_status"`
@@ -55,6 +55,9 @@ type OrderDetails struct {
 	ApproximateDeliveryTime int           `json:"approximate_delivery_time"`
 	ReviewRating            int           `json:"review_rating"`
 	ReviewDescription       string        `json:"review_description"`
+	SellerEarnings          int64         `json:"seller_earnings"`
+	PlatformEarnings        int64         `json:"platform_earnings"`
+	ActualEarnings          int64         `json:"actual_earnings"`
 }
 
 func (od *OrderDetails) TableName() string {
@@ -66,7 +69,7 @@ type OrderedItemDetails struct {
 	ProductID   string `json:"product_id"`
 	ProductName string `json:"product_name"`
 	Quantity    int    `json:"quantity"`
-	Price       int    `json:"price"`
-	ProductCost int    `json:"product_cost"`
-	Total       int    `json:"total"`
+	Price       int64  `json:"price"`
+	ProductCost int64  `json:"product_cost"`
+	Total       int64  `json:"total"`
 }

@@ -71,16 +71,6 @@ func auto(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	var flatTables []core.FlatTable
-	flatTables = append(flatTables, &models.Location{})
-	for _, ft := range flatTables {
-		if err := ft.Populate(tx); err != nil {
-			tx.Rollback()
-			log.Log().Errorln(err)
-			return
-		}
-	}
-
 	if err := tx.Commit().Error; err != nil {
 		log.Log().Errorln(err)
 		return

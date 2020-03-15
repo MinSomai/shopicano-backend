@@ -62,6 +62,9 @@ type OrderDetailsView struct {
 	UserPicture             *string           `json:"user_picture,omitempty"`
 	ReviewRating            int               `json:"review_rating,omitempty"`
 	ReviewDescription       string            `json:"review_description,omitempty"`
+	SellerEarnings          int64             `json:"seller_earnings"`
+	PlatformEarnings        int64             `json:"platform_earnings"`
+	ActualEarnings          int64             `json:"actual_earnings"`
 }
 
 func (odv *OrderDetailsView) TableName() string {
@@ -82,7 +85,8 @@ func (odv *OrderDetailsView) CreateView(tx *gorm.DB) error {
 		" s.country AS store_country, s.postcode AS store_postcode, s.email AS store_email, s.phone AS store_phone, s.status AS store_status,"+
 		" sm.id AS shipping_method_id, sm.name AS shipping_method_name, sm.approximate_delivery_time AS approximate_delivery_time,"+
 		" pm.id AS payment_method_id, pm.name AS payment_method_name, pm.is_offline_payment AS payment_method_is_offline,"+
-		" rv.rating AS review_rating, rv.description AS review_description"+
+		" rv.rating AS review_rating, rv.description AS review_description, o.seller_earnings AS seller_earnings,"+
+		" o.platform_earnings AS platform_earnings, o.actual_earnings AS actual_earnings"+
 		" FROM orders AS o"+
 		" LEFT JOIN addresses AS sa ON o.shipping_address_id = sa.id"+
 		" LEFT JOIN addresses AS ba ON o.billing_address_id = ba.id"+

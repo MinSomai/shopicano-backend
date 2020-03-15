@@ -5,7 +5,7 @@ import (
 	"github.com/shopicano/shopicano-backend/models"
 )
 
-type AdminRepository interface {
+type PlatformRepository interface {
 	CreateShippingMethod(db *gorm.DB, sm *models.ShippingMethod) error
 	UpdateShippingMethod(db *gorm.DB, sm *models.ShippingMethod) error
 	ListShippingMethods(db *gorm.DB, from, limit int) ([]models.ShippingMethod, error)

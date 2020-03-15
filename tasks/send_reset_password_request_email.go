@@ -21,7 +21,7 @@ const (
 func SendResetPasswordEmailFn(userID string) error {
 	db := app.DB().Begin()
 
-	adminDao := data.NewAdminRepository()
+	adminDao := data.NewPlatformRepository()
 	settings, err := adminDao.GetSettings(db)
 	if err != nil {
 		db.Rollback()
@@ -53,9 +53,11 @@ func SendResetPasswordEmailFn(userID string) error {
 	}
 
 	content, err := templates.GenerateResetPasswordEmailHTML(map[string]interface{}{
-		"resetPasswordUrl": fmt.Sprintf("%s/#/reset-password?token=%s&email=%s", config.App().FrontStoreUrl, *u.ResetPasswordToken, u.Email),
-		"platformName":     settings.Name,
-		"platformWebsite":  settings.Website,
+		"resetPasswordUrl": fmt.Sprintf("%s%s?token=%s&email=%s",
+			config.App().FrontStoreUrl, config.PathMappingCfg()["after_password_reset_requested"], *u.ResetPasswordToken, u.Email),
+		"platformName":    settings.Name,
+		"platformWebsite": settings.Website,
+		"assetsUrl":       fmt.Sprintf("%s/assets/", settings.Website),
 	})
 	if err != nil {
 		db.Rollback()
@@ -80,7 +82,7 @@ func SendResetPasswordEmailFn(userID string) error {
 func SendResetPasswordConfirmationEmailFn(userID string) error {
 	db := app.DB()
 
-	adminDao := data.NewAdminRepository()
+	adminDao := data.NewPlatformRepository()
 	settings, err := adminDao.GetSettings(db)
 	if err != nil {
 		db.Rollback()
@@ -102,6 +104,7 @@ func SendResetPasswordConfirmationEmailFn(userID string) error {
 		"platformName":    settings.Name,
 		"platformWebsite": settings.Website,
 		"userName":        u.Name,
+		"assetsUrl":       fmt.Sprintf("%s/assets/", settings.Website),
 	})
 	if err != nil {
 		log.Log().Errorln(err)

@@ -29,6 +29,13 @@ if [ "$cmd" = "run" ]; then
   exit
 fi
 
+if [ "$cmd" = "worker" ]; then
+  echo "Executing worker command"
+  #  curl --request PUT --data-binary @config.yml http://localhost:8500/v1/kv/${CONSUL_PATH}
+  ./${binary} worker
+  exit
+fi
+
 if [ "$cmd" = "auto" ]; then
   echo "Executing migration auto command"
   ./${binary} migration auto

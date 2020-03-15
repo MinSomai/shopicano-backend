@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
-	"github.com/shopicano/shopicano-backend/config"
 	"github.com/shopicano/shopicano-backend/core"
 	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/errors"
@@ -326,14 +325,14 @@ func register(ctx echo.Context) error {
 func emailVerification(ctx echo.Context) error {
 	resp := core.Response{}
 
-	userID := ctx.QueryParam("uid")
+	email := ctx.QueryParam("email")
 	token := ctx.QueryParam("token")
 
 	db := app.DB().Begin()
 
 	uc := data.NewUserRepository()
 
-	u, err := uc.Get(db, userID)
+	u, err := uc.GetByEmail(db, email)
 	if err != nil {
 		ok := errors.IsRecordNotFoundError(err)
 		if ok {
@@ -381,7 +380,9 @@ func emailVerification(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	return ctx.Redirect(http.StatusPermanentRedirect, config.App().FrontStoreUrl)
+	resp.Title = "Email has been verified"
+	resp.Status = http.StatusOK
+	return resp.ServerJSON(ctx)
 }
 
 func resetPasswordRequest(ctx echo.Context) error {
@@ -528,4 +529,8 @@ func resetPasswordUpdate(ctx echo.Context) error {
 	resp.Title = "Password has been changed"
 	resp.Status = http.StatusOK
 	return resp.ServerJSON(ctx)
+}
+
+func redirect(ctx echo.Context, url string) error {
+	return ctx.Redirect(http.StatusPermanentRedirect, url)
 }

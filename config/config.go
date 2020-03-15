@@ -45,6 +45,7 @@ func LoadConfig() error {
 	LoadPaymentGateway()
 	LoadRabbitMQ()
 	LoadEmailService()
+	LoadPathMapping()
 
 	return nil
 }

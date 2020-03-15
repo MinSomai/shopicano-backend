@@ -160,3 +160,7 @@ func (spg *stripePaymentGateway) VoidTransaction(orderDetails *models.OrderDetai
 
 	return nil
 }
+
+func (spg *stripePaymentGateway) DisplayName() string {
+	return "Stripe"
+}

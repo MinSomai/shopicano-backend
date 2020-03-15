@@ -87,6 +87,11 @@ var verifyEmailTemplate = `<!DOCTYPE html>
         text-align: center!important;
     }
     </style>
+	<script>
+	function redirectUrl(u) {
+  		window.open(u, '_blank');
+	}
+	</script>
 </head>
 
 
@@ -95,16 +100,16 @@ var verifyEmailTemplate = `<!DOCTYPE html>
         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0; padding-top: 138px; width: 100%; height: 100%;">
             <tr>
                 <td style="margin: 0; padding: 0; width: 100%; height: 100%;" align="center">
-                    <a href="{{ .platformWebsite }}" target="_blank"><img src="" width="165px" height="42px" alt="{{ .platformName }}"></a>
+                    <a href="{{ .platformWebsite }}" target="_blank"><img src="{{ .assetsUrl }}group-26@3x.png" width="165px" height="42px" alt="{{ .platformName }}"></a>
                     <table width="600" border="0" cellspacing="0" cellpadding="0" style="margin-top: 38px; padding: 0;">
                         <tr>
                             <td class="container" style="width:600px; min-width:600px; width: 100%;" align="center">
-                                <img src="thick@3x.png" width="74" height="74" alt="">
+                                <img src="{{ .assetsUrl }}thick@3x.png" width="74" height="74" alt="">
                                 <h3 class="my-28">Activate Your Account</h3>
 
                                 <p>Hi {{ .userName }}, Click the button below to activate your account and start buying from {{ .platformName }}</p>
 
-                                <button class="btn" onclick="location.href='{{ .verificationUrl }}'">Activate Account</button>
+                                <button class="btn" onclick="redirectUrl('{{ .verificationUrl }}');">Activate Account</button>
 
                                 <p class="my-28">If you’re having trouble with the button 'Activate Account', 
                                     copy and paste the URL below into your web browser.</p>

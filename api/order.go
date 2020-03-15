@@ -96,7 +96,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 
 	pu := data.NewProductRepository()
 	ou := data.NewOrderRepository()
-	au := data.NewAdminRepository()
+	au := data.NewPlatformRepository()
 	cu := data.NewCouponRepository()
 
 	pm, err := au.GetPaymentMethod(db, o.PaymentMethodID)
@@ -231,7 +231,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			Price:       item.Price,
 			ProductCost: item.ProductCost,
 		}
-		oi.SubTotal = v.Quantity * item.Price
+		oi.SubTotal = int64(v.Quantity) * item.Price
 
 		availableItems = append(availableItems, oi)
 
@@ -275,6 +275,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	}
 
 	o.GrandTotal = o.SubTotal + o.ShippingCharge
+	actualEarningsFromOrder := int64(0)
 
 	var couponID *string
 
@@ -342,20 +343,26 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			return resp.ServerJSON(ctx)
 		}
 
-		discount := 0
+		discount := int64(0)
 		switch coupon.DiscountType {
 		case models.ProductDiscount:
 			discount = coupon.CalculateDiscount(o.SubTotal)
+			actualEarningsFromOrder = o.SubTotal - discount
 		case models.ShippingDiscount:
 			discount = coupon.CalculateDiscount(o.ShippingCharge)
+			actualEarningsFromOrder = o.SubTotal
 		case models.TotalDiscount:
 			discount = coupon.CalculateDiscount(o.GrandTotal)
+			actualEarningsFromOrder = o.SubTotal - discount
 		default:
 			discount = 0
+			actualEarningsFromOrder = o.SubTotal
 		}
 
 		o.DiscountedAmount = discount
 		couponID = &coupon.ID
+	} else {
+		actualEarningsFromOrder = o.SubTotal
 	}
 
 	pgName := payment_gateways.GetActivePaymentGateway().GetName()
@@ -365,6 +372,26 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	o.GrandTotal += o.PaymentProcessingFee
 	o.OriginalGrandTotal = o.GrandTotal
 	o.GrandTotal -= o.DiscountedAmount
+
+	su := data.NewStoreRepository()
+	s, err := su.FindStoreByID(db, *storeID)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Store not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.StoreNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		return serveDatabaseQueryFailed(ctx, err)
+	}
+
+	o.ActualEarnings = actualEarningsFromOrder
+	o.PlatformEarnings = s.CalculateCommission(o.ActualEarnings)
+	o.SellerEarnings = o.ActualEarnings - o.PlatformEarnings
 
 	err = ou.Create(db, &o)
 	if err != nil {
@@ -428,6 +455,38 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 	if err := ou.CreateLog(db, &ol); err != nil {
 		db.Rollback()
 		return serveDatabaseQueryFailed(ctx, err)
+	}
+
+	if s.IsAutoConfirmEnabled {
+		o.Status = models.OrderConfirmed
+
+		err = ou.UpdateStatus(db, &o)
+		if err != nil {
+			db.Rollback()
+
+			log.Log().Errorln(err)
+
+			if errors.IsPreparedError(err) {
+				resp.Title = "Invalid request"
+				resp.Status = http.StatusBadRequest
+				resp.Code = errors.InvalidRequest
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+			return serveDatabaseQueryFailed(ctx, err)
+		}
+
+		ol := models.OrderLog{
+			ID:        utils.NewUUID(),
+			OrderID:   o.ID,
+			Action:    string(o.Status),
+			Details:   "Order has been confirmed",
+			CreatedAt: time.Now(),
+		}
+		if err := ou.CreateLog(db, &ol); err != nil {
+			db.Rollback()
+			return serveDatabaseQueryFailed(ctx, err)
+		}
 	}
 
 	if isAllDigitalProduct {
@@ -506,7 +565,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if err := queue.SendOrderDetailsEmail(o.ID, "Order has been placed"); err != nil {
+	if err := queue.SendOrderDetailsEmail(o.ID, "Thanks for your purchase"); err != nil {
 		db.Rollback()
 
 		resp.Title = "Failed to queue send order details"

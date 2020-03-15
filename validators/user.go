@@ -77,11 +77,13 @@ func ValidateRegister(ctx echo.Context) (*models.User, error) {
 }
 
 type reqUserUpdate struct {
-	Name           *string `json:"name"`
-	Email          *string `json:"email"`
-	ProfilePicture *string `json:"profile_picture"`
-	Phone          *string `json:"phone"`
-	Password       *string `json:"password"`
+	Name             *string `json:"name"`
+	Email            *string `json:"email"`
+	ProfilePicture   *string `json:"profile_picture"`
+	Phone            *string `json:"phone"`
+	CurrentPassword  *string `json:"current_password"`
+	NewPassword      *string `json:"new_password"`
+	NewPasswordAgain *string `json:"new_password_again"`
 }
 
 func ValidateUserUpdate(ctx echo.Context) (*reqUserUpdate, error) {
