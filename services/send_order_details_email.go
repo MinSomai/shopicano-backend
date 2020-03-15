@@ -29,12 +29,14 @@ func SendOrderDetailsEmail(email, subject string, order *models.OrderDetailsView
 		order.BillingAddress, order.BillingCity, order.BillingCountry, order.BillingPostcode)
 	params["isShippable"] = !order.IsAllDigitalProducts
 	params["buyerName"] = order.UserName
-	params["orderDate"] = order.CreatedAt.Format(utils.DateTimeFormatForInput)
+	params["orderDate"] = order.CreatedAt.Format(utils.DateTimeFormatForDistribution)
 	params["orderUrl"] = fmt.Sprintf("%s%s%s", config.App().FrontStoreUrl, config.PathMappingCfg()["after_payment_completed"], order.ID)
 
 	if !order.IsAllDigitalProducts {
 		params["shippingAddress"] = fmt.Sprintf("%s, %s, %s - %s",
 			*order.ShippingAddress, *order.ShippingCity, *order.ShippingCountry, *order.ShippingPostcode)
+	} else {
+		params["shippingAddress"] = "N/A"
 	}
 
 	params["shippingCharge"] = fmt.Sprintf("%.2f", float64(order.ShippingCharge)/100)

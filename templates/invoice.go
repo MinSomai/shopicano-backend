@@ -256,19 +256,13 @@ var invoiceTemplate = `
                                     {{end}}
 
                                     <tr class="tbl-data">
-                                        {{ if .isShippable }}
-                                            <th style="text-align: left;">Shipping Address</th> 
-                                        {{end}}
-
+                                        <th style="text-align: left;">Shipping Address</th>
                                         <td style="text-align: center;"></td>
                                         <td style="text-align: right; padding: 13px 0;">Total:</td>
                                         <td style="text-align: right; padding: 13px 0;">{{ .grandTotal }}</td>
                                     </tr>
                                     <tr class="tbl-data">
-                                        {{ if .isShippable }}
-                                            <td style="text-align: left; padding: 1px 10px 1px 0;">{{ .shippingAddress }}</td>
-                                        {{end}}
-
+                                        <td style="text-align: left; padding: 1px 10px 1px 0;">{{ .shippingAddress }}</td>
                                         <td style="text-align: center;"></td>
                                         <td style="text-align: right; padding: 1px 0;">Payment Status:</td>
                                         <td style="text-align: right; padding: 1px 0; color: #ff8124; font-weight: 500; font-size: 14px;">{{ .paymentStatus }}</td>
