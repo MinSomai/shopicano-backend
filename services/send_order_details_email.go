@@ -4,14 +4,23 @@ import (
 	"fmt"
 	"github.com/RichardKnop/machinery/v1/tasks"
 	"github.com/go-gomail/gomail"
+	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/config"
+	"github.com/shopicano/shopicano-backend/data"
 	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/models"
 	payment_gateways "github.com/shopicano/shopicano-backend/payment-gateways"
 	"github.com/shopicano/shopicano-backend/templates"
+	"github.com/shopicano/shopicano-backend/utils"
 )
 
 func SendOrderDetailsEmail(email, subject string, order *models.OrderDetailsView) error {
+	pu := data.NewPlatformRepository()
+	settings, err := pu.GetSettings(app.DB())
+	if err != nil {
+		return err
+	}
+
 	params := map[string]interface{}{}
 	params["greetings"] = fmt.Sprintf("Hi %s,", order.UserName)
 	params["intros"] = "Thank you for purchasing from our platform."
@@ -19,6 +28,9 @@ func SendOrderDetailsEmail(email, subject string, order *models.OrderDetailsView
 	params["billingAddress"] = fmt.Sprintf("%s\n%s\n%s - %s",
 		order.BillingAddress, order.BillingCity, order.BillingCountry, order.BillingPostcode)
 	params["isShippable"] = !order.IsAllDigitalProducts
+	params["buyerName"] = order.UserName
+	params["orderDate"] = order.CreatedAt.Format(utils.DateTimeFormatForInput)
+	params["orderUrl"] = fmt.Sprintf("%s%s%s", config.App().FrontStoreUrl, config.PathMappingCfg()["after_payment_completed"], order.ID)
 
 	if !order.IsAllDigitalProducts {
 		params["shippingAddress"] = fmt.Sprintf("%s\n%s\n%s - %s",
@@ -30,6 +42,10 @@ func SendOrderDetailsEmail(email, subject string, order *models.OrderDetailsView
 	params["subTotal"] = fmt.Sprintf("%.2f", float64(order.SubTotal)/100)
 	params["grandTotal"] = fmt.Sprintf("%.2f", float64(order.GrandTotal)/100)
 	params["isCouponApplied"] = false
+	params["isDigitalPayment"] = !order.PaymentMethodIsOffline
+	params["assetsUrl"] = fmt.Sprintf("%s/assets/", settings.Website)
+	params["siteUrl"] = fmt.Sprintf("%s", settings.Website)
+	params["platformName"] = settings.Name
 
 	pg, err := payment_gateways.GetPaymentGatewayByName(order.PaymentGateway)
 	if err != nil {
