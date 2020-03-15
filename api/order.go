@@ -457,6 +457,38 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		return serveDatabaseQueryFailed(ctx, err)
 	}
 
+	if s.IsAutoConfirmEnabled {
+		o.Status = models.OrderConfirmed
+
+		err = ou.UpdateStatus(db, &o)
+		if err != nil {
+			db.Rollback()
+
+			log.Log().Errorln(err)
+
+			if errors.IsPreparedError(err) {
+				resp.Title = "Invalid request"
+				resp.Status = http.StatusBadRequest
+				resp.Code = errors.InvalidRequest
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+			return serveDatabaseQueryFailed(ctx, err)
+		}
+
+		ol := models.OrderLog{
+			ID:        utils.NewUUID(),
+			OrderID:   o.ID,
+			Action:    string(o.Status),
+			Details:   "Order has been confirmed",
+			CreatedAt: time.Now(),
+		}
+		if err := ou.CreateLog(db, &ol); err != nil {
+			db.Rollback()
+			return serveDatabaseQueryFailed(ctx, err)
+		}
+	}
+
 	if isAllDigitalProduct {
 		o.Status = models.OrderDelivered
 
