@@ -48,7 +48,7 @@ func SendSignUpVerificationEmailFn(userID string) error {
 		return tasks.NewErrRetryTaskLater(err.Error(), time.Second*30)
 	}
 
-	verificationUrl := fmt.Sprintf("%s%s?email=%s&token=%s",
+	verificationUrl := fmt.Sprintf("%s%s&email=%s&token=%s",
 		config.App().FrontStoreUrl, config.PathMappingCfg()["after_account_verification"], u.Email, *u.VerificationToken)
 
 	params := map[string]interface{}{
