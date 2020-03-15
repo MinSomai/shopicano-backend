@@ -25,7 +25,7 @@ func SendOrderDetailsEmail(email, subject string, order *models.OrderDetailsView
 	params["greetings"] = fmt.Sprintf("Hi %s,", order.UserName)
 	params["intros"] = subject
 	params["orderHash"] = order.Hash
-	params["billingAddress"] = fmt.Sprintf("%s\n%s\n%s - %s",
+	params["billingAddress"] = fmt.Sprintf("%s, %s, %s - %s",
 		order.BillingAddress, order.BillingCity, order.BillingCountry, order.BillingPostcode)
 	params["isShippable"] = !order.IsAllDigitalProducts
 	params["buyerName"] = order.UserName
@@ -33,7 +33,7 @@ func SendOrderDetailsEmail(email, subject string, order *models.OrderDetailsView
 	params["orderUrl"] = fmt.Sprintf("%s%s%s", config.App().FrontStoreUrl, config.PathMappingCfg()["after_payment_completed"], order.ID)
 
 	if !order.IsAllDigitalProducts {
-		params["shippingAddress"] = fmt.Sprintf("%s\n%s\n%s - %s",
+		params["shippingAddress"] = fmt.Sprintf("%s, %s, %s - %s",
 			*order.ShippingAddress, *order.ShippingCity, *order.ShippingCountry, *order.ShippingPostcode)
 	}
 
