@@ -87,6 +87,11 @@ var verifyEmailTemplate = `<!DOCTYPE html>
         text-align: center!important;
     }
     </style>
+	<script>
+	function redirectUrl(u) {
+  		window.open(u, '_blank');
+	}
+	</script>
 </head>
 
 
@@ -104,7 +109,7 @@ var verifyEmailTemplate = `<!DOCTYPE html>
 
                                 <p>Hi {{ .userName }}, Click the button below to activate your account and start buying from {{ .platformName }}</p>
 
-                                <button class="btn" onclick="window.location.href='{{ .verificationUrl }}';">Activate Account</button>
+                                <button class="btn" onclick="redirectUrl('{{ .verificationUrl }}');">Activate Account</button>
 
                                 <p class="my-28">If you’re having trouble with the button 'Activate Account', 
                                     copy and paste the URL below into your web browser.</p>

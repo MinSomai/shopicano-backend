@@ -88,6 +88,11 @@ var resetPasswordConfirmationTemplate = `<!DOCTYPE html>
         text-align: center!important;
     }
     </style>
+	<script>
+	function redirectUrl(u) {
+  		window.open(u, '_blank');
+	}
+	</script>
 </head>
 
 

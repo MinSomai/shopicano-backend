@@ -5,8 +5,7 @@ import (
 	"html/template"
 )
 
-var resetPasswordTemplate = `<!DOCTYPE html>
-<html lang="en">
+var resetPasswordTemplate = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
@@ -87,15 +86,19 @@ var resetPasswordTemplate = `<!DOCTYPE html>
         text-align: center!important;
     }
     </style>
+	<script>
+	function redirectUrl(u) {
+  		window.open(u, '_blank');
+	}
+	</script>
 </head>
-
 
 <body>
     <center>
-        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0; padding-top: 138px; width: 100%; height: 100%;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0; width: 100%; height: 100%;">
             <tr>
                 <td style="margin: 0; padding: 0; width: 100%; height: 100%;" align="center">
-                    <a href="{{ .platformWebsite }}" target="_blank"><img src="group-26@3x.png" width="165px" height="42px" alt=""></a>
+                    <a href="{{ .platformWebsite }}" target="_blank"><img src="{{ .siteUrl }}group-26@3x.png" width="165px" height="42px" alt=""></a>
                     <table width="600" border="0" cellspacing="0" cellpadding="0" style="margin-top: 38px; padding: 0;">
                         <tr>
                             <td class="container" style="width:600px; min-width:600px; width: 100%;" align="center">
@@ -107,7 +110,7 @@ var resetPasswordTemplate = `<!DOCTYPE html>
                                     then you have to request new one.
                                 </p>
 
-                                <button class="btn" onclick="window.location.href='{{ .resetPasswordUrl }}';">Reset Password</button>
+                                <button class="btn" onclick="redirectUrl('{{ .resetPasswordUrl }}');">Reset Password</button>
 
                                 <p class="my-28">
                                     If you’re having trouble with the button ‘Reset Password', 
@@ -136,7 +139,6 @@ var resetPasswordTemplate = `<!DOCTYPE html>
         </table>
     </center>
 </body>
-</html>
 `
 
 func GenerateResetPasswordEmailHTML(params map[string]interface{}) (string, error) {
