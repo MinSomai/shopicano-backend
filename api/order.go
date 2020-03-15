@@ -533,7 +533,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	if err := queue.SendOrderDetailsEmail(o.ID, "Order has been placed"); err != nil {
+	if err := queue.SendOrderDetailsEmail(o.ID, "Thanks for your purchase"); err != nil {
 		db.Rollback()
 
 		resp.Title = "Failed to queue send order details"
