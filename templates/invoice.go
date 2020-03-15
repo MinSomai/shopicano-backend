@@ -170,7 +170,7 @@ var invoiceTemplate = `
                     <table width="600" border="0" cellspacing="0" cellpadding="0" style="padding: 0;">
                         <tr>
                             <td class="container" style="width:600px; padding-bottom: 92px; min-width:600px; width: 100%;" align="center">
-                                <img src="group-26@3x.png" width="165px" height="42px" alt="">
+                                <img src="{{ .assetsUrl }}group-26@3x.png" width="165px" height="42px" alt="">
                                 <h3 class="title">{{ .greetings }}</h3>
 
                                 <p>{{ .intros }}</p>

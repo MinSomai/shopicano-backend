@@ -56,6 +56,7 @@ func SendSignUpVerificationEmailFn(userID string) error {
 		"platformWebsite": settings.Website,
 		"verificationUrl": verificationUrl,
 		"userName":        u.Name,
+		"assetsUrl":       fmt.Sprintf("%s/assets/", settings.Website),
 	}
 
 	body, err := templates.GenerateActivateAccountEmailHTML(params)

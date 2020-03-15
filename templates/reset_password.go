@@ -98,11 +98,11 @@ var resetPasswordTemplate = `
         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0; width: 100%; height: 100%;">
             <tr>
                 <td style="margin: 0; padding: 0; width: 100%; height: 100%;" align="center">
-                    <a href="{{ .platformWebsite }}" target="_blank"><img src="{{ .siteUrl }}group-26@3x.png" width="165px" height="42px" alt=""></a>
+                    <a href="{{ .platformWebsite }}" target="_blank"><img src="{{ .assetsUrl }}group-26@3x.png" width="165px" height="42px" alt=""></a>
                     <table width="600" border="0" cellspacing="0" cellpadding="0" style="margin-top: 38px; padding: 0;">
                         <tr>
                             <td class="container" style="width:600px; min-width:600px; width: 100%;" align="center">
-                                <img src="key.png" width="74" height="74" alt="">
+                                <img src="{{ .assetsUrl }}key.png" width="74" height="74" alt="">
                                 <h3 class="my-28">Reset Your Password</h3>
 
                                 <p>

@@ -57,6 +57,7 @@ func SendResetPasswordEmailFn(userID string) error {
 			config.App().FrontStoreUrl, config.PathMappingCfg()["after_password_reset_requested"], *u.ResetPasswordToken, u.Email),
 		"platformName":    settings.Name,
 		"platformWebsite": settings.Website,
+		"assetsUrl":       fmt.Sprintf("%s/assets/", settings.Website),
 	})
 	if err != nil {
 		db.Rollback()
@@ -103,6 +104,7 @@ func SendResetPasswordConfirmationEmailFn(userID string) error {
 		"platformName":    settings.Name,
 		"platformWebsite": settings.Website,
 		"userName":        u.Name,
+		"assetsUrl":       fmt.Sprintf("%s/assets/", settings.Website),
 	})
 	if err != nil {
 		log.Log().Errorln(err)
