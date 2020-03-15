@@ -23,7 +23,7 @@ func (pm *PaymentMethod) TableName() string {
 }
 
 func (pm *PaymentMethod) CalculateProcessingFee(bill int64) int64 {
-	if pm.IsOfflinePayment {
+	if pm.IsOfflinePayment || bill == 0 {
 		return 0
 	}
 
