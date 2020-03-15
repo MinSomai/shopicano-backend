@@ -107,7 +107,7 @@ var resetPasswordTemplate = `<!DOCTYPE html>
                                     then you have to request new one.
                                 </p>
 
-                                <button class="btn">Reset Password</button>
+                                <button class="btn" onclick="window.location.href='{{ .resetPasswordUrl }}';">Reset Password</button>
 
                                 <p class="my-28">
                                     If you’re having trouble with the button ‘Reset Password', 
