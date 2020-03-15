@@ -30,7 +30,8 @@ func SendOrderDetailsEmail(email, subject string, order *models.OrderDetailsView
 	params["isShippable"] = !order.IsAllDigitalProducts
 	params["buyerName"] = order.UserName
 	params["orderDate"] = order.CreatedAt.Format(utils.DateTimeFormatForDistribution)
-	params["orderUrl"] = fmt.Sprintf("%s%s%s", config.App().FrontStoreUrl, config.PathMappingCfg()["after_payment_completed"], order.ID)
+	orderPath := fmt.Sprintf(config.App().FrontStoreUrl, config.PathMappingCfg()["after_payment_completed"], order.ID)
+	params["orderUrl"] = fmt.Sprintf("%s%s", config.App().FrontStoreUrl, orderPath)
 
 	if !order.IsAllDigitalProducts {
 		params["shippingAddress"] = fmt.Sprintf("%s, %s, %s - %s",
