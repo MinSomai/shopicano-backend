@@ -164,10 +164,10 @@ var invoiceTemplate = `
 
 <body>
     <center>
-        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0; padding-top: 138px; padding-bottom: 138px; width: 100%; height: 100%;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0; width: 100%; height: 100%;">
             <tr>
                 <td style="margin: 0; padding: 0; width: 100%; height: 100%;" align="center">
-                    <table width="600" border="0" cellspacing="0" cellpadding="0" style="margin-top: 38px; padding: 0;">
+                    <table width="600" border="0" cellspacing="0" cellpadding="0" style="padding: 0;">
                         <tr>
                             <td class="container" style="width:600px; padding-bottom: 92px; min-width:600px; width: 100%;" align="center">
                                 <img src="group-26@3x.png" width="165px" height="42px" alt="">
