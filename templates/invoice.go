@@ -275,12 +275,14 @@ var invoiceTemplate = `
                                         <td style="text-align: right; padding: 1px 0;">Payment Status:</td>
                                         <td style="text-align: right; padding: 1px 0; color: #ff8124; font-weight: 500; font-size: 14px;">{{ .paymentStatus }}</td>
                                     </tr>
-                                    <tr class="tbl-data">
-                                        <td style="text-align: left; padding: 1px 10px 1px 0;"></td>
-                                        <td style="text-align: center;"></td>
-                                        <td style="text-align: right; padding: 1px 0;">Order Status:</td>
-                                        <td style="text-align: right; padding: 1px 0; color: #ff8124; font-weight: 500; font-size: 14px;">{{ .status }}</td>
-                                    </tr>
+									{{ if .isShippable }}
+                                    	<tr class="tbl-data">
+                                        	<td style="text-align: left; padding: 1px 10px 1px 0;"></td>
+                                        	<td style="text-align: center;"></td>
+                                        	<td style="text-align: right; padding: 1px 0;">Order Status:</td>
+                                        	<td style="text-align: right; padding: 1px 0; color: #ff8124; font-weight: 500; font-size: 14px;">{{ .status }}</td>
+                                    	</tr>
+									{{end}}
                                 </table>
                                 <!--    2nd table end  -->
                             </td>
