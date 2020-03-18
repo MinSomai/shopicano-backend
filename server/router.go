@@ -12,6 +12,10 @@ var router = echo.New()
 
 // GetRouter returns the api router
 func GetRouter() http.Handler {
+	router.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+		Level: 6,
+	}))
+
 	router.Pre(middleware.AddTrailingSlash())
 	router.Use(middleware.Logger())
 	router.Use(middleware.Recover())
