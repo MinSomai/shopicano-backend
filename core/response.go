@@ -45,7 +45,7 @@ func (r *Response) ServeStreamFromMinio(ctx echo.Context, object *minio.Object) 
 		return nil
 	}
 
-	img = imaging.Resize(img, 700, 1024, imaging.Lanczos)
+	img = imaging.Resize(img, 0, 1024, imaging.Lanczos)
 
 	if err := imaging.Encode(ctx.Response().Writer, img, imaging.PNG); err != nil {
 		return err
