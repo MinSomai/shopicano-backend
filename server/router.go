@@ -6,6 +6,7 @@ import (
 	"github.com/shopicano/shopicano-backend/api"
 	"github.com/shopicano/shopicano-backend/middlewares"
 	"net/http"
+	"strings"
 )
 
 var router = echo.New()
@@ -14,6 +15,9 @@ var router = echo.New()
 func GetRouter() http.Handler {
 	router.Use(middleware.GzipWithConfig(middleware.GzipConfig{
 		Level: 6,
+		Skipper: func(ctx echo.Context) bool {
+			return strings.Contains(ctx.Path(), "/fs/")
+		},
 	}))
 
 	router.Pre(middleware.AddTrailingSlash())

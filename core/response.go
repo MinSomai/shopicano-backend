@@ -6,7 +6,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/minio/minio-go"
 	"github.com/shopicano/shopicano-backend/errors"
-	"github.com/shopicano/shopicano-backend/log"
+	"image"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -50,23 +51,36 @@ func (r *Response) ServeStreamFromMinio(ctx echo.Context, object *minio.Object) 
 	width, _ := strconv.ParseInt(widthQ, 10, 64)
 	quality, _ := strconv.ParseInt(qualityQ, 10, 64)
 
-	img, err := imaging.Decode(object)
-	if err != nil {
+	var img image.Image
+	var err error
+
+	if height != 0 && width != 0 {
+		img, err = imaging.Decode(object)
+		if err != nil {
+			return nil
+		}
+		img = imaging.Resize(img, int(width), int(height), imaging.Lanczos)
+	} else if height != 0 && width == 0 {
+		img, err = imaging.Decode(object)
+		if err != nil {
+			return nil
+		}
+		img = imaging.Resize(img, 0, int(height), imaging.Lanczos)
+	} else if height == 0 && width != 0 {
+		img, err = imaging.Decode(object)
+		if err != nil {
+			return nil
+		}
+		img = imaging.Resize(img, int(width), 0, imaging.Lanczos)
+	} else {
+		if _, err := io.Copy(ctx.Response().Writer, object); err != nil {
+			return err
+		}
 		return nil
 	}
 
-	log.Log().Infoln("H : ", height, ",W : ", width, ",Q : ", quality)
-
-	if height != 0 && width != 0 {
-		img = imaging.Fit(img, int(height), int(width), imaging.Lanczos)
-	} else if height != 0 && width == 0 {
-		img = imaging.Fit(img, int(height), 0, imaging.Lanczos)
-	} else if height == 0 && width != 0 {
-		img = imaging.Fit(img, 0, int(width), imaging.Lanczos)
-	}
-
 	if quality <= 0 || quality > 100 {
-		return imaging.Encode(ctx.Response().Writer, img, imaging.JPEG)
+		return imaging.Encode(ctx.Response().Writer, img, imaging.JPEG, imaging.JPEGQuality(100))
 	}
 	return imaging.Encode(ctx.Response().Writer, img, imaging.JPEG, imaging.JPEGQuality(int(quality)))
 }
