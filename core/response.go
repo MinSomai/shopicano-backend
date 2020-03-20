@@ -47,31 +47,26 @@ func (r *Response) ServeStreamFromMinio(ctx echo.Context, object *minio.Object) 
 	qualityQ := ctx.QueryParam("quality")
 
 	height, _ := strconv.ParseInt(heightQ, 10, 64)
-	if height <= 0 || height > 4000 {
-		height = 1024
-	}
-
 	width, _ := strconv.ParseInt(widthQ, 10, 64)
-	if width <= 0 || width > 4000 {
-		width = 768
-	}
-
 	quality, _ := strconv.ParseInt(qualityQ, 10, 64)
-	if quality <= 0 || quality > 100 {
-		quality = 100
-	}
 
 	img, err := imaging.Decode(object)
 	if err != nil {
 		return nil
 	}
 
-	img = imaging.Resize(img, int(width), int(height), imaging.Lanczos)
-
 	log.Log().Infoln("H : ", height, ",W : ", width, ",Q : ", quality)
 
-	if err := imaging.Encode(ctx.Response().Writer, img, imaging.JPEG, imaging.JPEGQuality(int(quality))); err != nil {
-		return err
+	if height != 0 && width != 0 {
+		img = imaging.Fit(img, int(height), int(width), imaging.Lanczos)
+	} else if height != 0 && width == 0 {
+		img = imaging.Fit(img, int(height), 0, imaging.Lanczos)
+	} else if height == 0 && width != 0 {
+		img = imaging.Fit(img, 0, int(width), imaging.Lanczos)
 	}
-	return nil
+
+	if quality <= 0 || quality > 100 {
+		return imaging.Encode(ctx.Response().Writer, img, imaging.JPEG)
+	}
+	return imaging.Encode(ctx.Response().Writer, img, imaging.JPEG, imaging.JPEGQuality(int(quality)))
 }
