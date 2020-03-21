@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export CONSUL_URL="128.199.89.247:8500"
-export CONSUL_PATH="shopicano"
+export CONSUL_URL="localhost:8500"
+export CONSUL_PATH="design-mamba"
 
 export GO111MODULE=on
 export GOARCH="amd64"

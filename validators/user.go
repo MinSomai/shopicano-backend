@@ -92,6 +92,19 @@ func ValidateUserUpdate(ctx echo.Context) (*reqUserUpdate, error) {
 	if err := ctx.Bind(&body); err != nil {
 		return nil, err
 	}
+
+	ve := errors.ValidationError{}
+
+	if body.Name != nil {
+		if len(*body.Name) < 3 || len(*body.Name) > 100 {
+			ve.Add("name", "must be between 3 to 100")
+		}
+	}
+
+	if len(ve) > 0 {
+		return nil, &ve
+	}
+
 	return &body, nil
 }
 
