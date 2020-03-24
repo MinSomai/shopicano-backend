@@ -30,7 +30,7 @@ func (pu *ProductRepositoryImpl) Create(db *gorm.DB, p *models.Product) error {
 
 func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 	if err := db.Table(p.TableName()).
-		Select("name, description, is_published, category_id, sku, stock, unit, price, product_cost, max_quantity_count, image, is_shippable, is_digital, digital_download_link, updated_at").
+		Select("name, description, is_published, category_id, sku, slug, stock, unit, price, product_cost, max_quantity_count, image, is_shippable, is_digital, digital_download_link, updated_at").
 		Where("id = ? AND store_id = ?", p.ID, p.StoreID).
 		Updates(map[string]interface{}{
 			"name":                  p.Name,
@@ -38,6 +38,7 @@ func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 			"is_published":          p.IsPublished,
 			"category_id":           p.CategoryID,
 			"sku":                   p.SKU,
+			"slug":                  p.Slug,
 			"stock":                 p.Stock,
 			"unit":                  p.Unit,
 			"price":                 p.Price,
@@ -78,7 +79,7 @@ func (pu *ProductRepositoryImpl) List(db *gorm.DB, from, limit int) ([]models.Pr
 	var ps []models.ProductDetails
 	p := models.Product{}
 	if err := db.Table(p.TableName()).
-		Select("products.id, products.stock, products.sku, products.unit, products.store_id, s.name AS store_name, products.name, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, products.stock, products.sku, products.slug, products.unit, products.store_id, s.name AS store_name, products.name, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins("LEFT JOIN categories AS c ON products.category_id = c.id").
 		Joins("LEFT JOIN stores AS s ON products.store_id = s.id").
 		Where("products.is_published = ?", true).
@@ -93,7 +94,7 @@ func (pu *ProductRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, f
 	var ps []models.ProductDetailsInternal
 	p := models.Product{}
 	if err := db.Table(p.TableName()).
-		Select("products.id, products.stock, products.sku, products.unit, products.store_id, s.name AS store_name, products.name, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, products.stock, products.sku, products.slug, products.unit, products.store_id, s.name AS store_name, products.name, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins("LEFT JOIN categories AS c ON products.category_id = c.id").
 		Joins("LEFT JOIN stores AS s ON products.store_id = s.id").
 		Where("products.store_id = ?", storeID).
@@ -108,7 +109,7 @@ func (pu *ProductRepositoryImpl) Search(db *gorm.DB, query string, from, limit i
 	var ps []models.ProductDetails
 	p := models.Product{}
 	if err := db.Table(p.TableName()).
-		Select("products.id, products.name, products.sku, products.unit, products.store_id, s.name AS store_name, products.stock, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, products.name, products.sku, products.slug, products.unit, products.store_id, s.name AS store_name, products.stock, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins("LEFT JOIN categories AS c ON products.category_id = c.id").
 		Joins("LEFT JOIN collection_of_products AS cop ON products.id = cop.product_id").
 		Joins("LEFT JOIN collections AS col ON cop.collection_id = col.id").
@@ -126,7 +127,7 @@ func (pu *ProductRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, storeID, query 
 	var ps []models.ProductDetailsInternal
 	p := models.Product{}
 	if err := db.Table(p.TableName()).
-		Select("products.id, products.name, products.sku, products.unit, products.store_id, s.name AS store_name, products.stock, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, products.name, products.sku, products.slug, products.unit, products.store_id, s.name AS store_name, products.stock, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins("LEFT JOIN categories AS c ON products.category_id = c.id").
 		Joins("LEFT JOIN stores AS s ON products.store_id = s.id").
 		Where("products.store_id = ? AND (LOWER(products.name) LIKE ? OR LOWER(c.name) LIKE ?)", storeID, "%"+strings.ToLower(query)+"%", "%"+strings.ToLower(query)+"%").
@@ -150,7 +151,7 @@ func (pu *ProductRepositoryImpl) Delete(db *gorm.DB, storeID, productID string) 
 func (pu *ProductRepositoryImpl) Get(db *gorm.DB, productID string) (*models.Product, error) {
 	p := models.Product{}
 	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
-		Where("products.id = ?", productID).
+		Where("products.id = ? OR products.slug = ?", productID, productID).
 		First(&p).Error; err != nil {
 		return nil, err
 	}
@@ -160,7 +161,7 @@ func (pu *ProductRepositoryImpl) Get(db *gorm.DB, productID string) (*models.Pro
 func (pu *ProductRepositoryImpl) GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.Product, error) {
 	p := models.Product{}
 	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
-		Where("products.id = ? AND products.store_id = ?", productID, storeID).
+		Where("(products.id = ? OR products.slug = ?) AND products.store_id = ?", productID, productID, storeID).
 		First(&p).Error; err != nil {
 		return nil, err
 	}
@@ -177,7 +178,7 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 		Select("products.id, s.id AS store_id, s.name AS store_name, products.max_quantity_count AS max_quantity_count, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS c ON products.category_id = c.id", cat.TableName())).
 		Joins(fmt.Sprintf("LEFT JOIN %s AS s ON products.store_id = s.id", store.TableName())).
-		Where("products.id = ? AND products.is_published = ?", productID, true).
+		Where("(products.id = ? OR products.slug = ?) AND products.is_published = ?", productID, productID, true).
 		First(&ps).Error; err != nil {
 		return nil, err
 	}
@@ -219,7 +220,7 @@ func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, pr
 		Select("products.id, s.id AS store_id, s.name AS store_name, products.max_quantity_count AS max_quantity_count, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS c ON products.category_id = c.id", cat.TableName())).
 		Joins(fmt.Sprintf("LEFT JOIN %s AS s ON products.store_id = s.id", store.TableName())).
-		Where("products.id = ? AND products.store_id = ?", productID, storeID).
+		Where("(products.id = ? OR products.slug = ?) AND products.store_id = ?", productID, productID, storeID).
 		First(&ps).Error; err != nil {
 
 		return nil, err

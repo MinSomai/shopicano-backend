@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"github.com/gosimple/slug"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
@@ -72,6 +73,7 @@ func createProduct(ctx echo.Context) error {
 		ProductCost:      req.ProductCost,
 		Stock:            req.Stock,
 		Name:             req.Name,
+		Slug:             slug.Make(req.Name),
 		IsShippable:      req.IsShippable,
 		CategoryID:       req.CategoryID,
 		IsPublished:      req.IsPublished,
@@ -175,6 +177,7 @@ func updateProduct(ctx echo.Context) error {
 
 	if req.Name != nil {
 		p.Name = *req.Name
+		p.Slug = slug.Make(*req.Name)
 	}
 	if req.Price != nil {
 		p.Price = *req.Price

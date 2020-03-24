@@ -7,6 +7,7 @@ type ProductDetails struct {
 	Name             string                 `json:"name"`
 	StoreID          string                 `json:"store_id"`
 	StoreName        string                 `json:"store_name"`
+	Slug             string                 `json:"slug"`
 	Description      string                 `json:"description"`
 	IsPublished      bool                   `json:"is_published"`
 	CategoryID       string                 `json:"category_id,omitempty"`
@@ -31,6 +32,7 @@ type ProductDetailsInternal struct {
 	Name                string                 `json:"name"`
 	StoreID             string                 `json:"store_id"`
 	StoreName           string                 `json:"store_name"`
+	Slug                string                 `json:"slug"`
 	Description         string                 `json:"description"`
 	IsPublished         bool                   `json:"is_published"`
 	CategoryID          string                 `json:"category_id,omitempty"`
