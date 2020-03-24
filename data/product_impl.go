@@ -354,12 +354,14 @@ func (pu *ProductRepositoryImpl) ListAttributes(db *gorm.DB, productID string) (
 			sortedAttributes[a.Key] = append(sortedAttributes[a.Key], models.ProductKV{
 				ID:    a.ID,
 				Value: a.Value,
+				Image: a.Image,
 			})
 		} else {
 			sortedAttributes[a.Key] = []models.ProductKV{
 				{
 					ID:    a.ID,
 					Value: a.Value,
+					Image: a.Image,
 				},
 			}
 		}
