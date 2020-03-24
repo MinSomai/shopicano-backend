@@ -1,7 +1,7 @@
 version: '3.1'
 
 services:
-  shopicano:
+  shopicano_backend:
     image: docker.pkg.github.com/shopicano/shopicano-backend/shopicano-backend:1.2.18-rc
     command: ["serve"]
     restart: always
