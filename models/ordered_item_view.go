@@ -16,7 +16,7 @@ type OrderedItemView struct {
 	SubTotal         int64                  `json:"sub_total"`
 	Description      string                 `json:"description"`
 	SKU              string                 `json:"sku"`
-	AdditionalImages string                 `json:"additional_images"`
+	AdditionalImages []string               `json:"additional_images"`
 	Image            string                 `json:"image"`
 	IsShippable      bool                   `json:"is_shippable"`
 	IsDigital        bool                   `json:"is_digital"`
@@ -30,7 +30,7 @@ func (oiv *OrderedItemView) TableName() string {
 func (oiv *OrderedItemView) CreateView(tx *gorm.DB) error {
 	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT oi.id AS id, oi.order_id AS order_id, oi.product_id AS product_id, p.name AS name,"+
 		" oi.quantity AS quantity, oi.price AS price, oi.product_cost AS product_cost, oi.sub_total AS sub_total,"+
-		" p.description AS description, p.sku AS sku, p.additional_images AS additional_images, p.image AS image,"+
+		" p.description AS description, p.sku AS sku, p.image AS image,"+
 		" p.is_shippable AS is_shippable, p.is_digital AS is_digital, p.digital_download_link AS digital_download_link"+
 		" FROM ordered_items AS oi"+
 		" LEFT JOIN products AS p ON oi.product_id = p.id;", oiv.TableName())
