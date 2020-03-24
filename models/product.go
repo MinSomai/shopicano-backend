@@ -8,6 +8,7 @@ import (
 type Product struct {
 	ID                  string    `json:"id" gorm:"column:id;unique"`
 	Name                string    `json:"name" gorm:"column:name;primary_key"`
+	Slug                string    `json:"slug" gorm:"column:slug;index"`
 	Description         string    `json:"description" gorm:"column:description"`
 	IsPublished         bool      `json:"is_published" gorm:"column:is_published;index"`
 	StoreID             string    `json:"store_id" gorm:"column:store_id;primary_key"`

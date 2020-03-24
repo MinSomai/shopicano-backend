@@ -1,62 +1,86 @@
 app:
-  host: "0.0.0.0"
+  host: 0.0.0.0
   port: 9119
-  log_level: "debug"
-
+  log_level: debug
+  backend_url: 'https://alpha-api.shopicano.com'
+  front_store_url: 'https://alpha.shopicano.com'
+  dashboard_url: 'https://alpha-dashboard.shopicano.com'
+  jwt_key: '123456'
 database:
-  host: "0.0.0.0"
+  host: 0.0.0.0
   port: 5432
-  username: "test"
-  password: "test"
-  name: "test"
+  username: root
+  password: test
+  name: shopicano
   max_idle_connections: 2
   max_active_connections: 10
   max_connection_lifetime: 2
-
 minio:
-  base_url: "0.0.0.0:9000"
-  serve_url: "http://0.0.0.0:9000"
-  key: "MINIO_ACCESS_KEY"
-  secret: "MINIO_SECRET_KEY"
-  bucket: "shopicano"
-  location: "us"
+  base_url: '0.0.0.0:9000'
+  serve_url: 'http://0.0.0.0:9000'
+  key: MINIO_ACCESS_KEY
+  secret: MINIO_SECRET_KEY
+  bucket: shopicano
+  location: us
   sign_duration: 5
-
 rabbitmq:
-  broker: "amqp://guest:guest@0.0.0.0:5672/"
-  default_queue: "shopicano_tasks"
-  result_backend: "amqp://guest:guest@0.0.0.0:5672/"
+  broker: 'amqp://guest:guest@0.0.0.0:5672/'
+  default_queue: shopicano_tasks
+  result_backend: 'amqp://guest:guest@0.0.0.0:5672/'
   amqp:
-    exchange: "shopicano_exchange"
-    exchange_type: "direct"
-    binding_key: "shopicano_tasks"
+    exchange: shopicano_exchange
+    exchange_type: direct
+    binding_key: shopicano_tasks
     prefetch_count: 5
   worker:
-    name: "worker-1"
+    name: worker-1
     count: 5
-
-#payment_gateway:
-#  name: "stripe"
-#  configs:
-#    secret_key: "sk_test_4NbdmxYcZ8rvd5uaeahwianbA"
-#    public_key: "pk_test_EBmqabVLFZiauwnan1kaiakEulkz"
-#    success_callback: "https://414b062211.ngrok.io/v1/orders/%s/pay"
-#    failure_callback: "https://414b09911.ngrok.io/v1/orders/%s/pay"
-
 payment_gateway:
-  name: "brainTree"
-  configs:
-    token: "sandbox_mf8nfbgp_7jqb4j4oe78ahahbahhabeqj"
-    public_key: "2k6v48t96p9anaqkanbfukak"
-    private_key: "00eb8c46af1fpoqjba9873ma425074c4a6624"
-    merchant_id: "mb7ffspvgb98anh"
-    success_callback: "https://414b31121.ngrok.io/v1/orders/%s/pay"
-    failure_callback: "https://4111221.ngrok.io/v1/orders/%s/pay"
-
+  name: paddle  # default payment gateway name
+  brain_tree:
+    mode: sandbox
+    token: sandbox_mf8nfbgp_jkaksjdfhkjsa
+    public_key: kjandsflkansdfl
+    private_key: 00eb8c46af1feabcuihaisfunaisdunfiu
+    merchant_id: mb7ffsuabdfkajsdbnfkj
+    success_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
+    failure_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
+  stripe:
+    mode: sandbox
+    secret_key: sk_test_27iblsN3OtTojakdsjnfkajsdfnkjasdfs
+    public_key: pk_test_vkZ0lasdfasdfjnkasndfoiwejnkansdfk
+    success_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
+    failure_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
+  2co:
+    host: 'https://sandbox.2checkout.com'
+    merchant_code: '900000000'
+    secret_key: YWY3ZDcwYTYtOasdjnfkalsdnfaksjdfnkasdnfkj
+    public_key: 032E08FF-AE82-4C4C-BBD6-KJNASKDJFNKJJ
+    private_key: 04A2864B-3950-4386-A97E-8YABNKASDBFK
+    username: shopicano_api
+    password: test
+    success_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
+    failure_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
+  ssl:
+    host: 'https://sandbox.sslcommerz.com'
+    store_id: shopi8718181018
+    store_password: shopikjnsdkj1jeians8a33jaja
+    success_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
+    failure_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
+    cancel_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
+  paddle:
+    host: 'https://vendors.paddle.com'
+    vendor_id: '000000'
+    vendor_auth_code: 43dd10d080d0a47d78f114dasdkfnlsdkfnmalksdfnisdoiaa
+    success_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
+    failure_callback: 'https://alpha-api.shopicano.com/v1/orders/%s/pay'
 email_service:
-  smtp_host: "example.example.com"
+  smtp_host: smtp.example.com
   smtp_port: 587
-  smtp_username: "no-reply@example.com"
-  smtp_password: "password"
-  from_email_address: "no-reply@example.com"
-  verification_url: "https://414b11111.ngrok.io"
+  smtp_username: noreply@example.com
+  smtp_password: 'test'
+  from_email_address: noreply@example.com
+paths_mapping:
+  after_account_verification: '/#/extra?q=account-activated'
+  after_payment_completed: '/#/order-history/%s'
+  after_password_reset_requested: '/#/recovery/password-reset'
