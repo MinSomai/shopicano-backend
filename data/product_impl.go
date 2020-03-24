@@ -30,7 +30,7 @@ func (pu *ProductRepositoryImpl) Create(db *gorm.DB, p *models.Product) error {
 
 func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 	if err := db.Table(p.TableName()).
-		Select("name, description, is_published, category_id, sku, stock, unit, price, product_cost, max_quantity_count, additional_images, image, is_shippable, is_digital, digital_download_link, updated_at").
+		Select("name, description, is_published, category_id, sku, stock, unit, price, product_cost, max_quantity_count, image, is_shippable, is_digital, digital_download_link, updated_at").
 		Where("id = ? AND store_id = ?", p.ID, p.StoreID).
 		Updates(map[string]interface{}{
 			"name":                  p.Name,
@@ -41,7 +41,6 @@ func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 			"stock":                 p.Stock,
 			"unit":                  p.Unit,
 			"price":                 p.Price,
-			"additional_images":     p.AdditionalImages,
 			"image":                 p.Image,
 			"is_shippable":          p.IsShippable,
 			"is_digital":            p.IsDigital,
@@ -55,10 +54,21 @@ func (pu *ProductRepositoryImpl) Update(db *gorm.DB, p *models.Product) error {
 	return nil
 }
 
-func (pu *ProductRepositoryImpl) IncreaseDownloadCounter(db *gorm.DB, p *models.Product) error {
+func (pu *ProductRepositoryImpl) IncreaseDownloadCounter(db *gorm.DB, pID, sID string) error {
+	p := models.Product{}
 	if err := db.Table(p.TableName()).
-		Where("id = ? AND store_id = ?", p.ID, p.StoreID).
+		Where("id = ? AND store_id = ?", pID, sID).
 		Update("download_counter", gorm.Expr("download_counter + ?", 1)).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pu *ProductRepositoryImpl) IncreaseViewCounter(db *gorm.DB, pID, sID string) error {
+	p := models.Product{}
+	if err := db.Table(p.TableName()).
+		Where("id = ? AND store_id = ?", pID, sID).
+		Update("views", gorm.Expr("views + ?", 1)).Error; err != nil {
 		return err
 	}
 	return nil
@@ -164,7 +174,7 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 	store := models.Store{}
 
 	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
-		Select("products.id, s.id AS store_id, s.name AS store_name, products.max_quantity_count AS max_quantity_count, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.additional_images, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, s.id AS store_id, s.name AS store_name, products.max_quantity_count AS max_quantity_count, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS c ON products.category_id = c.id", cat.TableName())).
 		Joins(fmt.Sprintf("LEFT JOIN %s AS s ON products.store_id = s.id", store.TableName())).
 		Where("products.id = ? AND products.is_published = ?", productID, true).
@@ -182,6 +192,7 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 		Scan(&collections).Error; err != nil {
 		return nil, err
 	}
+	ps.Collections = collections
 
 	attributes, err := pu.ListAttributes(db, ps.ID)
 	if err != nil {
@@ -189,7 +200,12 @@ func (pu *ProductRepositoryImpl) GetDetails(db *gorm.DB, productID string) (*mod
 	}
 	ps.Attributes = attributes
 
-	ps.Collections = collections
+	additionalImages, err := pu.GetImages(db, productID)
+	if err != nil {
+		return nil, err
+	}
+	ps.AdditionalImages = additionalImages
+
 	return &ps, nil
 }
 
@@ -200,7 +216,7 @@ func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, pr
 	store := models.Store{}
 
 	if err := db.Table(fmt.Sprintf("%s", p.TableName())).
-		Select("products.id, s.id AS store_id, s.name AS store_name, products.max_quantity_count AS max_quantity_count, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.additional_images, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Select("products.id, s.id AS store_id, s.name AS store_name, products.max_quantity_count AS max_quantity_count, products.digital_download_link, products.price, products.unit, products.stock, products.sku, products.name, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
 		Joins(fmt.Sprintf("LEFT JOIN %s AS c ON products.category_id = c.id", cat.TableName())).
 		Joins(fmt.Sprintf("LEFT JOIN %s AS s ON products.store_id = s.id", store.TableName())).
 		Where("products.id = ? AND products.store_id = ?", productID, storeID).
@@ -219,6 +235,7 @@ func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, pr
 		Scan(&collections).Error; err != nil {
 		return nil, err
 	}
+	ps.Collections = collections
 
 	attributes, err := pu.ListAttributes(db, ps.ID)
 	if err != nil {
@@ -226,7 +243,12 @@ func (pu *ProductRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, pr
 	}
 	ps.Attributes = attributes
 
-	ps.Collections = collections
+	additionalImages, err := pu.GetImages(db, productID)
+	if err != nil {
+		return nil, err
+	}
+	ps.AdditionalImages = additionalImages
+
 	return &ps, nil
 }
 
@@ -369,4 +391,38 @@ func (pu *ProductRepositoryImpl) ListByCollection(db *gorm.DB, collectionID stri
 		return nil, err
 	}
 	return ps, nil
+}
+
+func (pu *ProductRepositoryImpl) AddImage(db *gorm.DB, productID, imagePath string) error {
+	pi := models.ProductImage{
+		ProductID: productID,
+		ImagePath: imagePath,
+	}
+
+	if err := db.Table(pi.TableName()).Create(&pi).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pu *ProductRepositoryImpl) GetImages(db *gorm.DB, productID string) ([]string, error) {
+	var images []models.ProductImage
+	pi := models.ProductImage{}
+	if err := db.Table(pi.TableName()).Where("product_id = ?", productID).Find(&images).Error; err != nil {
+		return nil, err
+	}
+
+	var filteredImages []string
+	for _, v := range images {
+		filteredImages = append(filteredImages, v.ImagePath)
+	}
+	return filteredImages, nil
+}
+
+func (pu *ProductRepositoryImpl) RemoveImage(db *gorm.DB, productID string) error {
+	pi := models.ProductImage{}
+	if err := db.Table(pi.TableName()).Where("product_id = ?", productID).Delete(&pi).Error; err != nil {
+		return err
+	}
+	return nil
 }

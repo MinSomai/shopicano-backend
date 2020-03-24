@@ -1041,7 +1041,7 @@ func downloadProductAsUser(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	err = pu.IncreaseDownloadCounter(db, m)
+	err = pu.IncreaseDownloadCounter(db, m.ID, m.StoreID)
 	if err != nil {
 		log.Log().Errorln(err)
 
