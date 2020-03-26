@@ -6,7 +6,7 @@ services:
     command: ["serve"]
     restart: always
     ports:
-      - 9119:9119
+      - 8000:8000
     environment:
       CONSUL_URL: "consul:8500"
       CONSUL_PATH: "shopicano"
@@ -33,6 +33,20 @@ services:
     depends_on:
       - shopicano
 
+  shopicano_frontend:
+    image: docker.pkg.github.com/shopicano/shopicano-front-store/shopicano-front-store:1.0.15-rc
+    environment:
+      - SHOPICANO_BACKEND_URL=http://shopicano_backend:8000
+    ports:
+      - 9100:80
+
+  shopicano_dashboard:
+    image: docker.pkg.github.com/shopicano/shopicano-front-store/shopicano-front-store:1.0.15-rc
+    environment:
+      - SHOPICANO_BACKEND_URL=http://shopicano_backend:8000
+    ports:
+      - 9200:80
+
   postgres:
     image: postgres:10
     ports:
@@ -47,7 +61,7 @@ services:
   minio:
     image: minio/minio
     ports:
-      - 9001:9000
+      - 9000:9000
     environment:
       MINIO_ACCESS_KEY: "MINIO_ACCESS_KEY"
       MINIO_SECRET_KEY: "MINIO_SECRET_KEY"

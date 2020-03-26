@@ -1,13 +1,13 @@
 app:
   host: 0.0.0.0
-  port: 9119
+  port: 8000
   log_level: debug
   backend_url: 'https://alpha-api.shopicano.com'
   front_store_url: 'https://alpha.shopicano.com'
   dashboard_url: 'https://alpha-dashboard.shopicano.com'
   jwt_key: '123456'
 database:
-  host: 0.0.0.0
+  host: postgres
   port: 5432
   username: root
   password: test
@@ -16,17 +16,17 @@ database:
   max_active_connections: 10
   max_connection_lifetime: 2
 minio:
-  base_url: '0.0.0.0:9000'
-  serve_url: 'http://0.0.0.0:9000'
+  base_url: 'minio:9000'
+  serve_url: 'http://minio:9000'
   key: MINIO_ACCESS_KEY
   secret: MINIO_SECRET_KEY
   bucket: shopicano
   location: us
   sign_duration: 5
 rabbitmq:
-  broker: 'amqp://guest:guest@0.0.0.0:5672/'
+  broker: 'amqp://guest:guest@rabbitmq:5672/'
   default_queue: shopicano_tasks
-  result_backend: 'amqp://guest:guest@0.0.0.0:5672/'
+  result_backend: 'amqp://guest:guest@rabbitmq:5672/'
   amqp:
     exchange: shopicano_exchange
     exchange_type: direct
@@ -36,7 +36,7 @@ rabbitmq:
     name: worker-1
     count: 5
 payment_gateway:
-  name: paddle  # default payment gateway name
+  name: stripe  # default payment gateway name
   brain_tree:
     mode: sandbox
     token: sandbox_mf8nfbgp_jkaksjdfhkjsa

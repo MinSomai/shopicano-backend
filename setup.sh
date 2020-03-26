@@ -1,6 +1,9 @@
 #!/bin/bash
 
-export CONSUL_URL="0.0.0.0:8500"
+mainIp=${curl 'https://api.ipify.org'}
+echo "Your machine ip : $mainIp"
+
+export CONSUL_URL="$mainIp:8500"
 export CONSUL_PATH="shopicano"
 
 echo "Starting shopicano setup..."
@@ -11,7 +14,7 @@ echo "Docker is up"
 echo "Configuring environment..."
 
 echo "Adding default config to consul..."
-curl --request PUT --data-binary @config.example.yml http://${CONSUL_URL}/v1/kv/${CONSUL_PATH}
+curl --request PUT --data-binary @config.example.yml http://"${CONSUL_URL}"/v1/kv/${CONSUL_PATH}
 
 echo "Finding shopicano docker container..."
 containers=$(docker ps | grep shopicano_backend)
