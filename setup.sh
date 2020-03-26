@@ -18,8 +18,7 @@ export CONSUL_PATH="shopicano"
 
 echo "Starting shopicano setup..."
 
-./value-replacer --in ./docker-compose-setup.yml --out ./docker-compose-setup.yml --query shopicano_backend_url --value "$ShopicanoHostname"
-./value-replacer --in ./docker-compose-setup.yml --out ./docker-compose-setup.yml --query shopicano_backend_url --value "$ShopicanoHostname"
+./value-replacer --in ./docker-compose.yml --out ./docker-compose.yml --query shopicano_backend_url --value "$ShopicanoHostname"
 
 echo "Starting docker..."
 docker-compose up -d

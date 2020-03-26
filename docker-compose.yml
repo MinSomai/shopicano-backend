@@ -34,7 +34,7 @@ services:
   shopicano_frontend:
     image: shopicano/front-store:1.0.15-rc
     environment:
-      - SHOPICANO_BACKEND_URL=http://shopicano_backend:8000
+      - SHOPICANO_BACKEND_URL=shopicano_backend_url:8000
     ports:
       - 9100:80
     depends_on:
@@ -45,7 +45,7 @@ services:
   shopicano_dashboard:
     image: shopicano/dashboard:1.1.9-rc
     environment:
-      - SHOPICANO_BACKEND_URL=http://shopicano_backend:8000
+      - SHOPICANO_BACKEND_URL=shopicano_backend_url:8000
     ports:
       - 9200:80
     depends_on:
