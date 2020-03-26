@@ -8,7 +8,7 @@ echo ""
 ShopicanoHostname=$1
 
 if [ "$1" == "" ]; then
-  ShopicanoHostname=$(curl https://api.ipify.org)
+  ShopicanoHostname=http://$(curl https://api.ipify.org)
 fi
 
 echo "Target hostname: $ShopicanoHostname"
