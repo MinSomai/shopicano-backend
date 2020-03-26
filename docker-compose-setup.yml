@@ -1,0 +1,87 @@
+version: '3.1'
+
+services:
+  shopicano_backend:
+    image: shopicano/backend:1.2.18-rc
+    command: ["serve"]
+    restart: always
+    ports:
+      - 8000:8000
+    environment:
+      CONSUL_URL: "consul:8500"
+      CONSUL_PATH: "shopicano"
+    links:
+      - postgres
+      - rabbitmq
+      - consul
+    depends_on:
+      - postgres
+      - rabbitmq
+      - consul
+
+  shopicano_worker:
+    image: shopicano/backend:1.2.18-rc
+    command: ["worker"]
+    restart: always
+    environment:
+      CONSUL_URL: "consul:8500"
+      CONSUL_PATH: "shopicano"
+    links:
+      - postgres
+      - rabbitmq
+      - consul
+
+  shopicano_frontend:
+    image: shopicano/front-store:1.0.15-rc
+    environment:
+      - SHOPICANO_BACKEND_URL=shopicano_backend_url:8000
+    ports:
+      - 9100:80
+    depends_on:
+      - shopicano_backend
+    links:
+      - shopicano_backend
+
+  shopicano_dashboard:
+    image: shopicano/dashboard:1.1.9-rc
+    environment:
+      - SHOPICANO_BACKEND_URL=shopicano_backend_url:8000
+    ports:
+      - 9200:80
+    depends_on:
+      - shopicano_backend
+    links:
+      - shopicano_backend
+
+  postgres:
+    image: postgres:10
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: shopicano
+      POSTGRES_PASSWORD: shopicano
+      POSTGRES_USER: root
+    volumes:
+      - "./storage/pg/:/var/lib/postgresql/data/"
+
+  minio:
+    image: minio/minio
+    ports:
+      - 9000:9000
+    environment:
+      MINIO_ACCESS_KEY: "MINIO_ACCESS_KEY"
+      MINIO_SECRET_KEY: "MINIO_SECRET_KEY"
+    command: ["server", "/data"]
+    volumes:
+      - "./storage/minio/:/data/"
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+
+  consul:
+    image: consul
+    ports:
+      - "8500:8500"

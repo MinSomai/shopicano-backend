@@ -1,9 +1,23 @@
 #!/bin/bash
 
+base64 -d <<<"IF9fX19fICBfICAgICAgICAgICAgICAgICAgICBfICAgICAgICAgICAgICAgICAgICAgICAgICAgIAovICBfX198fCB8ICAgICAgICAgICAgICAgICAgKF8pICAgICAgICAgICAgICAgICAgICAgICAgICAgClwgYC0tLiB8IHxfXyAgICBfX18gICBfIF9fICAgXyAgIF9fXyAgIF9fIF8gIF8gX18gICAgX19fICAKIGAtLS4gXHwgJ18gXCAgLyBfIFwgfCAnXyBcIHwgfCAvIF9ffCAvIF9gIHx8ICdfIFwgIC8gXyBcIAovXF9fLyAvfCB8IHwgfHwgKF8pIHx8IHxfKSB8fCB8fCAoX18gfCAoX3wgfHwgfCB8IHx8IChfKSB8ClxfX19fLyB8X3wgfF98IFxfX18vIHwgLl9fLyB8X3wgXF9fX3wgXF9fLF98fF98IHxffCBcX19fLyAKICAgICAgICAgICAgICAgICAgICAgfCB8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICB8X3wgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg"
+
+ShopicanoHostname=$1
+
+if [ "$1" == "" ]; then
+  ShopicanoHostname=$(curl https://api.ipify.org)
+fi
+
+echo "Target hostname: $ShopicanoHostname"
+
 export CONSUL_URL="0.0.0.0:8500"
 export CONSUL_PATH="shopicano"
 
 echo "Starting shopicano setup..."
+
+./value-replacer --in ./docker-compose-setup.yml --out ./docker-compose-setup.yml --query shopicano_backend_url --value "$ShopicanoHostname"
+./value-replacer --in ./docker-compose-setup.yml --out ./docker-compose-setup.yml --query shopicano_backend_url --value "$ShopicanoHostname"
+
 echo "Starting docker..."
 docker-compose up -d
 echo "Docker is up"
@@ -24,4 +38,6 @@ docker exec "$containerID" shopicano migration auto
 echo "Initializing shopicano..."
 docker exec "$containerID" shopicano migration init
 
+echo ""
+echo ""
 echo "Shopicano is ready."
