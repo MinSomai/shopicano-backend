@@ -2,7 +2,7 @@ version: '3.1'
 
 services:
   shopicano_backend:
-    image: docker.pkg.github.com/shopicano/shopicano-backend/shopicano-backend:1.2.18-rc
+    image: shopicano/backend:1.2.18-rc
     command: ["serve"]
     restart: always
     ports:
@@ -20,7 +20,7 @@ services:
       - consul
 
   shopicano_worker:
-    image: docker.pkg.github.com/shopicano/shopicano-backend/shopicano-backend:1.2.18-rc
+    image: shopicano/backend:1.2.18-rc
     command: ["worker"]
     restart: always
     environment:
@@ -32,7 +32,7 @@ services:
       - consul
 
   shopicano_frontend:
-    image: docker.pkg.github.com/shopicano/shopicano-front-store/shopicano-front-store:1.0.15-rc
+    image: shopicano/front-store:1.0.15-rc
     environment:
       - SHOPICANO_BACKEND_URL=http://shopicano_backend:8000
     ports:
@@ -43,7 +43,7 @@ services:
       - shopicano_backend
 
   shopicano_dashboard:
-    image: docker.pkg.github.com/shopicano/shopicano-front-store/shopicano-front-store:1.0.15-rc
+    image: shopicano/dashboard:1.1.9-rc
     environment:
       - SHOPICANO_BACKEND_URL=http://shopicano_backend:8000
     ports:

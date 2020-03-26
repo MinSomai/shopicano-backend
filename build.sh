@@ -56,7 +56,7 @@ fi
 
 if [ "$cmd" = "docker" ]; then
   echo "Executing docker build command"
-  docker build -t docker.pkg.github.com/shopicano/shopicano-backend/shopicano-backend:"$2" .
+  docker build -t shopicano/backend:"$2" .
   exit
 fi
 
