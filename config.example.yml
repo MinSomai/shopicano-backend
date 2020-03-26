@@ -10,7 +10,7 @@ database:
   host: postgres
   port: 5432
   username: root
-  password: test
+  password: shopicano
   name: shopicano
   max_idle_connections: 2
   max_active_connections: 10

@@ -58,8 +58,8 @@ services:
     ports:
       - 5432:5432
     environment:
-      POSTGRES_DB: test
-      POSTGRES_PASSWORD: test
+      POSTGRES_DB: shopicano
+      POSTGRES_PASSWORD: shopicano
       POSTGRES_USER: root
     volumes:
       - "./storage/pg/:/var/lib/postgresql/data/"
