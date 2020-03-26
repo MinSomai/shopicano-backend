@@ -39,6 +39,10 @@ services:
       - SHOPICANO_BACKEND_URL=http://shopicano_backend:8000
     ports:
       - 9100:80
+    depends_on:
+      - shopicano_backend
+    links:
+      - shopicano_backend
 
   shopicano_dashboard:
     image: docker.pkg.github.com/shopicano/shopicano-front-store/shopicano-front-store:1.0.15-rc
@@ -46,6 +50,10 @@ services:
       - SHOPICANO_BACKEND_URL=http://shopicano_backend:8000
     ports:
       - 9200:80
+    depends_on:
+      - shopicano_backend
+    links:
+      - shopicano_backend
 
   postgres:
     image: postgres:10
