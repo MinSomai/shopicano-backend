@@ -121,14 +121,13 @@ func ValidateCreateStoreStaff(ctx echo.Context) (*string, *string, error) {
 	return nil, nil, &ve
 }
 
-func ValidateUpdateStoreStaff(ctx echo.Context) (*string, *string, error) {
+func ValidateUpdateStoreStaff(ctx echo.Context) (*string, error) {
 	pld := struct {
-		Email        string `json:"user_id" valid:"required"`
 		PermissionID string `json:"permission_id" valid:"required"`
 	}{}
 
 	if err := ctx.Bind(&pld); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	ve := errors.ValidationError{}
@@ -136,7 +135,7 @@ func ValidateUpdateStoreStaff(ctx echo.Context) (*string, *string, error) {
 	ok, err := govalidator.ValidateStruct(&pld)
 	if ok {
 		if pld.PermissionID == values.AdminGroupID || pld.PermissionID == values.ManagerGroupID {
-			return &pld.Email, &pld.PermissionID, nil
+			return &pld.PermissionID, nil
 		}
 
 		ve.Add("permission_id", "is invalid")
@@ -146,7 +145,7 @@ func ValidateUpdateStoreStaff(ctx echo.Context) (*string, *string, error) {
 		ve.Add(k, v)
 	}
 
-	return nil, nil, &ve
+	return nil, &ve
 }
 
 func ValidateUpdateStoreStatus(ctx echo.Context) (*models.StoreStatus, *int64, error) {

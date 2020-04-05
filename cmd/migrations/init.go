@@ -18,6 +18,12 @@ var MigInitCmd = &cobra.Command{
 	Run:   initCmd,
 }
 
+var applicationModeSingle bool
+
+func init() {
+	MigInitCmd.Flags().BoolVarP(&applicationModeSingle, "single", "s", false, "Indicates where to run as single vendor or multi-vendor")
+}
+
 func initCmd(cmd *cobra.Command, args []string) {
 	tx := app.DB().Begin()
 
@@ -78,7 +84,7 @@ func initCmd(cmd *cobra.Command, args []string) {
 		ProfilePicture: nil,
 		Password:       password,
 		PermissionID:   upAdmin.ID,
-		Email:          "admin@example.com",
+		Email:          "admin@shopicano.com",
 		CreatedAt:      time.Now().UTC(),
 		UpdatedAt:      time.Now().UTC(),
 	}
@@ -130,6 +136,46 @@ func initCmd(cmd *cobra.Command, args []string) {
 	flatTables = append(flatTables, &models.Location{})
 	for _, ft := range flatTables {
 		if err := ft.Populate(tx); err != nil {
+			tx.Rollback()
+			log.Log().Errorln(err)
+			return
+		}
+	}
+
+	if applicationModeSingle {
+		store := &models.Store{
+			ID:                       utils.NewUUID(),
+			IsAutoConfirmEnabled:     true,
+			CommissionRate:           0,
+			Name:                     "Shopicano Store",
+			Email:                    "admin@shopicano.com",
+			Phone:                    "+8801700000000",
+			Status:                   models.StoreActive,
+			Address:                  a.Address,
+			Description:              "My Shopicano Store",
+			IsOrderCreationEnabled:   true,
+			IsProductCreationEnabled: true,
+			Postcode:                 a.Postcode,
+			City:                     a.City,
+			Country:                  a.Country,
+			CreatedAt:                time.Now().UTC(),
+			UpdatedAt:                time.Now().UTC(),
+		}
+
+		if err := tx.Create(store).Error; err != nil {
+			tx.Rollback()
+			log.Log().Errorln(err)
+			return
+		}
+
+		st := &models.Staff{
+			UserID:       u.ID,
+			StoreID:      store.ID,
+			PermissionID: values.AdminGroupID,
+			IsCreator:    true,
+		}
+
+		if err := tx.Create(st).Error; err != nil {
 			tx.Rollback()
 			log.Log().Errorln(err)
 			return
