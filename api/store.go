@@ -36,7 +36,7 @@ func RegisterStoreRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.Use(middlewares.HasStore())
 		g.Use(middlewares.IsStoreAdmin())
 		g.POST("/:store_id/staffs/", addStoreStaff)
-		g.PATCH("/:store_id/staffs/", updateStoreStaffPermission)
+		g.PATCH("/:store_id/staffs/:user_id/", updateStoreStaffPermission)
 		g.DELETE("/:store_id/staffs/:user_id/", deleteStoreStaff)
 		g.GET("/:store_id/staffs/", listStaffs)
 	}(*storesPublicPath)
@@ -289,7 +289,7 @@ func addStoreStaff(ctx echo.Context) error {
 
 	if exists {
 		resp.Title = "User already staff"
-		resp.Status = http.StatusForbidden
+		resp.Status = http.StatusConflict
 		resp.Code = errors.UserAlreadyStaff
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
@@ -318,7 +318,9 @@ func addStoreStaff(ctx echo.Context) error {
 }
 
 func updateStoreStaffPermission(ctx echo.Context) error {
-	uID, pID, err := validators.ValidateUpdateStoreStaff(ctx)
+	uID := ctx.Param("user_id")
+
+	pID, err := validators.ValidateUpdateStoreStaff(ctx)
 
 	resp := core.Response{}
 
@@ -335,7 +337,7 @@ func updateStoreStaffPermission(ctx echo.Context) error {
 	uu := data.NewUserRepository()
 	su := data.NewStoreRepository()
 
-	u, err := uu.Get(db, *uID)
+	u, err := uu.Get(db, uID)
 	if err != nil {
 		ok := errors.IsRecordNotFoundError(err)
 		if ok {

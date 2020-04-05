@@ -7,6 +7,7 @@ type ProductDetails struct {
 	Name             string                 `json:"name"`
 	StoreID          string                 `json:"store_id"`
 	StoreName        string                 `json:"store_name"`
+	Slug             string                 `json:"slug"`
 	Description      string                 `json:"description"`
 	IsPublished      bool                   `json:"is_published"`
 	CategoryID       string                 `json:"category_id,omitempty"`
@@ -19,7 +20,7 @@ type ProductDetails struct {
 	SKU              string                 `json:"sku"`
 	Stock            int                    `json:"stock"`
 	Unit             string                 `json:"unit"`
-	AdditionalImages string                 `json:"additional_images"`
+	AdditionalImages []string               `json:"additional_images"`
 	CreatedAt        time.Time              `json:"created_at"`
 	UpdatedAt        time.Time              `json:"updated_at"`
 	Collections      []Collection           `json:"collections,omitempty"`
@@ -31,6 +32,7 @@ type ProductDetailsInternal struct {
 	Name                string                 `json:"name"`
 	StoreID             string                 `json:"store_id"`
 	StoreName           string                 `json:"store_name"`
+	Slug                string                 `json:"slug"`
 	Description         string                 `json:"description"`
 	IsPublished         bool                   `json:"is_published"`
 	CategoryID          string                 `json:"category_id,omitempty"`
@@ -44,7 +46,7 @@ type ProductDetailsInternal struct {
 	SKU                 string                 `json:"sku"`
 	Stock               int                    `json:"stock"`
 	Unit                string                 `json:"unit"`
-	AdditionalImages    string                 `json:"additional_images"`
+	AdditionalImages    []string               `json:"additional_images"`
 	DigitalDownloadLink string                 `json:"digital_download_link"`
 	CreatedAt           time.Time              `json:"created_at"`
 	UpdatedAt           time.Time              `json:"updated_at"`

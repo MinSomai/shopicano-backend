@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export CONSUL_URL="localhost:8500"
-export CONSUL_PATH="design-mamba"
+export CONSUL_URL="128.199.89.247:8500"
+export CONSUL_PATH="shopicano"
 
 export GO111MODULE=on
 export GOARCH="amd64"
@@ -56,7 +56,7 @@ fi
 
 if [ "$cmd" = "docker" ]; then
   echo "Executing docker build command"
-  docker build -t docker.pkg.github.com/shopicano/shopicano-backend/shopicano-backend:"$2" .
+  docker build -t shopicano/backend:"$2" .
   exit
 fi
 

@@ -16,7 +16,8 @@ type ProductRepository interface {
 	ListByCollection(db *gorm.DB, collectionID string, from, limit int) ([]models.ProductDetails, error)
 	Delete(db *gorm.DB, storeID, productID string) error
 	Get(db *gorm.DB, productID string) (*models.Product, error)
-	IncreaseDownloadCounter(db *gorm.DB, m *models.Product) error
+	IncreaseDownloadCounter(db *gorm.DB, pID, sID string) error
+	IncreaseViewCounter(db *gorm.DB, pID, sID string) error
 	GetAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.Product, error)
 	GetDetails(db *gorm.DB, productID string) (*models.ProductDetails, error)
 	GetDetailsAsStoreStuff(db *gorm.DB, storeID, productID string) (*models.ProductDetailsInternal, error)
@@ -27,4 +28,7 @@ type ProductRepository interface {
 	RemoveAttribute(db *gorm.DB, productID, attributeID string) error
 	ListAttributes(db *gorm.DB, productID string) (map[string][]models.ProductKV, error)
 	GetAttribute(db *gorm.DB, productID, ID string) (*models.ProductAttribute, error)
+	AddImage(db *gorm.DB, productID, imagePath string) error
+	GetImages(db *gorm.DB, productID string) ([]string, error)
+	RemoveImage(db *gorm.DB, productID string) error
 }

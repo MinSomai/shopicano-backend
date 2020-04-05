@@ -42,7 +42,7 @@ func GetRouter() http.Handler {
 func registerV1Routes() {
 	v1 := router.Group("/v1")
 	publicEndpoints := v1
-	platformEndpoints := v1.Group("/platform")
+	platformEndpoints := v1.Group("/marketplace")
 
 	platformEndpoints.Use(middlewares.JWTAuth())
 

@@ -127,6 +127,15 @@ func (os *OrderRepositoryImpl) List(db *gorm.DB, userID string, offset, limit in
 			return nil, err
 		}
 
+		for i := range items {
+			pu := NewProductRepository()
+			images, err := pu.GetImages(db, items[i].ProductID)
+			if err != nil {
+				return nil, err
+			}
+			items[i].AdditionalImages = images
+		}
+
 		if len(items) == 0 {
 			items = []models.OrderedItemViewExternal{}
 		}
@@ -160,6 +169,15 @@ func (os *OrderRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, off
 		if err := db.Model(oiv).Find(&items, "order_id = ?", v.ID).Error; err != nil {
 			log.Log().Errorln(err)
 			return nil, err
+		}
+
+		for i := range items {
+			pu := NewProductRepository()
+			images, err := pu.GetImages(db, items[i].ProductID)
+			if err != nil {
+				return nil, err
+			}
+			items[i].AdditionalImages = images
 		}
 
 		if len(items) == 0 {
@@ -197,6 +215,15 @@ func (os *OrderRepositoryImpl) Search(db *gorm.DB, query, userID string, offset,
 			return nil, err
 		}
 
+		for i := range items {
+			pu := NewProductRepository()
+			images, err := pu.GetImages(db, items[i].ProductID)
+			if err != nil {
+				return nil, err
+			}
+			items[i].AdditionalImages = images
+		}
+
 		if len(items) == 0 {
 			items = []models.OrderedItemView{}
 		}
@@ -232,6 +259,15 @@ func (os *OrderRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, query, storeID st
 			return nil, err
 		}
 
+		for i := range items {
+			pu := NewProductRepository()
+			images, err := pu.GetImages(db, items[i].ProductID)
+			if err != nil {
+				return nil, err
+			}
+			items[i].AdditionalImages = images
+		}
+
 		if len(items) == 0 {
 			items = []models.OrderedItemView{}
 		}
@@ -258,6 +294,15 @@ func (os *OrderRepositoryImpl) GetDetails(db *gorm.DB, orderID string) (*models.
 	if err := db.Model(oiv).Find(&items, "order_id = ?", orderID).Error; err != nil {
 		log.Log().Errorln(err)
 		return nil, err
+	}
+
+	for i := range items {
+		pu := NewProductRepository()
+		images, err := pu.GetImages(db, items[i].ProductID)
+		if err != nil {
+			return nil, err
+		}
+		items[i].AdditionalImages = images
 	}
 
 	order.Items = items
@@ -295,6 +340,15 @@ func (os *OrderRepositoryImpl) GetDetailsAsStoreStuff(db *gorm.DB, storeID, orde
 				Value: attr.AttributeValue,
 			})
 		}
+	}
+
+	for i := range items {
+		pu := NewProductRepository()
+		images, err := pu.GetImages(db, items[i].ProductID)
+		if err != nil {
+			return nil, err
+		}
+		items[i].AdditionalImages = images
 	}
 
 	order.Items = items
@@ -341,6 +395,15 @@ func (os *OrderRepositoryImpl) GetDetailsAsUser(db *gorm.DB, userID, orderID str
 				Value: attr.AttributeValue,
 			})
 		}
+	}
+
+	for i := range items {
+		pu := NewProductRepository()
+		images, err := pu.GetImages(db, items[i].ProductID)
+		if err != nil {
+			return nil, err
+		}
+		items[i].AdditionalImages = images
 	}
 
 	order.Items = items

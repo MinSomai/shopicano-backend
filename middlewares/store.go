@@ -37,6 +37,14 @@ func HasStore() echo.MiddlewareFunc {
 				return resp.ServerJSON(ctx)
 			}
 
+			storeID := ctx.Param("store_id")
+			if storeID != "" && storeID != store.ID {
+				resp.Status = http.StatusForbidden
+				resp.Code = errors.UnauthorizedStoreAccess
+				resp.Title = "Unauthorized request"
+				return resp.ServerJSON(ctx)
+			}
+
 			log.Log().Infoln(store.StorePermission)
 			log.Log().Infoln(store.Status)
 

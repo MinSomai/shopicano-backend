@@ -10,7 +10,7 @@ type OrderedItemViewExternal struct {
 	SubTotal         int64                  `json:"sub_total"`
 	Description      string                 `json:"description"`
 	SKU              string                 `json:"sku"`
-	AdditionalImages string                 `json:"additional_images"`
+	AdditionalImages []string               `json:"additional_images"`
 	Image            string                 `json:"image"`
 	IsShippable      bool                   `json:"is_shippable"`
 	IsDigital        bool                   `json:"is_digital"`

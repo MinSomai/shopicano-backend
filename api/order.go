@@ -54,7 +54,7 @@ func RegisterOrderRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.Use(middlewares.HasStore())
 		g.Use(middlewares.IsStoreActive())
 		g.Use(middlewares.IsStoreAdmin())
-		g.POST("/:order_id/revert-payment/", revertOrderPayment)
+		g.POST("/:order_id/refund/", revertOrderPayment)
 		g.PATCH("/:order_id/payment-status/", orderPaymentStatusUpdate)
 	}(*ordersPlatformPath)
 }
@@ -554,7 +554,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 		}
 	}
 
-	m, err := ou.GetDetails(db, o.ID)
+	m, err := ou.GetDetailsAsUser(db, o.UserID, o.ID)
 	if err != nil {
 		db.Rollback()
 
@@ -1041,7 +1041,7 @@ func downloadProductAsUser(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	err = pu.IncreaseDownloadCounter(db, m)
+	err = pu.IncreaseDownloadCounter(db, m.ID, m.StoreID)
 	if err != nil {
 		log.Log().Errorln(err)
 

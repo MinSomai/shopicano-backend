@@ -19,7 +19,7 @@ func drop(cmd *cobra.Command, args []string) {
 
 	var tables []core.Table
 	tables = append(tables, &models.CouponUsage{}, &models.CouponFor{}, &models.Coupon{}, &models.Review{}, &models.OrderedItemAttribute{})
-	tables = append(tables, &models.ProductAttribute{}, &models.OrderLog{})
+	tables = append(tables, &models.ProductAttribute{}, &models.OrderLog{}, &models.ProductImage{})
 	tables = append(tables, &models.OrderedItem{}, &models.Order{})
 	tables = append(tables, &models.CollectionOfProduct{}, &models.Product{}, &models.Category{}, &models.Collection{})
 	tables = append(tables, &models.ShippingMethod{}, &models.PaymentMethod{}, &models.Settings{})

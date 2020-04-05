@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"github.com/gosimple/slug"
 	"github.com/labstack/echo/v4"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/core"
@@ -65,17 +66,6 @@ func createProduct(ctx echo.Context) error {
 		req.CategoryID = nil
 	}
 
-	images := ""
-	for _, i := range req.AdditionalImages {
-		if strings.TrimSpace(i) == "" {
-			continue
-		}
-		if images != "" {
-			images += ","
-		}
-		images += strings.TrimSpace(i)
-	}
-
 	p := models.Product{
 		ID:               utils.NewUUID(),
 		StoreID:          storeID,
@@ -83,12 +73,12 @@ func createProduct(ctx echo.Context) error {
 		ProductCost:      req.ProductCost,
 		Stock:            req.Stock,
 		Name:             req.Name,
+		Slug:             slug.Make(req.Name),
 		IsShippable:      req.IsShippable,
 		CategoryID:       req.CategoryID,
 		IsPublished:      req.IsPublished,
 		IsDigital:        req.IsDigital,
 		MaxQuantityCount: req.MaxQuantityCount,
-		AdditionalImages: images,
 		SKU:              req.SKU,
 		Unit:             req.Unit,
 		Image:            req.Image,
@@ -97,11 +87,13 @@ func createProduct(ctx echo.Context) error {
 		UpdatedAt:        time.Now().UTC(),
 	}
 
-	db := app.DB()
+	db := app.DB().Begin()
 
 	pu := data.NewProductRepository()
 	err = pu.Create(db, &p)
 	if err != nil {
+		db.Rollback()
+
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
 			resp.Title = msg
@@ -112,6 +104,30 @@ func createProduct(ctx echo.Context) error {
 		}
 
 		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	for _, i := range req.AdditionalImages {
+		if strings.TrimSpace(i) == "" {
+			continue
+		}
+
+		if err := pu.AddImage(db, p.ID, strings.TrimSpace(i)); err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to add additional image"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Failed to commit data"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
@@ -144,23 +160,14 @@ func updateProduct(ctx echo.Context) error {
 		req.CategoryID = nil
 	}
 
-	db := app.DB()
+	db := app.DB().Begin()
 
 	pu := data.NewProductRepository()
 
-	images := ""
-	for _, i := range req.AdditionalImages {
-		if strings.TrimSpace(i) == "" {
-			continue
-		}
-		if images != "" {
-			images += ","
-		}
-		images += strings.TrimSpace(i)
-	}
-
 	p, err := pu.GetAsStoreStuff(db, storeID, productID)
 	if err != nil {
+		db.Rollback()
+
 		resp.Title = "Product not found"
 		resp.Status = http.StatusNotFound
 		resp.Code = errors.ProductNotFound
@@ -170,6 +177,7 @@ func updateProduct(ctx echo.Context) error {
 
 	if req.Name != nil {
 		p.Name = *req.Name
+		p.Slug = slug.Make(*req.Name)
 	}
 	if req.Price != nil {
 		p.Price = *req.Price
@@ -196,8 +204,33 @@ func updateProduct(ctx echo.Context) error {
 		p.Image = *req.Image
 	}
 	if len(req.AdditionalImages) > 0 {
-		p.AdditionalImages = images
+		for _, i := range req.AdditionalImages {
+			if strings.TrimSpace(i) == "" {
+				continue
+			}
+
+			if err := pu.AddImage(db, p.ID, strings.TrimSpace(i)); err != nil {
+				db.Rollback()
+
+				resp.Title = "Failed to add additional image"
+				resp.Status = http.StatusInternalServerError
+				resp.Code = errors.DatabaseQueryFailed
+				resp.Errors = err
+				return resp.ServerJSON(ctx)
+			}
+		}
+
+		if err := pu.RemoveImage(db, p.ID); err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to remove additional image"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
 	}
+
 	if req.SKU != nil {
 		p.SKU = *req.SKU
 	}
@@ -218,6 +251,8 @@ func updateProduct(ctx echo.Context) error {
 
 	err = pu.Update(db, p)
 	if err != nil {
+		db.Rollback()
+
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
 			resp.Title = msg
@@ -228,6 +263,14 @@ func updateProduct(ctx echo.Context) error {
 		}
 
 		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Failed to commit data"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
@@ -246,10 +289,12 @@ func deleteProduct(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	db := app.DB()
+	db := app.DB().Begin()
 
 	pu := data.NewProductRepository()
 	if err := pu.Delete(db, storeID, productID); err != nil {
+		db.Rollback()
+
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Product not found"
 			resp.Status = http.StatusNotFound
@@ -259,6 +304,24 @@ func deleteProduct(ctx echo.Context) error {
 		}
 
 		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := pu.RemoveImage(db, productID); err != nil {
+		db.Rollback()
+
+		resp.Title = "Failed to remove additional image"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := db.Commit().Error; err != nil {
+		resp.Title = "Failed to commit data"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err
@@ -278,7 +341,7 @@ func getProduct(ctx echo.Context) error {
 
 	pu := data.NewProductRepository()
 
-	var p interface{}
+	var p *models.ProductDetails
 	var err error
 
 	p, err = pu.GetDetails(db, productID)
@@ -291,6 +354,14 @@ func getProduct(ctx echo.Context) error {
 			return resp.ServerJSON(ctx)
 		}
 
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := pu.IncreaseViewCounter(db, p.ID, p.StoreID); err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed

@@ -5,6 +5,7 @@ import "fmt"
 type ProductKV struct {
 	ID    string `json:"id"`
 	Value string `json:"value"`
+	Image string `json:"image"`
 }
 
 type OrderItemAttributeKV struct {
@@ -17,6 +18,7 @@ type ProductAttribute struct {
 	ProductID string `json:"-" gorm:"column:product_id;primary_key"`
 	Key       string `json:"key" gorm:"column:key;primary_key"`
 	Value     string `json:"value" gorm:"column:value;primary_key"`
+	Image     string `json:"image" gorm:"column:image"`
 }
 
 func (pa *ProductAttribute) TableName() string {
