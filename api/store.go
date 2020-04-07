@@ -92,7 +92,7 @@ func createStore(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 	settings, err := au.GetSettings(db)
 	if err != nil {
 		db.Rollback()

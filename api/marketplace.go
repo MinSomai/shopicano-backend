@@ -37,8 +37,7 @@ func RegisterPlatformRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	}(*platformEndpoints)
 
 	func(g echo.Group) {
-		g.GET("/shipping-methods/", listShippingMethods)
-		g.GET("/payment-methods/", listPaymentMethods)
+		g.Use(middlewares.JWTAuth())
 		g.GET("/payment-methods/:id/", getPaymentMethod)
 		g.GET("/shipping-methods/:id/", getShippingMethod)
 	}(*publicEndpoints)
@@ -71,7 +70,7 @@ func createShippingMethod(ctx echo.Context) error {
 		UpdatedAt:               time.Now().UTC(),
 	}
 
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 	if err := au.CreateShippingMethod(db, m); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
@@ -111,7 +110,7 @@ func updateShippingMethod(ctx echo.Context) error {
 
 	db := app.DB()
 
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 	m, err := au.GetShippingMethod(db, ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
@@ -157,7 +156,7 @@ func deleteShippingMethod(ctx echo.Context) error {
 
 	db := app.DB()
 
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 	if err := au.DeleteShippingMethod(db, ID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Shipping method not found"
@@ -185,7 +184,7 @@ func getShippingMethod(ctx echo.Context) error {
 
 	db := app.DB()
 
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 	sm, err := au.GetShippingMethod(db, ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
@@ -226,7 +225,7 @@ func listShippingMethods(ctx echo.Context) error {
 	db := app.DB()
 
 	from := (page - 1) * limit
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 
 	var v interface{}
 	v, err = au.ListActiveShippingMethods(db, int(from), int(limit))
@@ -262,7 +261,7 @@ func listShippingMethodsAsAdmin(ctx echo.Context) error {
 	db := app.DB()
 
 	from := (page - 1) * limit
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 
 	var v interface{}
 	v, err = au.ListShippingMethods(db, int(from), int(limit))
@@ -308,7 +307,7 @@ func createPaymentMethod(ctx echo.Context) error {
 
 	db := app.DB()
 
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 	if err := au.CreatePaymentMethod(db, m); err != nil {
 		msg, ok := errors.IsDuplicateKeyError(err)
 		if ok {
@@ -348,7 +347,7 @@ func updatePaymentMethod(ctx echo.Context) error {
 
 	db := app.DB()
 
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 	m, err := au.GetPaymentMethod(db, ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
@@ -395,7 +394,7 @@ func deletePaymentMethod(ctx echo.Context) error {
 
 	db := app.DB()
 
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 	if err := au.DeletePaymentMethod(db, ID); err != nil {
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Payment method not found"
@@ -423,7 +422,7 @@ func getPaymentMethod(ctx echo.Context) error {
 
 	db := app.DB()
 
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 	pm, err := au.GetPaymentMethod(db, ID)
 	if err != nil {
 		if errors.IsRecordNotFoundError(err) {
@@ -464,7 +463,7 @@ func listPaymentMethods(ctx echo.Context) error {
 	db := app.DB()
 
 	from := (page - 1) * limit
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 
 	var v interface{}
 	v, err = au.ListActivePaymentMethods(db, int(from), int(limit))
@@ -500,7 +499,7 @@ func listPaymentMethodsAsAdmin(ctx echo.Context) error {
 	db := app.DB()
 
 	from := (page - 1) * limit
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 
 	var v interface{}
 	v, err = au.ListPaymentMethods(db, int(from), int(limit))
@@ -533,7 +532,7 @@ func updateSettings(ctx echo.Context) error {
 
 	db := app.DB()
 
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 
 	s, err := au.GetSettings(db)
 	if err != nil {
