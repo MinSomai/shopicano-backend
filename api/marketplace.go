@@ -38,8 +38,8 @@ func RegisterPlatformRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 
 	func(g echo.Group) {
 		g.Use(middlewares.JWTAuth())
-		g.GET("/payment-methods/:id/", getPaymentMethod)
-		g.GET("/shipping-methods/:id/", getShippingMethod)
+		g.GET("/payment-methods/:id/", getPaymentMethodForUser)
+		g.GET("/shipping-methods/:id/", getShippingMethodForUser)
 	}(*publicEndpoints)
 }
 
@@ -207,30 +207,24 @@ func getShippingMethod(ctx echo.Context) error {
 	return resp.ServerJSON(ctx)
 }
 
-func listShippingMethods(ctx echo.Context) error {
-	pageQ := ctx.Request().URL.Query().Get("page")
-	limitQ := ctx.Request().URL.Query().Get("limit")
-
-	page, err := strconv.ParseInt(pageQ, 10, 64)
-	if err != nil {
-		page = 1
-	}
-	limit, err := strconv.ParseInt(limitQ, 10, 64)
-	if err != nil {
-		limit = 10
-	}
+func getShippingMethodForUser(ctx echo.Context) error {
+	ID := ctx.Param("id")
 
 	resp := core.Response{}
 
 	db := app.DB()
 
-	from := (page - 1) * limit
 	au := data.NewMarketplaceRepository()
-
-	var v interface{}
-	v, err = au.ListActiveShippingMethods(db, int(from), int(limit))
-
+	sm, err := au.GetShippingMethod(db, ID)
 	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Shipping method not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.ShippingMethodNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -239,7 +233,7 @@ func listShippingMethods(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusOK
-	resp.Data = v
+	resp.Data = sm
 	return resp.ServerJSON(ctx)
 }
 
@@ -445,30 +439,24 @@ func getPaymentMethod(ctx echo.Context) error {
 	return resp.ServerJSON(ctx)
 }
 
-func listPaymentMethods(ctx echo.Context) error {
-	pageQ := ctx.Request().URL.Query().Get("page")
-	limitQ := ctx.Request().URL.Query().Get("limit")
-
-	page, err := strconv.ParseInt(pageQ, 10, 64)
-	if err != nil {
-		page = 1
-	}
-	limit, err := strconv.ParseInt(limitQ, 10, 64)
-	if err != nil {
-		limit = 10
-	}
+func getPaymentMethodForUser(ctx echo.Context) error {
+	ID := ctx.Param("id")
 
 	resp := core.Response{}
 
 	db := app.DB()
 
-	from := (page - 1) * limit
 	au := data.NewMarketplaceRepository()
-
-	var v interface{}
-	v, err = au.ListActivePaymentMethods(db, int(from), int(limit))
-
+	pm, err := au.GetPaymentMethodForUser(db, ID)
 	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Payment method not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.PaymentMethodNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -477,7 +465,7 @@ func listPaymentMethods(ctx echo.Context) error {
 	}
 
 	resp.Status = http.StatusOK
-	resp.Data = v
+	resp.Data = pm
 	return resp.ServerJSON(ctx)
 }
 

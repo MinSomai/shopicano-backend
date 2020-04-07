@@ -76,6 +76,16 @@ func (au *MarketplaceRepositoryImpl) GetShippingMethod(db *gorm.DB, ID string) (
 	return &m, nil
 }
 
+func (au *MarketplaceRepositoryImpl) GetShippingMethodForUser(db *gorm.DB, ID string) (*models.ShippingMethod, error) {
+	m := models.ShippingMethod{}
+	if err := db.Table(m.TableName()).
+		Where("id = ? AND is_published = ?", ID, true).
+		First(&m).Error; err != nil {
+		return &m, err
+	}
+	return &m, nil
+}
+
 func (au *MarketplaceRepositoryImpl) CreatePaymentMethod(db *gorm.DB, pm *models.PaymentMethod) error {
 	if err := db.Table(pm.TableName()).Create(pm).Error; err != nil {
 		return err
@@ -128,6 +138,16 @@ func (au *MarketplaceRepositoryImpl) GetPaymentMethod(db *gorm.DB, ID string) (*
 	m := models.PaymentMethod{}
 	if err := db.Table(m.TableName()).
 		Where("id = ?", ID).
+		First(&m).Error; err != nil {
+		return &m, err
+	}
+	return &m, nil
+}
+
+func (au *MarketplaceRepositoryImpl) GetPaymentMethodForUser(db *gorm.DB, ID string) (*models.PaymentMethod, error) {
+	m := models.PaymentMethod{}
+	if err := db.Table(m.TableName()).
+		Where("id = ? AND is_published = ?", ID, true).
 		First(&m).Error; err != nil {
 		return &m, err
 	}
