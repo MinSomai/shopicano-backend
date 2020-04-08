@@ -67,7 +67,7 @@ type ReqUpdateCoupon struct {
 	IsUserSpecific  *bool              `json:"is_user_specific"`
 	MaxDiscount     *int64             `json:"max_discount"`
 	MaxUsage        *int               `json:"max_usage"`
-	MaxUsagePerUser int                `json:"max_usage_per_user"`
+	MaxUsagePerUser *int               `json:"max_usage_per_user"`
 	MinOrderValue   *int64             `json:"min_order_value"`
 	DiscountType    *models.CouponType `json:"discount_type"`
 	StartAt         *string            `json:"start_at"`
