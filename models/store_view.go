@@ -6,51 +6,47 @@ import (
 	"time"
 )
 
-type StoreUserProfile struct {
-	ID                 string      `json:"id"`
-	Name               string      `json:"name"`
-	Address            string      `json:"address"`
-	City               string      `json:"city"`
-	Country            string      `json:"country"`
-	PostCode           string      `json:"postcode"`
-	Email              string      `json:"email"`
-	Phone              string      `json:"phone"`
-	Status             StoreStatus `json:"status"`
-	Description        string      `json:"description"`
-	CreatedAt          time.Time   `json:"created_at"`
-	UpdatedAt          time.Time   `json:"updated_at"`
-	UserID             string      `json:"user_id"`
-	UserName           string      `json:"user_name"`
-	UserEmail          string      `json:"user_email"`
-	UserProfilePicture string      `json:"user_profile_picture"`
-	UserPhone          string      `json:"user_phone"`
-	UserStatus         string      `json:"user_status"`
-	UserPermission     Permission  `json:"user_permission"`
-	StorePermission    Permission  `json:"store_permission"`
+type StoreView struct {
+	ID                       string      `json:"id"`
+	Name                     string      `json:"name"`
+	Status                   StoreStatus `json:"status"`
+	LogoImage                string      `json:"logo_image"`
+	CoverImage               string      `json:"cover_image"`
+	CommissionRate           int64       `json:"commission_rate"`
+	IsProductCreationEnabled bool        `json:"is_product_creation_enabled"`
+	IsOrderCreationEnabled   bool        `json:"is_order_creation_enabled"`
+	IsAutoConfirmEnabled     bool        `json:"is_auto_confirm_enabled"`
+	Description              string      `json:"description"`
+	Address                  string      `json:"address"`
+	City                     string      `json:"city"`
+	Country                  string      `json:"country"`
+	Postcode                 string      `json:"postcode"`
+	Email                    string      `json:"email"`
+	Phone                    string      `json:"phone"`
+	CreatedAt                time.Time   `json:"created_at"`
+	UpdatedAt                time.Time   `json:"updated_at"`
 }
 
-func (sup *StoreUserProfile) TableName() string {
-	return "store_user_profiles"
+func (sv *StoreView) TableName() string {
+	return "stores_view"
 }
 
-func (sup *StoreUserProfile) CreateView(tx *gorm.DB) error {
-	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT s.id, s.name, av.address, av.city, av.country, av.postcode,"+
-		" av.email, av.phone, s.status, s.description, s.created_at, up.permission AS user_permission,"+
-		" s.updated_at, u.id AS user_id, u.name AS user_name, u.email AS user_email, u.profile_picture AS user_profile_picture,"+
-		" u.phone AS user_phone, u.status AS user_status, sp.permission AS store_permission FROM stores AS s"+
-		" LEFT JOIN staffs AS st ON s.id = st.store_id JOIN users AS u ON st.user_id = u.id"+
-		" LEFT JOIN user_permissions AS up ON u.permission_id = up.id"+
-		" LEFT JOIN addresses_view AS av ON s.address_id = av.id"+
-		" LEFT JOIN store_permissions AS sp ON sp.id = st.permission_id;", sup.TableName())
-
+func (sv *StoreView) CreateView(tx *gorm.DB) error {
+	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT s.id AS id, s.name AS name, s.status AS status, s.logo_image AS logo_image,"+
+		" s.cover_image AS cover_image, s.commission_rate AS commission_rate, s.is_product_creation_enabled AS is_product_creation_enabled,"+
+		" s.is_order_creation_enabled AS is_order_creation_enabled, s.is_auto_confirm_enabled AS is_auto_confirm_enabled,"+
+		" s.description AS description, av.address AS address, av.city AS city, av.country AS country, av.postcode AS postcode,"+
+		" av.email AS email, av.phone AS phone, s.created_at AS created_at, s.updated_at AS updated_at"+
+		" FROM stores AS s"+
+		" LEFT JOIN addresses_view AS av ON s.address_id = av.id", sv.TableName())
 	if err := tx.Exec(sql).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (sup *StoreUserProfile) DropView(tx *gorm.DB) error {
-	sql := fmt.Sprintf("DROP VIEW %s", sup.TableName())
+func (sv *StoreView) DropView(tx *gorm.DB) error {
+	sql := fmt.Sprintf("DROP VIEW %s", sv.TableName())
 
 	if err := tx.Exec(sql).Error; err != nil {
 		return err

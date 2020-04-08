@@ -85,6 +85,20 @@ func (sf *Staff) ForeignKeys() []string {
 	}
 }
 
+type StaffProfile struct {
+	StoreID         string      `json:"store_id"`
+	StaffID         string      `json:"staff_id"`
+	StaffName       string      `json:"staff_name"`
+	StaffEmail      string      `json:"staff_email"`
+	StaffPhone      string      `json:"staff_phone"`
+	StaffPicture    string      `json:"staff_picture"`
+	StaffPermission Permission  `json:"staff_permission"`
+	StaffStatus     UserStatus  `json:"staff_status"`
+	IsCreator       bool        `json:"is_creator"`
+	StoreStatus     StoreStatus `json:"store_status"`
+	StoreName       string      `json:"store_name"`
+}
+
 type StorePermission struct {
 	ID         string     `json:"id" gorm:"column:id;primary_key"`
 	Permission Permission `json:"permission" gorm:"column:permission;index;not null"`

@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/models"
 )
@@ -17,9 +18,18 @@ func NewStoreRepository() StoreRepository {
 	return storeRepository
 }
 
-func (su *StoreRepositoryImpl) GetStoreUserProfile(db *gorm.DB, userID string) (*models.StoreUserProfile, error) {
-	sup := models.StoreUserProfile{}
-	if err := db.Table(sup.TableName()).Where("user_id = ?", userID).First(&sup).Error; err != nil {
+func (su *StoreRepositoryImpl) GetStoreUserProfile(db *gorm.DB, userID string) (*models.StaffProfile, error) {
+	sup := models.StaffProfile{}
+	st := models.Staff{}
+	if err := db.Table(fmt.Sprintf("%s AS st", st.TableName())).
+		Select("st.user_id AS staff_id, st.store_id AS store_id, s.name AS store_name, s.status AS store_status, st.is_creator AS is_creator,"+
+			" sp.permission AS staff_permission, u.name AS staff_name, u.email AS staff_email, u.phone AS staff_phone,"+
+			" u.profile_picture AS staff_picture, u.status AS staff_status").
+		Joins("LEFT JOIN store_permissions AS sp ON st.permission_id = sp.id").
+		Joins("LEFT JOIN stores AS s ON st.store_id = s.id").
+		Joins("LEFT JOIN users AS u ON st.user_id = u.id").
+		Where("st.user_id = ?", userID).
+		Find(&sup).Error; err != nil {
 		return nil, err
 	}
 	return &sup, nil
@@ -69,6 +79,14 @@ func (su *StoreRepositoryImpl) FindStoreByID(db *gorm.DB, ID string) (*models.St
 	return &s, nil
 }
 
+func (su *StoreRepositoryImpl) FindByID(db *gorm.DB, ID string) (*models.StoreView, error) {
+	s := models.StoreView{}
+	if err := db.Table(s.TableName()).Find(&s, "id = ?", ID).Error; err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
 func (su *StoreRepositoryImpl) IsAlreadyStaff(db *gorm.DB, userID string) (bool, error) {
 	staff := models.Staff{}
 
@@ -82,30 +100,40 @@ func (su *StoreRepositoryImpl) IsAlreadyStaff(db *gorm.DB, userID string) (bool,
 	return count > 0, nil
 }
 
-func (su *StoreRepositoryImpl) ListStaffs(db *gorm.DB, storeID string, from, limit int) ([]models.StoreUserProfile, error) {
-	var staffs []models.StoreUserProfile
-	sup := models.StoreUserProfile{}
-	if err := db.Table(sup.TableName()).
-		Where("id = ?", storeID).
-		Offset(from).
-		Limit(limit).
-		Find(&staffs).Error; err != nil {
+func (su *StoreRepositoryImpl) ListStaffs(db *gorm.DB, storeID string, from, limit int) ([]models.StaffProfile, error) {
+	var sup []models.StaffProfile
+	st := models.Staff{}
+	if err := db.Table(fmt.Sprintf("%s AS st", st.TableName())).
+		Select("st.user_id AS staff_id, st.store_id AS store_id, s.name AS store_name, s.status AS store_status, st.is_creator AS is_creator,"+
+			" sp.permission AS staff_permission, u.name AS staff_name, u.email AS staff_email, u.phone AS staff_phone,"+
+			" u.profile_picture AS staff_picture, u.status AS staff_status").
+		Joins("LEFT JOIN store_permissions AS sp ON st.permission_id = sp.id").
+		Joins("LEFT JOIN stores AS s ON st.store_id = s.id").
+		Joins("LEFT JOIN users AS u ON st.user_id = u.id").
+		Where("st.store_id = ?", storeID).
+		Limit(limit).Offset(from).
+		Find(&sup).Error; err != nil {
 		return nil, err
 	}
-	return staffs, nil
+	return sup, nil
 }
 
-func (su *StoreRepositoryImpl) SearchStaffs(db *gorm.DB, storeID, query string, from, limit int) ([]models.StoreUserProfile, error) {
-	var staffs []models.StoreUserProfile
-	sup := models.StoreUserProfile{}
-	if err := db.Table(sup.TableName()).
-		Where("id = ? AND (user_email LIKE ? OR user_phone LIKE ?)", storeID, "%"+query+"%", "%"+query+"%").
-		Offset(from).
-		Limit(limit).
-		Find(&staffs).Error; err != nil {
+func (su *StoreRepositoryImpl) SearchStaffs(db *gorm.DB, storeID, query string, from, limit int) ([]models.StaffProfile, error) {
+	var sup []models.StaffProfile
+	st := models.Staff{}
+	if err := db.Table(fmt.Sprintf("%s AS st", st.TableName())).
+		Select("st.user_id AS staff_id, st.store_id AS store_id, s.name AS store_name, s.status AS store_status, st.is_creator AS is_creator,"+
+			" sp.permission AS staff_permission, u.name AS staff_name, u.email AS staff_email, u.phone AS staff_phone,"+
+			" u.profile_picture AS staff_picture, u.status AS staff_status").
+		Joins("LEFT JOIN store_permissions AS sp ON st.permission_id = sp.id").
+		Joins("LEFT JOIN users AS u ON st.user_id = u.id").
+		Joins("LEFT JOIN stores AS s ON st.store_id = s.id").
+		Where("id = ? AND (u.email LIKE ? OR u.phone LIKE ?)", storeID, "%"+query+"%", "%"+query+"%").
+		Limit(limit).Offset(from).
+		Find(&sup).Error; err != nil {
 		return nil, err
 	}
-	return staffs, nil
+	return sup, nil
 }
 
 func (su *StoreRepositoryImpl) List(db *gorm.DB, from, limit int) ([]models.Store, error) {

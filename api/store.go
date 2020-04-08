@@ -170,8 +170,18 @@ func createStore(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	db = app.DB()
+	store, err := su.FindByID(db, s.ID)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	resp.Status = http.StatusCreated
-	resp.Data = s
+	resp.Data = store
 	return resp.ServerJSON(ctx)
 }
 
@@ -183,7 +193,7 @@ func getStore(ctx echo.Context) error {
 	db := app.DB()
 
 	su := data.NewStoreRepository()
-	store, err := su.FindStoreByID(db, storeID)
+	store, err := su.FindByID(db, storeID)
 	if err != nil {
 		ok := errors.IsRecordNotFoundError(err)
 		if ok {
@@ -230,8 +240,29 @@ func getStoreForOwner(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	store, err := su.FindByID(db, profile.StoreID)
+	if err != nil {
+		ok := errors.IsRecordNotFoundError(err)
+		if ok {
+			resp.Title = "Store not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.StoreNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	resp.Status = http.StatusOK
-	resp.Data = profile
+	resp.Data = map[string]interface{}{
+		"store": store,
+		"staff": profile,
+	}
 	return resp.ServerJSON(ctx)
 }
 

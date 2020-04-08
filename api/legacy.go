@@ -164,9 +164,7 @@ func login(ctx echo.Context) error {
 		result["has_store"] = false
 	} else {
 		result["has_store"] = true
-		result["store_id"] = profile.ID
-		result["store_name"] = profile.Name
-		result["store_permission"] = profile.StorePermission
+		result["staff"] = profile
 	}
 
 	if err := db.Commit().Error; err != nil {

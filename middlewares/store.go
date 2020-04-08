@@ -38,19 +38,19 @@ func HasStore() echo.MiddlewareFunc {
 			}
 
 			storeID := ctx.Param("store_id")
-			if storeID != "" && storeID != store.ID {
+			if storeID != "" && storeID != store.StoreID {
 				resp.Status = http.StatusForbidden
 				resp.Code = errors.UnauthorizedStoreAccess
 				resp.Title = "Unauthorized request"
 				return resp.ServerJSON(ctx)
 			}
 
-			log.Log().Infoln(store.StorePermission)
-			log.Log().Infoln(store.Status)
+			log.Log().Infoln(store.StaffPermission)
+			log.Log().Infoln(store.StoreStatus)
 
-			ctx.Set(utils.StoreID, store.ID)
-			ctx.Set(utils.StorePermission, store.StorePermission)
-			ctx.Set(utils.StoreStatus, store.Status)
+			ctx.Set(utils.StoreID, store.StoreID)
+			ctx.Set(utils.StorePermission, store.StaffPermission)
+			ctx.Set(utils.StoreStatus, store.StoreStatus)
 			return next(ctx)
 		}
 	}
