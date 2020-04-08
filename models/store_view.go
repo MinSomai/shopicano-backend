@@ -34,12 +34,13 @@ func (sup *StoreUserProfile) TableName() string {
 }
 
 func (sup *StoreUserProfile) CreateView(tx *gorm.DB) error {
-	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT s.id, s.name, s.address, s.city, s.country, s.postcode,"+
-		" s.email, s.phone, s.status, s.description, s.created_at, up.permission AS user_permission,"+
+	sql := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT s.id, s.name, av.address, av.city, av.country, av.postcode,"+
+		" av.email, av.phone, s.status, s.description, s.created_at, up.permission AS user_permission,"+
 		" s.updated_at, u.id AS user_id, u.name AS user_name, u.email AS user_email, u.profile_picture AS user_profile_picture,"+
 		" u.phone AS user_phone, u.status AS user_status, sp.permission AS store_permission FROM stores AS s"+
 		" LEFT JOIN staffs AS st ON s.id = st.store_id JOIN users AS u ON st.user_id = u.id"+
 		" LEFT JOIN user_permissions AS up ON u.permission_id = up.id"+
+		" LEFT JOIN addresses_view AS av ON s.address_id = av.id"+
 		" LEFT JOIN store_permissions AS sp ON sp.id = st.permission_id;", sup.TableName())
 
 	if err := tx.Exec(sql).Error; err != nil {

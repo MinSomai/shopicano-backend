@@ -617,27 +617,51 @@ func updateStore(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	addrDao := data.NewAddressRepository()
+	addr, err := addrDao.GetRawAddressByID(db, store.AddressID)
+	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Address not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.AddressNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	if body.Name != nil {
 		store.Name = *body.Name
 	}
 	if body.Address != nil {
-		store.Address = *body.Address
+		addr.Address = *body.Address
 	}
 	if body.City != nil {
-		store.City = *body.City
+		addr.City = *body.City
 	}
-	if body.Country != nil {
-		store.Country = *body.Country
+	if body.State != nil {
+		addr.State = *body.State
+	}
+	if body.CountryID != nil {
+		addr.CountryID = *body.CountryID
 	}
 	if body.Postcode != nil {
-		store.Postcode = *body.Postcode
+		addr.Postcode = *body.Postcode
 	}
 	if body.Phone != nil {
-		store.Phone = *body.Phone
+		addr.Phone = *body.Phone
 	}
 	if body.Email != nil {
-		store.Email = *body.Email
+		addr.Email = *body.Email
 	}
+
 	if body.IsProductCreationEnabled != nil {
 		store.IsProductCreationEnabled = *body.IsProductCreationEnabled
 	}
@@ -659,6 +683,14 @@ func updateStore(ctx echo.Context) error {
 
 	if err := su.UpdateStore(db, store); err != nil {
 		resp.Title = "Failed to update store"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if err := addrDao.UpdateAddress(db, addr); err != nil {
+		resp.Title = "Failed to update address"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
 		resp.Errors = err

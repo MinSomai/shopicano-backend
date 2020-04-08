@@ -7,13 +7,14 @@ import (
 )
 
 type ReqAddressCreate struct {
-	Name     string `json:"name" valid:"required"`
-	Address  string `json:"address" valid:"required"`
-	City     string `json:"city" valid:"required"`
-	Country  string `json:"country" valid:"required"`
-	Postcode string `json:"postcode" valid:"required"`
-	Email    string `json:"email"`
-	Phone    string `json:"phone"`
+	Name      string `json:"name" valid:"required"`
+	Address   string `json:"address" valid:"required"`
+	State     string `json:"state"`
+	City      string `json:"city" valid:"required"`
+	CountryID int64  `json:"country_id" valid:"required"`
+	Postcode  string `json:"postcode" valid:"required"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone"`
 }
 
 func ValidateCreateAddress(ctx echo.Context) (*ReqAddressCreate, error) {

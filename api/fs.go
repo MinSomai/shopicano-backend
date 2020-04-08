@@ -17,14 +17,13 @@ import (
 
 func RegisterFSRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 	fsPublicPath := publicEndpoints.Group("/fs")
-	fsPlatformPath := platformEndpoints.Group("/fs")
 
 	fsPublicPath.GET("/:bucket_name/:file_name/", serveAsStream)
 
 	func(g echo.Group) {
 		g.Use(middlewares.JWTAuth())
 		g.POST("/:bucket_name/", upload)
-	}(*fsPlatformPath)
+	}(*fsPublicPath)
 }
 
 func serveAsStream(ctx echo.Context) error {

@@ -49,10 +49,11 @@ func createAddress(ctx echo.Context) error {
 		Name:      req.Name,
 		Address:   req.Address,
 		City:      req.City,
+		State:     req.State,
 		Postcode:  req.Postcode,
 		Phone:     req.Phone,
 		Email:     req.Email,
-		Country:   req.Country,
+		CountryID: req.CountryID,
 		UserID:    userID,
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
@@ -69,8 +70,17 @@ func createAddress(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	addr, err := au.GetAddressByID(db, add.ID)
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	resp.Status = http.StatusCreated
-	resp.Data = add
+	resp.Data = addr
 	return resp.ServerJSON(ctx)
 }
 
@@ -95,10 +105,11 @@ func updateAddress(ctx echo.Context) error {
 		Name:      req.Name,
 		Address:   req.Address,
 		City:      req.City,
+		State:     req.State,
 		Postcode:  req.Postcode,
 		Phone:     req.Phone,
 		Email:     req.Email,
-		Country:   req.Country,
+		CountryID: req.CountryID,
 		UserID:    userID,
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),

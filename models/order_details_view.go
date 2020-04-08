@@ -81,16 +81,17 @@ func (odv *OrderDetailsView) CreateView(tx *gorm.DB) error {
 		" sa.city AS shipping_city, sa.country AS shipping_country, sa.postcode AS shipping_postcode, cop.code AS coupon_code,"+
 		" sa.email AS shipping_email, sa.phone AS shipping_phone, ba.id AS billing_id, ba.name AS billing_name, ba.address AS billing_address,"+
 		" ba.city AS billing_city, ba.country AS billing_country, ba.postcode AS billing_postcode, ba.email AS billing_email,"+
-		" ba.phone AS billing_phone, s.id AS store_id, s.name AS store_name, s.address AS store_address, s.city AS store_city,"+
-		" s.country AS store_country, s.postcode AS store_postcode, s.email AS store_email, s.phone AS store_phone, s.status AS store_status,"+
+		" ba.phone AS billing_phone, s.id AS store_id, s.name AS store_name, sta.address AS store_address, sta.city AS store_city,"+
+		" sta.country AS store_country, sta.postcode AS store_postcode, sta.email AS store_email, sta.phone AS store_phone, s.status AS store_status,"+
 		" sm.id AS shipping_method_id, sm.name AS shipping_method_name, sm.approximate_delivery_time AS approximate_delivery_time,"+
 		" pm.id AS payment_method_id, pm.name AS payment_method_name, pm.is_offline_payment AS payment_method_is_offline,"+
 		" rv.rating AS review_rating, rv.description AS review_description, o.seller_earnings AS seller_earnings,"+
 		" o.platform_earnings AS platform_earnings, o.actual_earnings AS actual_earnings"+
 		" FROM orders AS o"+
-		" LEFT JOIN addresses AS sa ON o.shipping_address_id = sa.id"+
-		" LEFT JOIN addresses AS ba ON o.billing_address_id = ba.id"+
+		" LEFT JOIN addresses_view AS sa ON o.shipping_address_id = sa.id"+
+		" LEFT JOIN addresses_view AS ba ON o.billing_address_id = ba.id"+
 		" LEFT JOIN stores AS s ON o.store_id = s.id"+
+		" LEFT JOIN addresses_view AS sta ON s.address_id = sta.id"+
 		" LEFT JOIN users AS u ON o.user_id = u.id"+
 		" LEFT JOIN coupon_usages AS cu ON o.id = cu.order_id"+
 		" LEFT JOIN coupons AS cop ON cu.coupon_id = cop.id"+

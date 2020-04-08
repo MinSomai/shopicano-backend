@@ -149,15 +149,10 @@ func (su *StoreRepositoryImpl) UpdateStoreStatus(db *gorm.DB, s *models.Store) e
 
 func (su *StoreRepositoryImpl) UpdateStore(db *gorm.DB, s *models.Store) error {
 	if err := db.Table(s.TableName()).
-		Select("name, address, city, country, postcode, phone, logo_image, cover_image, is_product_creation_enabled, is_order_creation_enabled, is_auto_confirm_enabled, description").
+		Select("name, logo_image, cover_image, is_product_creation_enabled, is_order_creation_enabled, is_auto_confirm_enabled, description").
 		Where("id = ?", s.ID).
 		Update(map[string]interface{}{
 			"name":                        s.Name,
-			"address":                     s.Address,
-			"city":                        s.City,
-			"country":                     s.Country,
-			"postcode":                    s.Postcode,
-			"phone":                       s.Phone,
 			"logo_image":                  s.LogoImage,
 			"cover_image":                 s.CoverImage,
 			"is_product_creation_enabled": s.IsProductCreationEnabled,
