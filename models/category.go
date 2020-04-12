@@ -34,7 +34,6 @@ type ResCategorySearch struct {
 	StoreID     string `json:"store_id"`
 	Description string `json:"description"`
 	Image       string `json:"image"`
-	Count       int64  `json:"count"`
 }
 
 type ResCategorySearchInternal struct {

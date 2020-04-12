@@ -127,14 +127,18 @@ func listCollections(ctx echo.Context) error {
 		limit = 10
 	}
 
+	db := app.DB()
+	cu := data.NewCollectionRepository()
+	from := (page - 1) * limit
+
 	resp := core.Response{}
 
 	var collections []models.Collection
 
 	if query == "" {
-		collections, err = fetchCollections(ctx, page, limit, true)
+		collections, err = cu.List(db, int(from), int(limit))
 	} else {
-		collections, err = searchCollections(ctx, query, page, limit, true)
+		collections, err = cu.Search(db, query, int(from), int(limit))
 	}
 
 	if err != nil {
@@ -166,14 +170,19 @@ func listCollectionsAsStoreOwner(ctx echo.Context) error {
 		limit = 10
 	}
 
+	db := app.DB()
+
+	from := (page - 1) * limit
+	cu := data.NewCollectionRepository()
+
 	resp := core.Response{}
 
-	var collections []models.Collection
+	var collections []models.CollectionDetail
 
 	if query == "" {
-		collections, err = fetchCollections(ctx, page, limit, false)
+		collections, err = cu.ListAsStoreStuff(db, utils.GetStoreID(ctx), int(from), int(limit))
 	} else {
-		collections, err = searchCollections(ctx, query, page, limit, false)
+		collections, err = cu.SearchAsStoreStuff(db, utils.GetStoreID(ctx), query, int(from), int(limit))
 	}
 
 	if err != nil {
@@ -187,28 +196,6 @@ func listCollectionsAsStoreOwner(ctx echo.Context) error {
 	resp.Status = http.StatusOK
 	resp.Data = collections
 	return resp.ServerJSON(ctx)
-}
-
-func searchCollections(ctx echo.Context, query string, page, limit int64, isPublic bool) ([]models.Collection, error) {
-	db := app.DB()
-
-	from := (page - 1) * limit
-	cu := data.NewCollectionRepository()
-	if isPublic {
-		return cu.Search(db, query, int(from), int(limit))
-	}
-	return cu.SearchAsStoreStuff(db, ctx.Get(utils.StoreID).(string), query, int(from), int(limit))
-}
-
-func fetchCollections(ctx echo.Context, page, limit int64, isPublic bool) ([]models.Collection, error) {
-	db := app.DB()
-
-	from := (page - 1) * limit
-	cu := data.NewCollectionRepository()
-	if isPublic {
-		return cu.List(db, int(from), int(limit))
-	}
-	return cu.ListAsStoreStuff(db, ctx.Get(utils.StoreID).(string), int(from), int(limit))
 }
 
 func updateCollection(ctx echo.Context) error {

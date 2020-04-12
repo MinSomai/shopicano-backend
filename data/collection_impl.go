@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/models"
 	"strings"
@@ -39,13 +40,18 @@ func (cu *CollectionRepositoryImpl) List(db *gorm.DB, from, limit int) ([]models
 	return cols, nil
 }
 
-func (cu *CollectionRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]models.Collection, error) {
-	var cols []models.Collection
+func (cu *CollectionRepositoryImpl) ListAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]models.CollectionDetail, error) {
+	var cols []models.CollectionDetail
 	col := models.Collection{}
-	if err := db.Table(col.TableName()).
-		Where("store_id = ?", storeID).
+	cop := models.CollectionOfProduct{}
+
+	if err := db.Table(fmt.Sprintf("%s AS c", col.TableName())).
+		Select("c.id AS id, c.name AS name, c.description AS description, c.image AS image, c.is_published AS is_published, COUNT(cop.product_id) AS number_of_products, c.created_at AS created_at").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS cop ON c.id = cop.collection_id", cop.TableName())).
+		Group("c.id, c.name, c.description, c.image, c.is_published, c.created_at, c.updated_at").
+		Where("c.store_id = ?", storeID).
 		Offset(from - limit).Limit(limit).
-		Order("updated_at DESC").Find(&cols).Error; err != nil {
+		Order("c.updated_at DESC").Find(&cols).Error; err != nil {
 		return nil, err
 	}
 	return cols, nil
@@ -64,13 +70,18 @@ func (cu *CollectionRepositoryImpl) Search(db *gorm.DB, query string, from, limi
 	return cols, nil
 }
 
-func (cu *CollectionRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.Collection, error) {
-	var cols []models.Collection
+func (cu *CollectionRepositoryImpl) SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.CollectionDetail, error) {
+	var cols []models.CollectionDetail
 	col := models.Collection{}
+	cop := models.CollectionOfProduct{}
+
 	if err := db.Table(col.TableName()).
-		Where("store_id = ? AND LOWER(name) LIKE ?", storeID, "%"+strings.ToLower(query)+"%").
+		Select("c.id AS id, c.name AS name, c.description AS description, c.image AS image, c.is_published AS is_published, COUNT(cop.product_id) AS number_of_products, c.created_at AS created_at").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS cop ON c.id = cop.collection_id", cop.TableName())).
+		Group("c.id, c.name, c.description, c.image, c.is_published, c.created_at, c.updated_at").
+		Where("c.store_id = ? AND LOWER(c.name) LIKE ?", storeID, "%"+strings.ToLower(query)+"%").
 		Offset(from - limit).Limit(limit).
-		Order("updated_at DESC").Find(&cols).Error; err != nil {
+		Order("c.updated_at DESC").Find(&cols).Error; err != nil {
 		return nil, err
 	}
 	return cols, nil

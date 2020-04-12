@@ -9,8 +9,8 @@ type CollectionRepository interface {
 	Create(db *gorm.DB, c *models.Collection) error
 	List(db *gorm.DB, from, limit int) ([]models.Collection, error)
 	Search(db *gorm.DB, query string, from, limit int) ([]models.Collection, error)
-	ListAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]models.Collection, error)
-	SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.Collection, error)
+	ListAsStoreStuff(db *gorm.DB, storeID string, from, limit int) ([]models.CollectionDetail, error)
+	SearchAsStoreStuff(db *gorm.DB, storeID, query string, from, limit int) ([]models.CollectionDetail, error)
 	Delete(db *gorm.DB, storeID, collectionID string) error
 	Get(db *gorm.DB, collectionID string) (*models.Collection, error)
 	GetAsStoreOwner(db *gorm.DB, storeID, collectionID string) (*models.Collection, error)

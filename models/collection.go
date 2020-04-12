@@ -27,3 +27,13 @@ func (c *Collection) ForeignKeys() []string {
 		fmt.Sprintf("store_id;%s(id);RESTRICT;RESTRICT", s.TableName()),
 	}
 }
+
+type CollectionDetail struct {
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	Description      string    `json:"description"`
+	Image            string    `json:"image"`
+	IsPublished      bool      `json:"is_published"`
+	NumberOfProducts int64     `json:"number_of_products"`
+	CreatedAt        time.Time `json:"created_at"`
+}
