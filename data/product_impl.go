@@ -396,6 +396,22 @@ func (pu *ProductRepositoryImpl) ListByCollection(db *gorm.DB, collectionID stri
 	return ps, nil
 }
 
+func (pu *ProductRepositoryImpl) ListByCollectionAsStoreStuff(db *gorm.DB, collectionID string, from, limit int) ([]models.ProductDetails, error) {
+	var ps []models.ProductDetails
+	p := models.Product{}
+	if err := db.Table(p.TableName()).
+		Select("products.id, products.stock, products.sku, products.unit, products.store_id, s.name AS store_name, products.name, products.price, products.description, products.is_published, products.is_shippable, products.is_digital, c.id AS category_id, c.name AS category_name, products.image, products.created_at, products.updated_at").
+		Joins("LEFT JOIN categories AS c ON products.category_id = c.id").
+		Joins("LEFT JOIN stores AS s ON products.store_id = s.id").
+		Joins("LEFT JOIN collection_of_products AS cop ON cop.product_id = products.id").
+		Where("cop.collection_id = ?", collectionID).
+		Offset(from).Limit(limit).
+		Order("products.created_at DESC").Find(&ps).Error; err != nil {
+		return nil, err
+	}
+	return ps, nil
+}
+
 func (pu *ProductRepositoryImpl) AddImage(db *gorm.DB, productID, imagePath string) error {
 	pi := models.ProductImage{
 		ProductID: productID,
