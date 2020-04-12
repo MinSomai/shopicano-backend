@@ -15,7 +15,7 @@ import (
 )
 
 func SendOrderDetailsEmail(email, subject string, order *models.OrderDetailsView) error {
-	pu := data.NewPlatformRepository()
+	pu := data.NewMarketplaceRepository()
 	settings, err := pu.GetSettings(app.DB())
 	if err != nil {
 		return err

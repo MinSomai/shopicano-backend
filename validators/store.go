@@ -13,14 +13,10 @@ import (
 func ValidateCreateStore(ctx echo.Context) (*models.Store, error) {
 	pld := struct {
 		Name        string `json:"name" valid:"required,stringlength(1|100)"`
-		Address     string `json:"address" valid:"required,stringlength(1|100)"`
-		City        string `json:"city" valid:"required,stringlength(1|30)"`
-		Country     string `json:"country" valid:"required,stringlength(1|30)"`
-		Postcode    string `json:"postcode" valid:"required,stringlength(1|100)"`
-		Email       string `json:"email" valid:"required,email"`
-		Phone       string `json:"phone" valid:"required,stringlength(1|20)"`
+		AddressID   string `json:"address_id" valid:"required"`
 		Description string `json:"description" valid:"required,stringlength(1|1000)"`
-		Image       string `json:"image"`
+		LogoImage   string `json:"logo_image"`
+		CoverImage  string `json:"cover_image"`
 	}{}
 
 	if err := ctx.Bind(&pld); err != nil {
@@ -32,16 +28,13 @@ func ValidateCreateStore(ctx echo.Context) (*models.Store, error) {
 		return &models.Store{
 			ID:                       utils.NewUUID(),
 			Name:                     pld.Name,
-			Email:                    pld.Email,
-			Phone:                    pld.Phone,
 			Status:                   models.StoreRegistered,
-			Address:                  pld.Address,
 			Description:              pld.Description,
+			CoverImage:               pld.CoverImage,
+			LogoImage:                pld.LogoImage,
 			IsOrderCreationEnabled:   false,
 			IsProductCreationEnabled: false,
-			Postcode:                 pld.Postcode,
-			City:                     pld.City,
-			Country:                  pld.Country,
+			AddressID:                pld.AddressID,
 			CreatedAt:                time.Now().UTC(),
 			UpdatedAt:                time.Now().UTC(),
 		}, nil
@@ -60,7 +53,8 @@ type reqStoreUpdate struct {
 	Name                     *string `json:"name"`
 	Address                  *string `json:"address"`
 	City                     *string `json:"city"`
-	Country                  *string `json:"country"`
+	State                    *string `json:"state"`
+	CountryID                *int64  `json:"country_id"`
 	Postcode                 *string `json:"postcode"`
 	Email                    *string `json:"email"`
 	Phone                    *string `json:"phone"`

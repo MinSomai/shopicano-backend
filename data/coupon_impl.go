@@ -174,3 +174,14 @@ func (cr *CouponRepositoryImpl) GetUsage(db *gorm.DB, couponID, userID string) (
 	}
 	return count, nil
 }
+
+func (cr *CouponRepositoryImpl) GetTotalUsage(db *gorm.DB, couponID string) (int, error) {
+	cu := models.CouponUsage{}
+	var count int
+	if err := db.Table(cu.TableName()).
+		Where("coupon_id = ?", couponID).
+		Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}

@@ -32,8 +32,8 @@ func (au *AddressRepositoryImpl) UpdateAddress(db *gorm.DB, a *models.Address) e
 	return nil
 }
 
-func (au *AddressRepositoryImpl) GetAddress(db *gorm.DB, userID, addressID string) (*models.Address, error) {
-	a := models.Address{}
+func (au *AddressRepositoryImpl) GetAddress(db *gorm.DB, userID, addressID string) (*models.AddressView, error) {
+	a := models.AddressView{}
 	if err := db.Table(a.TableName()).
 		Where("id = ? AND user_id = ?", addressID, userID).Find(&a).Error; err != nil {
 		return nil, err
@@ -41,9 +41,27 @@ func (au *AddressRepositoryImpl) GetAddress(db *gorm.DB, userID, addressID strin
 	return &a, nil
 }
 
-func (au *AddressRepositoryImpl) ListAddresses(db *gorm.DB, userId string, from, limit int) ([]models.Address, error) {
-	var addresses []models.Address
-	address := models.Address{}
+func (au *AddressRepositoryImpl) GetAddressByID(db *gorm.DB, addressID string) (*models.AddressView, error) {
+	a := models.AddressView{}
+	if err := db.Table(a.TableName()).
+		Where("id = ?", addressID).Find(&a).Error; err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+func (au *AddressRepositoryImpl) GetRawAddressByID(db *gorm.DB, addressID string) (*models.Address, error) {
+	a := models.Address{}
+	if err := db.Table(a.TableName()).
+		Where("id = ?", addressID).Find(&a).Error; err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+func (au *AddressRepositoryImpl) ListAddresses(db *gorm.DB, userId string, from, limit int) ([]models.AddressView, error) {
+	var addresses []models.AddressView
+	address := models.AddressView{}
 	if err := db.Table(address.TableName()).
 		Offset(from).Limit(limit).
 		Where("user_id = ?", userId).

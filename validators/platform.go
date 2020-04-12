@@ -38,12 +38,12 @@ func ValidateCreatePaymentMethod(ctx echo.Context) (*ReqPaymentMethodCreate, err
 }
 
 type ReqShippingMethodCreate struct {
-	Name                    string `json:"name" valid:"required"`
-	ApproximateDeliveryTime int    `json:"approximate_delivery_time" valid:"required"`
-	DeliveryCharge          int64  `json:"delivery_charge" valid:"required"`
-	IsPublished             bool   `json:"is_published"`
-	IsFlat                  bool   `json:"is_flat"`
-	WeightUnit              string `json:"weight_unit" valid:"required"`
+	Name                    string            `json:"name" valid:"required"`
+	ApproximateDeliveryTime int               `json:"approximate_delivery_time" valid:"required"`
+	DeliveryCharge          int64             `json:"delivery_charge" valid:"required"`
+	IsPublished             bool              `json:"is_published"`
+	IsFlat                  bool              `json:"is_flat"`
+	WeightUnit              models.WeightUnit `json:"weight_unit" valid:"required"`
 }
 
 func ValidateCreateShippingMethod(ctx echo.Context) (*ReqShippingMethodCreate, error) {
@@ -52,15 +52,21 @@ func ValidateCreateShippingMethod(ctx echo.Context) (*ReqShippingMethodCreate, e
 		return nil, err
 	}
 
-	ok, err := govalidator.ValidateStruct(&pld)
-	if ok {
-		return &pld, nil
-	}
-
 	ve := errors.ValidationError{}
 
-	for k, v := range govalidator.ErrorsByField(err) {
-		ve.Add(k, v)
+	ok, err := govalidator.ValidateStruct(&pld)
+	if !ok {
+		for k, v := range govalidator.ErrorsByField(err) {
+			ve.Add(k, v)
+		}
+	}
+
+	if pld.WeightUnit.IsValid() {
+		ve.Add("weight_unit", "is invalid")
+	}
+
+	if len(ve) == 0 {
+		return &pld, nil
 	}
 
 	return nil, &ve

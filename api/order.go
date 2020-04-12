@@ -96,7 +96,7 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 
 	pu := data.NewProductRepository()
 	ou := data.NewOrderRepository()
-	au := data.NewPlatformRepository()
+	au := data.NewMarketplaceRepository()
 	cu := data.NewCouponRepository()
 
 	pm, err := au.GetPaymentMethod(db, o.PaymentMethodID)
@@ -322,7 +322,28 @@ func createNewOrder(ctx echo.Context, pld *validators.ReqOrderCreate) error {
 			}
 		}
 
-		previousUsage, err := cu.GetUsage(db, coupon.ID, o.UserID) // TODO : Cross check
+		previousUsagePerUser, err := cu.GetUsage(db, coupon.ID, o.UserID)
+		if err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to get coupon usage"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		if coupon.MaxUsagePerUser != 0 && previousUsagePerUser >= coupon.MaxUsagePerUser {
+			db.Rollback()
+
+			resp.Title = "Coupon usage per user exceed"
+			resp.Status = http.StatusBadRequest
+			resp.Code = errors.InvalidCoupon
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
+		previousUsage, err := cu.GetTotalUsage(db, coupon.ID)
 		if err != nil {
 			db.Rollback()
 

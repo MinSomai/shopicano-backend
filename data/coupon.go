@@ -19,4 +19,5 @@ type CouponRepository interface {
 	HasUser(db *gorm.DB, storeID, couponID, userID string) (bool, error)
 	AddUsage(db *gorm.DB, cu *models.CouponUsage) error
 	GetUsage(db *gorm.DB, couponID, userID string) (int, error)
+	GetTotalUsage(db *gorm.DB, couponID string) (int, error)
 }

@@ -60,20 +60,22 @@ func createCoupon(ctx echo.Context) error {
 	et, _ := utils.ParseDateTimeForInput(req.EndAt)
 
 	c := models.Coupon{
-		ID:             utils.NewUUID(),
-		StoreID:        storeID,
-		IsUserSpecific: req.IsUserSpecific,
-		DiscountType:   req.DiscountType,
-		Code:           req.Code,
-		DiscountAmount: req.DiscountAmount,
-		StartAt:        st.UTC(),
-		EndAt:          et.UTC(),
-		IsActive:       req.IsActive,
-		IsFlatDiscount: req.IsFlatDiscount,
-		MaxDiscount:    req.MaxDiscount,
-		MaxUsage:       req.MaxUsage,
-		CreatedAt:      time.Now().UTC(),
-		UpdatedAt:      time.Now().UTC(),
+		ID:              utils.NewUUID(),
+		StoreID:         storeID,
+		IsUserSpecific:  req.IsUserSpecific,
+		DiscountType:    req.DiscountType,
+		Code:            req.Code,
+		DiscountAmount:  req.DiscountAmount,
+		StartAt:         st.UTC(),
+		EndAt:           et.UTC(),
+		IsActive:        req.IsActive,
+		IsFlatDiscount:  req.IsFlatDiscount,
+		MaxDiscount:     req.MaxDiscount,
+		MaxUsage:        req.MaxUsage,
+		MaxUsagePerUser: req.MaxUsagePerUser,
+		MinOrderValue:   req.MinOrderValue,
+		CreatedAt:       time.Now().UTC(),
+		UpdatedAt:       time.Now().UTC(),
 	}
 
 	err = cr.Create(db, &c)
@@ -159,6 +161,12 @@ func updateCoupon(ctx echo.Context) error {
 	}
 	if req.MaxUsage != nil {
 		c.MaxUsage = *req.MaxUsage
+	}
+	if req.MaxUsagePerUser != nil {
+		c.MaxUsagePerUser = *req.MaxUsagePerUser
+	}
+	if req.MinOrderValue != nil {
+		c.MinOrderValue = *req.MinOrderValue
 	}
 	if req.StartAt != nil {
 		st, _ := utils.ParseDateTimeForInput(*req.StartAt)
@@ -384,7 +392,24 @@ func checkCouponAvailability(ctx echo.Context) error {
 		}
 	}
 
-	usage, err := cu.GetUsage(db, coupon.ID, utils.GetUserID(ctx))
+	usagePerUser, err := cu.GetUsage(db, coupon.ID, utils.GetUserID(ctx))
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	if coupon.MaxUsagePerUser != 0 && usagePerUser > coupon.MaxUsagePerUser {
+		resp.Title = "Coupon usage limit per user exceed"
+		resp.Status = http.StatusForbidden
+		resp.Code = errors.CouponNotApplicable
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
+	usage, err := cu.GetTotalUsage(db, coupon.ID)
 	if err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError

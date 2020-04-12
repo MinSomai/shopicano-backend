@@ -26,12 +26,7 @@ func (s *StoreStatus) IsValid() bool {
 type Store struct {
 	ID                       string      `json:"id" gorm:"column:id;primary_key"`
 	Name                     string      `json:"name" gorm:"column:name;unique;not null"`
-	Address                  string      `json:"address" gorm:"column:address;not null"`
-	City                     string      `json:"city" gorm:"column:city;not null"`
-	Country                  string      `json:"country" gorm:"column:country;not null"`
-	Postcode                 string      `json:"postcode" gorm:"column:postcode;not null"`
-	Email                    string      `json:"email" gorm:"column:email;unique;not null"`
-	Phone                    string      `json:"phone" gorm:"column:phone;unique;not null"`
+	AddressID                string      `json:"address_id" gorm:"column:address_id;not null"`
 	Status                   StoreStatus `json:"status" gorm:"column:status;index"`
 	LogoImage                string      `json:"logo_image" gorm:"column:logo_image"`
 	CoverImage               string      `json:"cover_image" gorm:"column:cover_image"`
@@ -49,7 +44,10 @@ func (s *Store) TableName() string {
 }
 
 func (s *Store) ForeignKeys() []string {
-	return []string{}
+	a := Address{}
+	return []string{
+		fmt.Sprintf("address_id;%s(id);RESTRICT;RESTRICT", a.TableName()),
+	}
 }
 
 func (s *Store) CalculateCommission(value int64) int64 {
@@ -85,6 +83,20 @@ func (sf *Staff) ForeignKeys() []string {
 		fmt.Sprintf("store_id;%s(id);RESTRICT;RESTRICT", s.TableName()),
 		fmt.Sprintf("permission_id;%s(id);RESTRICT;RESTRICT", sp.TableName()),
 	}
+}
+
+type StaffProfile struct {
+	StoreID         string      `json:"store_id"`
+	StaffID         string      `json:"staff_id"`
+	StaffName       string      `json:"staff_name"`
+	StaffEmail      string      `json:"staff_email"`
+	StaffPhone      string      `json:"staff_phone"`
+	StaffPicture    string      `json:"staff_picture"`
+	StaffPermission Permission  `json:"staff_permission"`
+	StaffStatus     UserStatus  `json:"staff_status"`
+	IsCreator       bool        `json:"is_creator"`
+	StoreStatus     StoreStatus `json:"store_status"`
+	StoreName       string      `json:"store_name"`
 }
 
 type StorePermission struct {

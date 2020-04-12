@@ -27,6 +27,16 @@ func init() {
 func initCmd(cmd *cobra.Command, args []string) {
 	tx := app.DB().Begin()
 
+	var flatTables []core.FlatTable
+	flatTables = append(flatTables, &models.Location{})
+	for _, ft := range flatTables {
+		if err := ft.Populate(tx); err != nil {
+			tx.Rollback()
+			log.Log().Errorln(err)
+			return
+		}
+	}
+
 	upAdmin := models.UserPermission{
 		ID:         values.AdminGroupID,
 		Permission: models.AdminPerm,
@@ -101,7 +111,7 @@ func initCmd(cmd *cobra.Command, args []string) {
 		Email:     "example@shopicano.com",
 		Phone:     "8801710333333",
 		Postcode:  "1209",
-		Country:   "Bangladesh",
+		CountryID: 18,
 		City:      "Dhaka",
 		UserID:    u.ID,
 		CreatedAt: time.Now().UTC(),
@@ -132,32 +142,17 @@ func initCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	var flatTables []core.FlatTable
-	flatTables = append(flatTables, &models.Location{})
-	for _, ft := range flatTables {
-		if err := ft.Populate(tx); err != nil {
-			tx.Rollback()
-			log.Log().Errorln(err)
-			return
-		}
-	}
-
 	if applicationModeSingle {
 		store := &models.Store{
 			ID:                       utils.NewUUID(),
 			IsAutoConfirmEnabled:     true,
 			CommissionRate:           0,
 			Name:                     "Shopicano Store",
-			Email:                    "admin@shopicano.com",
-			Phone:                    "+8801700000000",
 			Status:                   models.StoreActive,
-			Address:                  a.Address,
 			Description:              "My Shopicano Store",
 			IsOrderCreationEnabled:   true,
 			IsProductCreationEnabled: true,
-			Postcode:                 a.Postcode,
-			City:                     a.City,
-			Country:                  a.Country,
+			AddressID:                a.ID,
 			CreatedAt:                time.Now().UTC(),
 			UpdatedAt:                time.Now().UTC(),
 		}

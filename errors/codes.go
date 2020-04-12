@@ -90,6 +90,7 @@ const (
 	CouponNotFound                                ErrorCode = "404015"
 	StaffDoesNotExists                            ErrorCode = "404016"
 	AttributeNotFound                             ErrorCode = "404017"
+	LocationNotFound                              ErrorCode = "404018"
 	LoginCredentialsInvalid                       ErrorCode = "401001"
 	VerificationTokenIsInvalid                    ErrorCode = "401002"
 	UnauthorizedRequest                           ErrorCode = "401004"

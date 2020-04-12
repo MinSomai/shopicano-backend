@@ -39,7 +39,7 @@ func IsNotInMaintenanceMode(next echo.HandlerFunc) echo.HandlerFunc {
 
 		db := app.DB()
 
-		au := data.NewPlatformRepository()
+		au := data.NewMarketplaceRepository()
 		s, err := au.GetSettings(db)
 		if err != nil {
 			log.Log().Errorln(err)
