@@ -29,6 +29,7 @@ func auto(cmd *cobra.Command, args []string) {
 	tables = append(tables, &models.Coupon{}, &models.CouponFor{}, &models.CouponUsage{})
 	tables = append(tables, &models.Location{}, &models.Review{}, &models.OrderedItemAttribute{}, &models.Log{})
 	tables = append(tables, &models.Location{}, &models.ShippingForLocation{}, &models.PaymentForLocation{})
+	tables = append(tables, &models.PaymentGateway{}, &models.PaymentGatewayConfig{})
 
 	for _, t := range tables {
 		if err := tx.AutoMigrate(t).Error; err != nil {
@@ -47,6 +48,7 @@ func auto(cmd *cobra.Command, args []string) {
 	tForeignKeys = append(tForeignKeys, &models.User{}, &models.Session{})
 	tForeignKeys = append(tForeignKeys, &models.Coupon{}, &models.Coupon{}, &models.CouponUsage{})
 	tForeignKeys = append(tForeignKeys, &models.Review{}, &models.OrderedItemAttribute{}, &models.ShippingForLocation{}, &models.PaymentForLocation{})
+	tForeignKeys = append(tForeignKeys, &models.PaymentGatewayConfig{})
 
 	for _, t := range tForeignKeys {
 		for _, fks := range t.ForeignKeys() {

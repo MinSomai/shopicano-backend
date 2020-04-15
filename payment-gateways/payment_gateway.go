@@ -3,12 +3,15 @@ package payment_gateways
 import (
 	"errors"
 	"github.com/braintree-go/braintree-go"
+	"github.com/jinzhu/gorm"
 	"github.com/shopicano/shopicano-backend/config"
 	"github.com/shopicano/shopicano-backend/models"
 )
 
 type PaymentGateway interface {
-	GetName() string
+	Load(db *gorm.DB) error
+	Reload(db *gorm.DB) error
+	GetID() string
 	GetConfig() (map[string]interface{}, error)
 	Pay(orderDetails *models.OrderDetailsView) (*PaymentGatewayResponse, error)
 	ValidateTransaction(orderDetails *models.OrderDetailsView) error
@@ -22,7 +25,15 @@ type PaymentGatewayResponse struct {
 	BrainTreeTransactionStatus braintree.TransactionStatus
 }
 
-var activePaymentGateway PaymentGateway
+var paymentGateways []PaymentGateway
+
+func Load() error {
+	return
+}
+
+func ReLoad() {
+
+}
 
 func SetActivePaymentGateway(cfg config.PaymentGatewayCfg) error {
 	gateway, err := GetPaymentGatewayByName(cfg.Name)
