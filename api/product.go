@@ -204,6 +204,16 @@ func updateProduct(ctx echo.Context) error {
 		p.Image = *req.Image
 	}
 	if len(req.AdditionalImages) > 0 {
+		if err := pu.RemoveImage(db, p.ID); err != nil {
+			db.Rollback()
+
+			resp.Title = "Failed to remove additional image"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
 		for _, i := range req.AdditionalImages {
 			if strings.TrimSpace(i) == "" {
 				continue
@@ -218,16 +228,6 @@ func updateProduct(ctx echo.Context) error {
 				resp.Errors = err
 				return resp.ServerJSON(ctx)
 			}
-		}
-
-		if err := pu.RemoveImage(db, p.ID); err != nil {
-			db.Rollback()
-
-			resp.Title = "Failed to remove additional image"
-			resp.Status = http.StatusInternalServerError
-			resp.Code = errors.DatabaseQueryFailed
-			resp.Errors = err
-			return resp.ServerJSON(ctx)
 		}
 	}
 
