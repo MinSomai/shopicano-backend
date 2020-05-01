@@ -16,7 +16,7 @@ func GetRouter() http.Handler {
 	router.Use(middleware.GzipWithConfig(middleware.GzipConfig{
 		Level: 6,
 		Skipper: func(ctx echo.Context) bool {
-			return strings.Contains(ctx.Path(), "/fs/")
+			return strings.Contains(ctx.Path(), "/fs/") || strings.Contains(ctx.Path(), "/download/")
 		},
 	}))
 

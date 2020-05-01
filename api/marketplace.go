@@ -27,6 +27,8 @@ func RegisterPlatformRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.PUT("/payment-methods/:id/", updatePaymentMethod)
 		g.DELETE("/payment-methods/:id/", deletePaymentMethod)
 		g.GET("/payment-methods/", listPaymentMethodsAsAdmin)
+		g.GET("/payment-methods/:id/", getPaymentMethod)
+		g.GET("/shipping-methods/:id/", getShippingMethod)
 
 		g.GET("/users/", listUsers)
 	}(*platformEndpoints)

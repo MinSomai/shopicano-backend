@@ -596,6 +596,7 @@ func deleteProductAttribute(ctx echo.Context) error {
 }
 
 func saveDownloadableProduct(ctx echo.Context) error {
+	storeID := utils.GetStoreID(ctx)
 	productID := ctx.Param("product_id")
 
 	resp := core.Response{}
@@ -653,7 +654,7 @@ func saveDownloadableProduct(ctx echo.Context) error {
 	extSeparatorIndex := strings.LastIndex(fileName, ".")
 	fileName = base64.StdEncoding.EncodeToString([]byte(fileName[:extSeparatorIndex])) + "." + fileName[extSeparatorIndex+1:]
 
-	newFileName := fmt.Sprintf("%s-%s", utils.NewUUID(), fileName)
+	newFileName := fmt.Sprintf("%s/%s-%s", storeID, utils.NewUUID(), fileName)
 	newFileNameWithBucket := fmt.Sprintf("%s/%s", values.ReservedBucketName, newFileName)
 	contentType := h.Header.Get("Content-Type")
 	errU := services.UploadToMinio(newFileNameWithBucket, contentType, bytes.NewReader(body), h.Size)
