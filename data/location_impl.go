@@ -64,7 +64,7 @@ func (l *LocationRepositoryImpl) Find(db *gorm.DB) ([]models.Location, error) {
 }
 
 func (l *LocationRepositoryImpl) AddShippingMethod(db *gorm.DB, m *models.ShippingForLocation) error {
-	if err := db.Create(m).
+	if err := db.FirstOrCreate(m).
 		Error; err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (l *LocationRepositoryImpl) RemoveShippingMethod(db *gorm.DB, m *models.Shi
 }
 
 func (l *LocationRepositoryImpl) AddPaymentMethod(db *gorm.DB, m *models.PaymentForLocation) error {
-	if err := db.Create(m).
+	if err := db.FirstOrCreate(m).
 		Error; err != nil {
 		return err
 	}

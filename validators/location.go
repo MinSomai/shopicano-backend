@@ -7,9 +7,9 @@ import (
 )
 
 type reqUpdateLocation struct {
-	IsPublished      *bool   `json:"is_published"`
-	ShippingMethodID *string `json:"shipping_method_id"`
-	PaymentMethodID  *string `json:"payment_method_id"`
+	IsPublished     *bool    `json:"is_published"`
+	ShippingMethods []string `json:"shipping_methods"`
+	PaymentMethods  []string `json:"payment_methods"`
 }
 
 func ValidateUpdateLocation(ctx echo.Context, single bool) (*reqUpdateLocation, error) {

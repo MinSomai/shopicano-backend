@@ -176,6 +176,8 @@ func updateLocation(ctx echo.Context) error {
 
 	loc, err := locDao.FindByID(db, int(locationID))
 	if err != nil {
+		db.Rollback()
+
 		if errors.IsRecordNotFoundError(err) {
 			resp.Title = "Location not found"
 			resp.Status = http.StatusNotFound
@@ -199,11 +201,13 @@ func updateLocation(ctx echo.Context) error {
 		}
 	}
 
-	if req.ShippingMethodID != nil {
+	for _, v := range req.ShippingMethods {
 		if err := locDao.AddShippingMethod(db, &models.ShippingForLocation{
 			LocationID:       locationID,
-			ShippingMethodID: *req.ShippingMethodID,
+			ShippingMethodID: v,
 		}); err != nil {
+			db.Rollback()
+
 			resp.Title = "Database query failed"
 			resp.Status = http.StatusInternalServerError
 			resp.Code = errors.DatabaseQueryFailed
@@ -212,11 +216,13 @@ func updateLocation(ctx echo.Context) error {
 		}
 	}
 
-	if req.PaymentMethodID != nil {
+	for _, v := range req.PaymentMethods {
 		if err := locDao.AddPaymentMethod(db, &models.PaymentForLocation{
 			LocationID:      locationID,
-			PaymentMethodID: *req.PaymentMethodID,
+			PaymentMethodID: v,
 		}); err != nil {
+			db.Rollback()
+
 			resp.Title = "Database query failed"
 			resp.Status = http.StatusInternalServerError
 			resp.Code = errors.DatabaseQueryFailed
@@ -227,6 +233,8 @@ func updateLocation(ctx echo.Context) error {
 
 	err = locDao.UpdateByID(db, loc)
 	if err != nil {
+		db.Rollback()
+
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -264,11 +272,13 @@ func deleteLocationParams(ctx echo.Context) error {
 	db := app.DB().Begin()
 	locDao := data.NewLocationRepository()
 
-	if req.ShippingMethodID != nil {
+	for _, v := range req.ShippingMethods {
 		if err := locDao.RemoveShippingMethod(db, &models.ShippingForLocation{
 			LocationID:       locationID,
-			ShippingMethodID: *req.ShippingMethodID,
+			ShippingMethodID: v,
 		}); err != nil {
+			db.Rollback()
+
 			resp.Title = "Database query failed"
 			resp.Status = http.StatusInternalServerError
 			resp.Code = errors.DatabaseQueryFailed
@@ -277,11 +287,13 @@ func deleteLocationParams(ctx echo.Context) error {
 		}
 	}
 
-	if req.PaymentMethodID != nil {
+	for _, v := range req.PaymentMethods {
 		if err := locDao.RemovePaymentMethod(db, &models.PaymentForLocation{
 			LocationID:      locationID,
-			PaymentMethodID: *req.PaymentMethodID,
+			PaymentMethodID: v,
 		}); err != nil {
+			db.Rollback()
+
 			resp.Title = "Database query failed"
 			resp.Status = http.StatusInternalServerError
 			resp.Code = errors.DatabaseQueryFailed
@@ -319,6 +331,16 @@ func updateAllLocations(ctx echo.Context) error {
 
 	locs, err := locDao.Find(db)
 	if err != nil {
+		db.Rollback()
+
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Location not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.LocationNotFound
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -335,11 +357,13 @@ func updateAllLocations(ctx echo.Context) error {
 			}
 		}
 
-		if req.ShippingMethodID != nil {
+		for _, v := range req.ShippingMethods {
 			if err := locDao.AddShippingMethod(db, &models.ShippingForLocation{
 				LocationID:       loc.ID,
-				ShippingMethodID: *req.ShippingMethodID,
+				ShippingMethodID: v,
 			}); err != nil {
+				db.Rollback()
+
 				resp.Title = "Database query failed"
 				resp.Status = http.StatusInternalServerError
 				resp.Code = errors.DatabaseQueryFailed
@@ -348,11 +372,13 @@ func updateAllLocations(ctx echo.Context) error {
 			}
 		}
 
-		if req.PaymentMethodID != nil {
+		for _, v := range req.PaymentMethods {
 			if err := locDao.AddPaymentMethod(db, &models.PaymentForLocation{
 				LocationID:      loc.ID,
-				PaymentMethodID: *req.PaymentMethodID,
+				PaymentMethodID: v,
 			}); err != nil {
+				db.Rollback()
+
 				resp.Title = "Database query failed"
 				resp.Status = http.StatusInternalServerError
 				resp.Code = errors.DatabaseQueryFailed
@@ -363,6 +389,8 @@ func updateAllLocations(ctx echo.Context) error {
 
 		err = locDao.UpdateByID(db, &loc)
 		if err != nil {
+			db.Rollback()
+
 			resp.Title = "Database query failed"
 			resp.Status = http.StatusInternalServerError
 			resp.Code = errors.DatabaseQueryFailed
