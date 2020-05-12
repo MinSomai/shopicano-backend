@@ -428,6 +428,24 @@ func (os *OrderRepositoryImpl) StoreSummary(db *gorm.DB, storeID string) (*model
 	return &sum, nil
 }
 
+func (os *OrderRepositoryImpl) StoreSummaryAny(db *gorm.DB, storeID string) (*models.Summary, error) {
+	o := models.Order{}
+	oi := models.OrderedItem{}
+
+	sum := models.Summary{}
+
+	if err := db.Table(fmt.Sprintf("%s AS o", o.TableName())).
+		Select("COUNT(o.id) AS total_orders, SUM(oi.price * oi.quantity) AS earnings, SUM(oi.product_cost * oi.quantity) AS expenses,"+
+			"SUM(oi.price * oi.quantity) - SUM(oi.product_cost * oi.quantity) AS profits, SUM(o.discounted_amount) AS discounts,"+
+			"COUNT(DISTINCT (o.user_id)) AS customers").
+		Joins(fmt.Sprintf("LEFT JOIN %s AS oi ON o.id = oi.order_id", oi.TableName())).
+		Where("o.store_id = ?", storeID).
+		Find(&sum).Error; err != nil {
+		return nil, err
+	}
+	return &sum, nil
+}
+
 func (os *OrderRepositoryImpl) StoreSummaryByTime(db *gorm.DB, storeID string, from, end time.Time) (*models.Summary, error) {
 	o := models.Order{}
 	oi := models.OrderedItem{}

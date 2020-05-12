@@ -176,6 +176,15 @@ func orderStats(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
+	summaryAny, err := ou.StoreSummaryAny(db, utils.GetStoreID(ctx))
+	if err != nil {
+		resp.Title = "Database query failed"
+		resp.Status = http.StatusInternalServerError
+		resp.Code = errors.DatabaseQueryFailed
+		resp.Errors = err
+		return resp.ServerJSON(ctx)
+	}
+
 	var timeWiseSummary []*models.Summary
 	var ordersStats []map[string]interface{}
 	var earningsStats []map[string]interface{}
@@ -298,7 +307,8 @@ func orderStats(ctx echo.Context) error {
 
 	resp.Status = http.StatusOK
 	resp.Data = map[string]interface{}{
-		"report":           summary,
+		"report_completed": summary,
+		"report":           summaryAny,
 		"reports_by_time":  timeWiseSummary,
 		"orders_by_time":   ordersStats,
 		"earnings_by_time": earningsStats,
