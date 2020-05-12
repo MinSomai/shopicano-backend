@@ -1072,7 +1072,8 @@ func downloadProductAsUser(ctx echo.Context) error {
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
-	return resp.ServeStreamFromMinio(ctx, f)
+
+	return resp.ServeStreamFromMinioAsDownload(ctx, f)
 }
 
 func serveDatabaseQueryFailed(ctx echo.Context, err error) error {

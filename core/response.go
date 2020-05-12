@@ -34,6 +34,23 @@ func (r *Response) ServerJSON(ctx echo.Context) error {
 	return nil
 }
 
+func (r *Response) ServeStreamFromMinioAsDownload(ctx echo.Context, object *minio.Object) error {
+	s, _ := object.Stat()
+
+	fileName := fmt.Sprintf("%s.%s", s.ETag, s.Key[strings.LastIndex(s.Key, ".")+1:])
+	ctx.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+	ctx.Response().Header().Set("Content-Type", s.ContentType)
+	ctx.Response().Header().Set("X-Platform", "Shopicano")
+	ctx.Response().Header().Set("X-Platform-Developer", "www.codersgarage.com")
+	ctx.Response().Header().Set("X-Platform-Connect", "www.shopicano.com")
+
+	if _, err := io.Copy(ctx.Response().Writer, object); err != nil {
+		log.Log().Errorln(err)
+		return err
+	}
+	return nil
+}
+
 func (r *Response) ServeStreamFromMinio(ctx echo.Context, object *minio.Object) error {
 	s, _ := object.Stat()
 
