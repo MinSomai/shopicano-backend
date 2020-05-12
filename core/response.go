@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/minio/minio-go"
 	"github.com/shopicano/shopicano-backend/errors"
+	"github.com/shopicano/shopicano-backend/log"
 	"github.com/shopicano/shopicano-backend/utils"
 	"image"
 	"io"
@@ -48,6 +49,7 @@ func (r *Response) ServeStreamFromMinio(ctx echo.Context, object *minio.Object) 
 	}
 
 	if _, err := io.Copy(ctx.Response().Writer, object); err != nil {
+		log.Log().Errorln(err)
 		return err
 	}
 	return nil
