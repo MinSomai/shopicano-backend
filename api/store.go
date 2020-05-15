@@ -39,6 +39,8 @@ func RegisterStoreRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.PATCH("/:store_id/staffs/:user_id/", updateStoreStaffPermission)
 		g.DELETE("/:store_id/staffs/:user_id/", deleteStoreStaff)
 		g.GET("/:store_id/staffs/", listStaffs)
+		g.POST("/:store_id/payout-settings/", createOrUpdatePayoutSettings)
+		g.GET("/:store_id/payout-settings/", getPayoutSettings)
 	}(*storesPublicPath)
 
 	func(g echo.Group) {
