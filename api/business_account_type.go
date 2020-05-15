@@ -153,14 +153,6 @@ func listBusinessAccountTypesForUser(ctx echo.Context) error {
 
 	resp := core.Response{}
 
-	if err != nil {
-		resp.Title = "Invalid data"
-		resp.Status = http.StatusUnprocessableEntity
-		resp.Code = errors.ShippingMethodCreationDataInvalid
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
-
 	db := app.DB()
 
 	au := data.NewMarketplaceRepository()
@@ -194,14 +186,6 @@ func listBusinessAccountTypes(ctx echo.Context) error {
 	from := (page - 1) * limit
 
 	resp := core.Response{}
-
-	if err != nil {
-		resp.Title = "Invalid data"
-		resp.Status = http.StatusUnprocessableEntity
-		resp.Code = errors.ShippingMethodCreationDataInvalid
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
 
 	db := app.DB()
 

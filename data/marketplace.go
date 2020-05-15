@@ -34,6 +34,14 @@ type MarketplaceRepository interface {
 	GetBusinessAccountType(db *gorm.DB, ID string) (*models.BusinessAccountType, error)
 	GetBusinessAccountTypeForUser(db *gorm.DB, ID string) (*models.BusinessAccountType, error)
 
+	CreatePayoutMethod(db *gorm.DB, m *models.PayoutMethod) error
+	UpdatePayoutMethod(db *gorm.DB, m *models.PayoutMethod) error
+	ListPayoutMethods(db *gorm.DB, from, limit int) ([]models.PayoutMethod, error)
+	ListPayoutMethodForUser(db *gorm.DB, from, limit int) ([]models.PayoutMethod, error)
+	DeletePayoutMethod(db *gorm.DB, ID string) error
+	GetPayoutMethod(db *gorm.DB, ID string) (*models.PayoutMethod, error)
+	GetPayoutMethodForUser(db *gorm.DB, ID string) (*models.PayoutMethod, error)
+
 	GetSettings(db *gorm.DB) (*models.Settings, error)
 	GetSettingsDetails(db *gorm.DB) (*models.SettingsDetails, error)
 	UpdateSettings(db *gorm.DB, s *models.Settings) error

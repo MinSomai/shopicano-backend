@@ -33,10 +33,10 @@ func RegisterPlatformRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.GET("/business-account-types/:bat_id/", getBusinessAccountType)
 
 		g.POST("/payout-methods/", createPayoutMethod)
-		g.PUT("/payout-methods/:id/", updatePayoutMethod)
-		g.DELETE("/payout-methods/:id/", deletePayoutMethod)
+		g.PUT("/payout-methods/:pom_id/", updatePayoutMethod)
+		g.DELETE("/payout-methods/:pom_id/", deletePayoutMethod)
 		g.GET("/payout-methods/", listPayoutMethods)
-		g.GET("/payout-methods/:id/", getPayoutMethod)
+		g.GET("/payout-methods/:pom_id/", getPayoutMethod)
 
 		g.GET("/users/", listUsers)
 	}(*platformEndpoints)
@@ -58,6 +58,9 @@ func RegisterPlatformRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.Use(middlewares.IsStoreAdmin())
 		g.GET("/business-account-types/", listBusinessAccountTypesForUser)
 		g.GET("/business-account-types/:bat_id/", getBusinessAccountTypeForUser)
+
+		g.GET("/payout-methods/", listPayoutMethodsForUser)
+		g.GET("/payout-methods/:pom_id/", getPayoutMethodForUser)
 	}(*publicEndpoints)
 }
 
