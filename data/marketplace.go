@@ -42,6 +42,11 @@ type MarketplaceRepository interface {
 	GetPayoutMethod(db *gorm.DB, ID string) (*models.PayoutMethod, error)
 	GetPayoutMethodForUser(db *gorm.DB, ID string) (*models.PayoutMethod, error)
 
+	CreatePayoutSettings(db *gorm.DB, m *models.PayoutSettings) error
+	UpdatePayoutSettings(db *gorm.DB, m *models.PayoutSettings) error
+	GetPayoutSettings(db *gorm.DB, storeID string) (*models.PayoutSettings, error)
+	GetPayoutSettingsDetails(db *gorm.DB, storeID string) (*models.PayoutSettingsDetails, error)
+
 	GetSettings(db *gorm.DB) (*models.Settings, error)
 	GetSettingsDetails(db *gorm.DB) (*models.SettingsDetails, error)
 	UpdateSettings(db *gorm.DB, s *models.Settings) error

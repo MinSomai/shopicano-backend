@@ -14,43 +14,76 @@ import (
 )
 
 func createOrUpdatePayoutSettings(ctx echo.Context) error {
-	req, err := validators.ValidateCreateShippingMethod(ctx)
+	req, err := validators.ValidateCreateOrUpdatePayoutSettings(ctx)
 
 	resp := core.Response{}
 
 	if err != nil {
 		resp.Title = "Invalid data"
 		resp.Status = http.StatusUnprocessableEntity
-		resp.Code = errors.ShippingMethodCreationDataInvalid
+		resp.Code = errors.PayoutSettingsDataInvalid
 		resp.Errors = err
 		return resp.ServerJSON(ctx)
 	}
 
-	db := app.DB()
-
-	m := &models.ShippingMethod{
-		ID:                      utils.NewUUID(),
-		Name:                    req.Name,
-		IsPublished:             req.IsPublished,
-		ApproximateDeliveryTime: req.ApproximateDeliveryTime,
-		DeliveryCharge:          req.DeliveryCharge,
-		WeightUnit:              req.WeightUnit,
-		IsFlat:                  req.IsFlat,
-		CreatedAt:               time.Now().UTC(),
-		UpdatedAt:               time.Now().UTC(),
-	}
-
+	db := app.DB().Begin()
 	au := data.NewMarketplaceRepository()
-	if err := au.CreateShippingMethod(db, m); err != nil {
-		msg, ok := errors.IsDuplicateKeyError(err)
-		if ok {
-			resp.Title = msg
-			resp.Status = http.StatusConflict
-			resp.Code = errors.ShippingMethodAlreadyExists
+
+	isNew := false
+	m, err := au.GetPayoutSettings(db, utils.GetStoreID(ctx))
+	if err != nil {
+		if !errors.IsRecordNotFoundError(err) {
+			db.Rollback()
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
 
+		isNew = true
+		m = &models.PayoutSettings{}
+		m.ID = utils.NewUUID()
+		m.StoreID = utils.GetStoreID(ctx)
+		m.CreatedAt = time.Now().UTC()
+	}
+
+	m.CountryID = req.CountryID
+	m.AccountTypeID = req.AccountTypeID
+	m.BusinessName = req.BusinessName
+	m.BusinessAddressID = req.BusinessAddressID
+	m.VatNumber = req.VatNumber
+	m.PayoutMethodID = req.PayoutMethodID
+	m.PayoutMethodDetails = req.PayoutMethodDetails
+	m.PayoutMinimumThreshold = req.PayoutMinimumThreshold
+	m.UpdatedAt = time.Now().UTC()
+
+	if isNew {
+		err := au.CreatePayoutSettings(db, m)
+		if err != nil {
+			db.Rollback()
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	} else {
+		err := au.UpdatePayoutSettings(db, m)
+		if err != nil {
+			db.Rollback()
+
+			resp.Title = "Database query failed"
+			resp.Status = http.StatusInternalServerError
+			resp.Code = errors.DatabaseQueryFailed
+			resp.Errors = err
+			return resp.ServerJSON(ctx)
+		}
+	}
+
+	if err := db.Commit().Error; err != nil {
 		resp.Title = "Database query failed"
 		resp.Status = http.StatusInternalServerError
 		resp.Code = errors.DatabaseQueryFailed
@@ -58,45 +91,23 @@ func createOrUpdatePayoutSettings(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	resp.Status = http.StatusCreated
+	resp.Status = http.StatusOK
 	resp.Data = m
 	return resp.ServerJSON(ctx)
 }
 
 func getPayoutSettings(ctx echo.Context) error {
-	req, err := validators.ValidateCreateShippingMethod(ctx)
-
 	resp := core.Response{}
-
-	if err != nil {
-		resp.Title = "Invalid data"
-		resp.Status = http.StatusUnprocessableEntity
-		resp.Code = errors.ShippingMethodCreationDataInvalid
-		resp.Errors = err
-		return resp.ServerJSON(ctx)
-	}
 
 	db := app.DB()
 
-	m := &models.ShippingMethod{
-		ID:                      utils.NewUUID(),
-		Name:                    req.Name,
-		IsPublished:             req.IsPublished,
-		ApproximateDeliveryTime: req.ApproximateDeliveryTime,
-		DeliveryCharge:          req.DeliveryCharge,
-		WeightUnit:              req.WeightUnit,
-		IsFlat:                  req.IsFlat,
-		CreatedAt:               time.Now().UTC(),
-		UpdatedAt:               time.Now().UTC(),
-	}
-
 	au := data.NewMarketplaceRepository()
-	if err := au.CreateShippingMethod(db, m); err != nil {
-		msg, ok := errors.IsDuplicateKeyError(err)
-		if ok {
-			resp.Title = msg
-			resp.Status = http.StatusConflict
-			resp.Code = errors.ShippingMethodAlreadyExists
+	m, err := au.GetPayoutSettingsDetails(db, utils.GetStoreID(ctx))
+	if err != nil {
+		if errors.IsRecordNotFoundError(err) {
+			resp.Title = "Payout settings not found"
+			resp.Status = http.StatusNotFound
+			resp.Code = errors.PayoutSettingsNotFound
 			resp.Errors = err
 			return resp.ServerJSON(ctx)
 		}
@@ -108,7 +119,7 @@ func getPayoutSettings(ctx echo.Context) error {
 		return resp.ServerJSON(ctx)
 	}
 
-	resp.Status = http.StatusCreated
+	resp.Status = http.StatusOK
 	resp.Data = m
 	return resp.ServerJSON(ctx)
 }
