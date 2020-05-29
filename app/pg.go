@@ -22,6 +22,7 @@ func ConnectSQLDB() error {
 	db.DB().SetMaxIdleConns(config.DB().MaxIdleConnections)
 	db.DB().SetMaxOpenConns(config.DB().MaxOpenConnections)
 	db.DB().SetConnMaxLifetime(config.DB().MaxConnectionLifetime)
+	db.Begin()
 
 	db.LogMode(true)
 	db.SetLogger(log.Log())

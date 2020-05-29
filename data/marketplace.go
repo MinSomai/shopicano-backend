@@ -47,6 +47,12 @@ type MarketplaceRepository interface {
 	GetPayoutSettings(db *gorm.DB, storeID string) (*models.PayoutSettings, error)
 	GetPayoutSettingsDetails(db *gorm.DB, storeID string) (*models.PayoutSettingsDetails, error)
 
+	CreatePayoutEntry(db *gorm.DB, m *models.PayoutSend) error
+	ListPayoutEntries(db *gorm.DB, storeID string, from, limit int) ([]models.PayoutSend, error)
+	GetPayoutEntry(db *gorm.DB, storeID, entryID string) (*models.PayoutSend, error)
+	GetPayoutEntryDetails(db *gorm.DB, storeID, entryID string) (*models.PayoutSendDetails, error)
+	UpdatePayoutEntry(db *gorm.DB, ps *models.PayoutSend) error
+
 	GetSettings(db *gorm.DB) (*models.Settings, error)
 	GetSettingsDetails(db *gorm.DB) (*models.SettingsDetails, error)
 	UpdateSettings(db *gorm.DB, s *models.Settings) error

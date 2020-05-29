@@ -2,7 +2,7 @@ package services
 
 import (
 	"fmt"
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v6"
 	"github.com/shopicano/shopicano-backend/app"
 	"github.com/shopicano/shopicano-backend/config"
 	"io"

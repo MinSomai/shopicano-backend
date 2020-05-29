@@ -193,3 +193,19 @@ func (su *StoreRepositoryImpl) UpdateStore(db *gorm.DB, s *models.Store) error {
 	}
 	return nil
 }
+
+func (su *StoreRepositoryImpl) GetStoreFinanceSummary(db *gorm.DB, storeID string) (*models.StoreFinanceSummaryView, error) {
+	m := models.StoreFinanceSummaryView{}
+	if err := db.Table(m.TableName()).Find(&m, "store_id = ?", storeID).Error; err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+func (su *StoreRepositoryImpl) GetStorePayoutSummary(db *gorm.DB, storeID string) (*models.StorePayoutSummaryView, error) {
+	m := models.StorePayoutSummaryView{}
+	if err := db.Table(m.TableName()).Find(&m, "store_id = ?", storeID).Error; err != nil {
+		return nil, err
+	}
+	return &m, nil
+}

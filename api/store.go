@@ -41,6 +41,10 @@ func RegisterStoreRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.GET("/:store_id/staffs/", listStaffs)
 		g.POST("/:store_id/payout-settings/", createOrUpdatePayoutSettings)
 		g.GET("/:store_id/payout-settings/", getPayoutSettings)
+		g.POST("/:store_id/payouts/entries/", createPayoutEntry)
+		g.GET("/:store_id/payouts/entries/", listPayoutEntries)
+		g.GET("/:store_id/payouts/entries/:entry_id/", getPayoutEntry)
+		g.GET("/:store_id/payouts/summary/", getStorePayoutSummary)
 	}(*storesPublicPath)
 
 	func(g echo.Group) {
@@ -53,6 +57,11 @@ func RegisterStoreRoutes(publicEndpoints, platformEndpoints *echo.Group) {
 		g.Use(middlewares.IsPlatformManager)
 		g.GET("/", listStores)
 		g.PATCH("/:store_id/", updateStoreAsPlatformOwner)
+		g.POST("/:store_id/payouts/entries/", createPayoutEntryByMarketplace)
+		g.GET("/:store_id/payouts/entries/", listPayoutEntriesByMarketplace)
+		g.GET("/:store_id/payouts/entries/:entry_id/", getPayoutEntryByMarketplace)
+		g.PATCH("/:store_id/payouts/entries/:entry_id/", updatePayoutEntryByMarketplace)
+		g.GET("/:store_id/payouts/summary/", getStorePayoutSummaryByMarketplace)
 	}(*storesPlatformPath)
 }
 

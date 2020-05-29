@@ -20,4 +20,7 @@ type StoreRepository interface {
 	Search(db *gorm.DB, query string, from, limit int) ([]models.Store, error)
 	UpdateStoreStatus(db *gorm.DB, s *models.Store) error
 	UpdateStore(db *gorm.DB, s *models.Store) error
+
+	GetStoreFinanceSummary(db *gorm.DB, storeID string) (*models.StoreFinanceSummaryView, error)
+	GetStorePayoutSummary(db *gorm.DB, storeID string) (*models.StorePayoutSummaryView, error)
 }
